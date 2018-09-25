@@ -57,10 +57,6 @@ sub index {
 			if ( !$tenant_utils->is_ds_resource_accessible($tenants_data, $ds->tenant_id) ) {
 				return $self->forbidden("Forbidden. Delivery-service tenant is not available to the user.");
 			}
-		} else {
-			if ( !&is_oper($self) && !$self->is_delivery_service_assigned($ds_id) ) {
-				return $self->forbidden();
-			}
 		}
 
 		$criteria{'job_deliveryservice'} = $ds_id;
@@ -90,10 +86,6 @@ sub index {
 sub show {
 	my $self = shift;
 	my $id   = $self->param('id');
-
-	if ( !&is_oper($self) ) {
-		return $self->forbidden();
-	}
 
 	my $jobs = $self->db->resultset("Job")->search( { 'me.id' => $id }, { prefetch => [ 'job_deliveryservice', 'job_user' ] } );
 	my @data = ();
@@ -179,10 +171,6 @@ sub create_current_user_job {
 	if ( $tenant_utils->use_tenancy() ) {
 		if ( !$tenant_utils->is_ds_resource_accessible($tenants_data, $ds->tenant_id) ) {
 			return $self->forbidden("Forbidden. Delivery-service tenant is not available to the user.");
-		}
-	} else {
-		if ( !&is_oper($self) && !$self->is_delivery_service_assigned($ds_id) ) {
-			return $self->forbidden();
 		}
 	}
 

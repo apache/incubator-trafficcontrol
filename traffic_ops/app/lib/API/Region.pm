@@ -184,9 +184,6 @@ sub create_for_division {
 	if ( !defined($params) ) {
 		return $self->alert("parameters must be in JSON format,  please check!");
 	}
-	if ( !&is_oper($self) ) {
-		return $self->alert("You must be an ADMIN or OPER to perform this operation!");
-	}
 
 	my $existing_region = $self->db->resultset('Region')->search( { name => $params->{name} } )->get_column('name')->single();
 	if ( defined($existing_region) ) {

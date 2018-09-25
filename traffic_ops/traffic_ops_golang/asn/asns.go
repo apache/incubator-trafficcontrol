@@ -32,9 +32,6 @@ import (
 	validation "github.com/go-ozzo/ozzo-validation"
 )
 
-// ASNsPrivLevel ...
-const ASNsPrivLevel = 10
-
 //we need a type alias to define functions on
 type TOASNV11 struct {
 	ReqInfo *api.APIInfo `json:"-"`

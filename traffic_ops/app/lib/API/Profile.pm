@@ -257,10 +257,6 @@ sub create {
 sub copy {
 	my $self = shift;
 
-	if ( !&is_oper($self) ) {
-		return $self->forbidden();
-	}
-
 	my $name                   = $self->param('profile_name');
 	my $profile_copy_from_name = $self->param('profile_copy_from');
 	if ( !defined($name) || $name eq "" || $name =~ /\s/ ) {
@@ -473,10 +469,6 @@ sub import {
 	my $p_cdn_id         = $self->db->resultset('Cdn')->search( { name => $data->{profile}->{cdn} } )->get_column('id')->single();
 	my $existing_profile = $self->db->resultset('Profile')->search( { name => $p_name } )->get_column('name')->single();
 	my @valid_types      = @{$self->db->source('ProfileTypeValue')->column_info('value')->{extra}->{list}};
-
-	if ( !&is_oper($self) ) {
-		return $self->forbidden();
-	}
 
 	if (!defined($p_cdn_id)) {
 		return $self->alert($data->{profile}->{cdn} . " CDN does not exist");

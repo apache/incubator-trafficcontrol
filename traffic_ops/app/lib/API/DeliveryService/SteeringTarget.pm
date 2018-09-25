@@ -104,10 +104,6 @@ sub update {
 	my $target_ds_id   = $self->param('target_id');
 	my $params         = $self->req->json;
 
-	if ( !&is_portal($self) ) {
-		return $self->forbidden();
-	}
-
 	my $tenant_utils = Utils::Tenant->new($self);
 	my $tenants_data = $tenant_utils->create_tenants_data_from_db();
 	my $ds = $self->db->resultset('Deliveryservice')->find( { id => $steering_ds_id } );
@@ -175,10 +171,6 @@ sub create {
 	my $steering_ds_id = $self->param('id');
 	my $target_ds_id   = $params->{targetId};
 
-	if ( !&is_portal($self) ) {
-		return $self->forbidden();
-	}
-
 	my $tenant_utils = Utils::Tenant->new($self);
 	my $tenants_data = $tenant_utils->create_tenants_data_from_db();
 	my $ds = $self->db->resultset('Deliveryservice')->find( { id => $steering_ds_id } );
@@ -245,10 +237,6 @@ sub delete {
 	my $self           = shift;
 	my $steering_ds_id = $self->param('id');
 	my $target_ds_id   = $self->param('target_id');
-
-	if ( !&is_portal($self) ) {
-		return $self->forbidden();
-	}
 
 	my $tenant_utils = Utils::Tenant->new($self);
 	my $tenants_data = $tenant_utils->create_tenants_data_from_db();

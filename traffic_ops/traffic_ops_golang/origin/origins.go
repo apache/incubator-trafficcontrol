@@ -170,17 +170,12 @@ func filterAuthorized(origins []tc.Origin, user *auth.CurrentUser, tx *sqlx.Tx) 
 }
 
 func (origin *TOOrigin) Read() ([]interface{}, error, error, int) {
-	returnable := []interface{}{}
-
-	privLevel := origin.ReqInfo.User.PrivLevel
-
-	origins, errs, errType := getOrigins(origin.ReqInfo.Params, origin.ReqInfo.Tx, privLevel)
+	origins, errs, errType := getOrigins(origin.ReqInfo.Params, origin.ReqInfo.Tx)
 	if len(errs) > 0 {
 		userErr, sysErr, errCode := api.TypeErrsToAPIErr(errs, errType)
 		return nil, userErr, sysErr, errCode
 	}
 
-	var err error
 	tenancyEnabled, err := tenant.IsTenancyEnabledTx(origin.ReqInfo.Tx.Tx)
 	if err != nil {
 		return nil, nil, errors.New("origin read: checking tenancy: " + err.Error()), http.StatusInternalServerError
@@ -192,6 +187,7 @@ func (origin *TOOrigin) Read() ([]interface{}, error, error, int) {
 		}
 	}
 
+	returnable := []interface{}{}
 	for _, origin := range origins {
 		returnable = append(returnable, origin)
 	}
@@ -199,7 +195,7 @@ func (origin *TOOrigin) Read() ([]interface{}, error, error, int) {
 	return returnable, nil, nil, http.StatusOK
 }
 
-func getOrigins(params map[string]string, tx *sqlx.Tx, privLevel int) ([]tc.Origin, []error, tc.ApiErrorType) {
+func getOrigins(params map[string]string, tx *sqlx.Tx) ([]tc.Origin, []error, tc.ApiErrorType) {
 	var rows *sqlx.Rows
 	var err error
 

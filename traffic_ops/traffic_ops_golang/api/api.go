@@ -45,6 +45,7 @@ import (
 const DBContextKey = "db"
 const ConfigContextKey = "context"
 const ReqIDContextKey = "reqid"
+const APICapabilityContextKey = "apicapability"
 
 type CRUDFactory func(reqInfo *APIInfo) CRUDer
 
@@ -363,6 +364,19 @@ func getConfig(ctx context.Context) (*config.Config, error) {
 
 func GetConfig(ctx context.Context) (*config.Config, error) {
 	return getConfig(ctx)
+}
+
+func GetAPICapability(ctx context.Context) (string, error) {
+	val := ctx.Value(APICapabilityContextKey)
+	if val != nil {
+		switch v := val.(type) {
+		case string:
+			return v, nil
+		default:
+			return "", fmt.Errorf("API Capability found with bad type: %T", v)
+		}
+	}
+	return "", errors.New("No api capability found in Context")
 }
 
 func getReqID(ctx context.Context) (uint64, error) {

@@ -25,10 +25,6 @@ sub dbdump {
 	my $self = shift;
 	my $filename = $self->get_filename();
 
-	if ( !&is_admin($self) ) {
-		return $self->forbidden();
-	}
-
 	my ($db_name, $host, $port) = $Schema::dsn =~ /:database=([^;]*);host=([^;]+);port=(\d+)/;
 	my $db_user = $Schema::user;
 	my $db_pass = $Schema::pass;

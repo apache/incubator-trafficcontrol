@@ -28,8 +28,6 @@ import (
 	"bytes"
 	"context"
 	"net/http/httptest"
-
-	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/auth"
 )
 
 type key int
@@ -63,9 +61,9 @@ func TestCreateRouteMap(t *testing.T) {
 	}
 
 	routes := []Route{
-		{1.2, http.MethodGet, `path1`, PathOneHandler, auth.PrivLevelReadOnly, true, nil},
-		{1.2, http.MethodGet, `path2`, PathTwoHandler, 0, false, nil},
-		{1.2, http.MethodGet, `path3`, PathThreeHandler, 0, false, []Middleware{}},
+		{1.2, http.MethodGet, `path1`, PathOneHandler, true, nil},
+		{1.2, http.MethodGet, `path2`, PathTwoHandler, false, nil},
+		{1.2, http.MethodGet, `path3`, PathThreeHandler, false, []Middleware{}},
 	}
 
 	rawRoutes := []RawRoute{}

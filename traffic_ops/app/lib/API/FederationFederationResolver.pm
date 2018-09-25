@@ -46,10 +46,6 @@ sub assign_fed_resolver_to_federation {
     my $replace             = $params->{replace};
     my $count               = 0;
 
-    if ( !&is_admin($self) ) {
-        return $self->forbidden();
-    }
-
     my $fed = $self->db->resultset('Federation')->find( { id => $fed_id } );
     if ( !defined($fed) ) {
         return $self->not_found();

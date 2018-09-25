@@ -186,7 +186,6 @@ LEFT JOIN cdn c ON prof.cdn = c.id`
 }
 
 func ReadParameters(tx *sqlx.Tx, parameters map[string]string, user *auth.CurrentUser, profile tc.ProfileNullable) ([]tc.ParameterNullable, error) {
-	privLevel := user.PrivLevel
 	queryValues := make(map[string]interface{})
 	queryValues["profile_id"] = *profile.ID
 
@@ -208,7 +207,7 @@ func ReadParameters(tx *sqlx.Tx, parameters map[string]string, user *auth.Curren
 		if param.Secure != nil {
 			isSecure = *param.Secure
 		}
-		if isSecure && (privLevel < auth.PrivLevelAdmin) {
+		if isSecure && !user.HasCapability(tc.ParameterSecureCapability) {
 			param.Value = &parameter.HiddenField
 		}
 		params = append(params, param)

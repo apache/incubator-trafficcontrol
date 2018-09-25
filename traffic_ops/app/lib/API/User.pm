@@ -170,10 +170,6 @@ sub update {
 	my $user_id = $self->param('id');
 	my $params  = $self->req->json;
 
-	if ( !&is_oper($self) ) {
-		return $self->forbidden();
-	}
-
 	my $user = $self->db->resultset('TmUser')->find( { id => $user_id } );
 	if ( !defined($user) ) {
 		return $self->not_found();
@@ -265,10 +261,6 @@ sub update {
 sub create {
 	my $self   = shift;
 	my $params = $self->req->json;
-
-	if ( !&is_oper($self) ) {
-		return $self->forbidden();
-	}
 
 	#setting tenant_id to the user's tenant if tenant is not set.
 	my $tenant_utils = Utils::Tenant->new($self);
@@ -381,10 +373,6 @@ sub register_user {
 	my $self    = shift;
 	my $params  = $self->req->json;
 
-	if ( !&is_oper($self) ) {
-		return $self->forbidden();
-	}
-
 	my ( $is_valid, $result ) = $self->is_registration_valid($params);
 
 	if ( !$is_valid ) {
@@ -488,10 +476,6 @@ sub assign_deliveryservices {
 	my $delivery_services	= $params->{deliveryServices};
 	my $replace				= $params->{replace};
 	my $count				= 0;
-
-	if ( !&is_oper($self) ) {
-		return $self->forbidden();
-	}
 
 	if ( ref($delivery_services) ne 'ARRAY' ) {
 		return $self->alert("Delivery services must be an array");
@@ -660,7 +644,7 @@ sub update_current {
 		if ( defined( $user->{"public_ssh_key"} ) ) {
 			$db_user->{"public_ssh_key"} = $user->{"public_ssh_key"};
 		}
-		if ( &is_admin($self) && defined( $user->{"role"} ) ) {
+		if ( defined( $user->{"role"} ) ) {
 			$db_user->{"role"} = $user->{"role"};
 		}
 		if ( defined( $user->{"uid"} ) ) {

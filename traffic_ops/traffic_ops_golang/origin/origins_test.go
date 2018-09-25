@@ -30,7 +30,6 @@ import (
 	"github.com/apache/trafficcontrol/lib/go-tc"
 	"github.com/apache/trafficcontrol/lib/go-util"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/api"
-	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/auth"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/test"
 
 	"github.com/jmoiron/sqlx"
@@ -116,7 +115,7 @@ func TestReadOrigins(t *testing.T) {
 	mock.ExpectQuery("SELECT").WillReturnRows(rows)
 	v := map[string]string{}
 
-	origins, errs, errType := getOrigins(v, db.MustBegin(), auth.PrivLevelAdmin)
+	origins, errs, errType := getOrigins(v, db.MustBegin())
 	log.Debugln("%v-->", origins)
 	if len(errs) > 0 {
 		t.Errorf("getOrigins expected: no errors, actual: %v with error type: %s", errs, errType.String())

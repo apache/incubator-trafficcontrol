@@ -125,7 +125,7 @@ func TestCreateHandler(t *testing.T) {
 
 	ctx := r.Context()
 	ctx = context.WithValue(ctx, auth.CurrentUserKey,
-		auth.CurrentUser{UserName: "username", ID: 1, PrivLevel: auth.PrivLevelAdmin})
+		auth.CurrentUser{UserName: "username", ID: 1})
 	ctx = context.WithValue(ctx, DBContextKey, db)
 	ctx = context.WithValue(ctx, ConfigContextKey, &cfg)
 	ctx = context.WithValue(ctx, ReqIDContextKey, uint64(0))
@@ -171,7 +171,7 @@ func TestReadHandler(t *testing.T) {
 
 	ctx := r.Context()
 	ctx = context.WithValue(ctx, auth.CurrentUserKey,
-		auth.CurrentUser{UserName: "username", ID: 1, PrivLevel: auth.PrivLevelAdmin})
+		auth.CurrentUser{UserName: "username", ID: 1})
 	ctx = context.WithValue(ctx, PathParamsKey, map[string]string{"id": "1"})
 	ctx = context.WithValue(ctx, DBContextKey, db)
 	ctx = context.WithValue(ctx, ConfigContextKey, &cfg)
@@ -212,7 +212,7 @@ func TestUpdateHandler(t *testing.T) {
 
 	ctx := r.Context()
 	ctx = context.WithValue(ctx, auth.CurrentUserKey,
-		auth.CurrentUser{UserName: "username", ID: 1, PrivLevel: auth.PrivLevelAdmin})
+		auth.CurrentUser{UserName: "username", ID: 1})
 	ctx = context.WithValue(ctx, PathParamsKey, map[string]string{"id": "1"})
 	ctx = context.WithValue(ctx, DBContextKey, db)
 	ctx = context.WithValue(ctx, ConfigContextKey, &cfg)
@@ -257,7 +257,7 @@ func TestDeleteHandler(t *testing.T) {
 
 	ctx := r.Context()
 	ctx = context.WithValue(ctx, auth.CurrentUserKey,
-		auth.CurrentUser{UserName: "username", ID: 1, PrivLevel: auth.PrivLevelAdmin})
+		auth.CurrentUser{UserName: "username", ID: 1})
 	ctx = context.WithValue(ctx, PathParamsKey, map[string]string{"id": "1"})
 	ctx = context.WithValue(ctx, DBContextKey, db)
 	ctx = context.WithValue(ctx, ConfigContextKey, &cfg)

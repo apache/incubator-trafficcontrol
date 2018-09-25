@@ -142,10 +142,6 @@ sub create {
 	my $self   = shift;
 	my $params = $self->req->json;
 
-	if ( !&is_oper($self) ) {
-		return $self->forbidden();
-	}
-
 	if ( !defined($params) ) {
 		return $self->alert("Parameters must be in JSON format.");
 	}
@@ -191,10 +187,6 @@ sub update {
 	my $self   = shift;
 	my $id     = $self->param('id');
 	my $params = $self->req->json;
-
-	if ( !&is_oper($self) ) {
-		return $self->forbidden();
-	}
 
 	if ( !defined($params) ) {
 		return $self->alert("Parameters must be in JSON format.");
@@ -243,10 +235,6 @@ sub update {
 sub delete {
 	my $self = shift;
 	my $id   = $self->param('id');
-
-	if ( !&is_oper($self) ) {
-		return $self->forbidden();
-	}
 
 	my $mapping = $self->db->resultset('ApiCapability')->find( { id => $id } );
 	if ( !defined($mapping) ) {

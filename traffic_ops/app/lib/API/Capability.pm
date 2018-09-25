@@ -67,10 +67,6 @@ sub create {
 	my $self   = shift;
 	my $params = $self->req->json;
 
-	if ( !&is_oper($self) ) {
-		return $self->forbidden();
-	}
-
 	if ( !defined($params) ) {
 		return $self->alert("Parameters must be in JSON format.");
 	}
@@ -118,10 +114,6 @@ sub update {
 	my $name   = $self->param('name');
 	my $params = $self->req->json;
 
-	if ( !&is_oper($self) ) {
-		return $self->forbidden();
-	}
-
 	if ( !defined($params) ) {
 		return $self->alert("Parameters must be in JSON format.");
 	}
@@ -158,10 +150,6 @@ sub update {
 sub delete {
 	my $self = shift;
 	my $name = $self->param('name');
-
-	if ( !&is_oper($self) ) {
-		return $self->forbidden();
-	}
 
 	my $capability = $self->db->resultset('Capability')->find( { name => $name } );
 	if ( !defined($capability) ) {

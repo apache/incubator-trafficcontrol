@@ -137,9 +137,16 @@ func TestWrapAuth(t *testing.T) {
 	id := 1
 	secret := "secret"
 
-	rows := sqlmock.NewRows([]string{"priv_level", "username", "id", "tenant_id"})
-	rows.AddRow(30, "user1", 1, 1)
+	rows := sqlmock.NewRows([]string{"username", "id", "tenant_id"})
+	rows.AddRow("user1", 1, 1)
 	mock.ExpectQuery("SELECT").WithArgs(userName).WillReturnRows(rows)
+
+	{
+		// capability query
+		rows := sqlmock.NewRows([]string{"count(*)"})
+		rows.AddRow(1)
+		mock.ExpectQuery("SELECT").WithArgs(userName, "GET", "").WillReturnRows(rows)
+	}
 
 	authBase := AuthBase{secret, nil}
 
@@ -149,7 +156,7 @@ func TestWrapAuth(t *testing.T) {
 		ctx := r.Context()
 		user, err := auth.GetCurrentUser(ctx)
 		if err != nil {
-			t.Fatalf("unable to get privLevel: %v", err)
+			t.Fatalf("unable to get user: %v", err)
 			return
 		}
 
@@ -163,7 +170,7 @@ func TestWrapAuth(t *testing.T) {
 		fmt.Fprintf(w, "%s", respBts)
 	}
 
-	authWrapper := authBase.GetWrapper(15)
+	authWrapper := authBase.GetWrapper()
 
 	f := authWrapper(handler)
 
@@ -175,7 +182,7 @@ func TestWrapAuth(t *testing.T) {
 
 	r.Header.Add("Cookie", tocookie.Name+"="+cookie)
 
-	expected := auth.CurrentUser{UserName: userName, ID: id, PrivLevel: 30, TenantID: 1}
+	expected := auth.CurrentUser{UserName: userName, ID: id, TenantID: 1}
 
 	expectedBody, err := json.Marshal(expected)
 	if err != nil {
@@ -184,6 +191,7 @@ func TestWrapAuth(t *testing.T) {
 
 	r = r.WithContext(context.WithValue(context.Background(), api.DBContextKey, db))
 	r = r.WithContext(context.WithValue(r.Context(), api.ConfigContextKey, &config.Config{ConfigTrafficOpsGolang: config.ConfigTrafficOpsGolang{DBQueryTimeoutSeconds: 20}}))
+	r = r.WithContext(context.WithValue(r.Context(), api.APICapabilityContextKey, ""))
 
 	f(w, r)
 

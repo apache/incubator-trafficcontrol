@@ -35,10 +35,6 @@ sub get_all_federation_resolver_mappings {
 	my $cdn_name = $self->param('cdnName');
 	my $data     = [];
 
-	if ( !&is_admin($self) ) {
-		return $self->alert("You must be an ADMIN to perform this operation!");
-	}
-
 	my $rs_data;
 	if ( defined $cdn_name ) {
 		push(
@@ -596,10 +592,6 @@ sub create_cdn_federation {
 	my $self        = shift;
 	my $params      = $self->req->json;
 
-	if ( !&is_admin($self) ) {
-		return $self->forbidden();
-	}
-
 	my ( $is_valid, $result ) = $self->is_federation_valid($params);
 
 	if ( !$is_valid ) {
@@ -633,10 +625,6 @@ sub update_cdn_federation {
 	my $self	= shift;
 	my $fed_id	= $self->param('fedId');
 	my $params	= $self->req->json;
-
-	if ( !&is_admin($self) ) {
-		return $self->forbidden();
-	}
 
 	my ( $is_valid, $result ) = $self->is_federation_valid($params);
 
@@ -674,10 +662,6 @@ sub update_cdn_federation {
 sub delete_cdn_federation {
 	my $self	= shift;
 	my $fed_id	= $self->param('fedId');
-
-	if ( !&is_admin($self) ) {
-		return $self->forbidden();
-	}
 
 	my $fed = $self->db->resultset('Federation')->find( { id => $fed_id } );
 	if ( !defined($fed) ) {

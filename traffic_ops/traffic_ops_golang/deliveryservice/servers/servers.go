@@ -395,7 +395,7 @@ func read(tx *sqlx.Tx, dsID int, user *auth.CurrentUser, unassigned bool) ([]tc.
 		if err = rows.StructScan(&s); err != nil {
 			return nil, errors.New("error scanning dss rows: " + err.Error())
 		}
-		if user.PrivLevel < auth.PrivLevelAdmin {
+		if !user.HasCapability(tc.ServerSecureCapability) {
 			s.ILOPassword = util.StrPtr("")
 		}
 		servers = append(servers, s)

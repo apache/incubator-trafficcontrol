@@ -91,10 +91,6 @@ sub create {
 	my $self   = shift;
 	my $params = $self->req->json;
 
-	if ( !&is_oper($self) ) {
-		return $self->forbidden();
-	}
-
 	if ( !defined($params) ) {
 		return $self->alert("parameters must be in JSON format.");
 	}
@@ -150,10 +146,6 @@ sub update {
 	my $id     = $self->param('id');
 	my $params = $self->req->json;
 
-	if ( !&is_oper($self) ) {
-		return $self->forbidden();
-	}
-
 	my $cdn = $self->db->resultset('Cdn')->find( { id => $id } );
 	if ( !defined($cdn) ) {
 		return $self->not_found();
@@ -204,10 +196,6 @@ sub delete {
 	my $self = shift;
 	my $id   = $self->param('id');
 
-	if ( !&is_oper($self) ) {
-		return $self->forbidden();
-	}
-
 	my $cdn = $self->db->resultset('Cdn')->search( { id => $id } );
 	if ( !defined($cdn) ) {
 		return $self->not_found();
@@ -234,10 +222,6 @@ sub delete {
 sub delete_by_name {
 	my $self = shift;
 	my $cdn_name   = $self->param('name');
-
-	if ( !&is_oper($self) ) {
-		return $self->forbidden();
-	}
 
 	my $cdn = $self->db->resultset('Cdn')->find( { name => $cdn_name } );
 	if ( !defined($cdn) ) {
@@ -266,10 +250,6 @@ sub queue_updates {
 	my $self		= shift;
 	my $params		= $self->req->json;
 	my $cdn_id		= $self->param('id');
-
-	if ( !&is_oper($self) ) {
-		return $self->forbidden("Forbidden. You must have the operations role to perform this operation.");
-	}
 
 	my $cdn = $self->db->resultset('Cdn')->find( { id => $cdn_id } );
 	if ( !defined($cdn) ) {
@@ -1077,18 +1057,17 @@ sub domains {
 sub dnssec_keys {
 	my $self       = shift;
 	my $is_updated = 0;
-	if ( &is_admin($self) ) {
-		my $cdn_name = $self->param('name');
-		my $keys;
-		my $response_container = $self->riak_get( "dnssec", $cdn_name );
-		my $get_keys = $response_container->{'response'};
-		if ( $get_keys->is_success() ) {
-			$keys = decode_json( $get_keys->content );
-			return $self->success($keys);
-		}
-		else {
-			return $self->success({}, " - Dnssec keys for $cdn_name could not be found. ");
-		}
+
+	my $cdn_name = $self->param('name');
+	my $keys;
+	my $response_container = $self->riak_get( "dnssec", $cdn_name );
+	my $get_keys = $response_container->{'response'};
+	if ( $get_keys->is_success() ) {
+		$keys = decode_json( $get_keys->content );
+		return $self->success($keys);
+	}
+	else {
+		return $self->success({}, " - Dnssec keys for $cdn_name could not be found. ");
 	}
 	return $self->alert( { Error => " - You must be an ADMIN to perform this operation!" } );
 }
@@ -1358,30 +1337,25 @@ sub regen_expired_keys {
 sub dnssec_keys_generate {
 	my $self = shift;
 
-	if ( !&is_admin($self) ) {
-		$self->alert( { Error => " - You must be an ADMIN to perform this operation!" } );
+	my $key_type      = "dnssec";
+	my $key           = $self->req->json->{key};
+	my $name          = $self->req->json->{name};
+	my $ttl           = $self->req->json->{ttl};
+	my $k_exp_days    = $self->req->json->{kskExpirationDays};
+	my $z_exp_days    = $self->req->json->{zskExpirationDays};
+	my $effectiveDate = $self->req->json->{effectiveDate};
+	if ( !defined($effectiveDate) ) {
+		$effectiveDate = time();
+	}
+	my $res      = $self->generate_store_dnssec_keys( $key, $name, $ttl, $k_exp_days, $z_exp_days, $effectiveDate );
+	my $response = $res->{response};
+	my $rc       = $response->{_rc};
+	if ( $rc eq "204" ) {
+		&log( $self, "Generated DNSSEC keys for CDN $key", "APICHANGE" );
+		$self->success_message("Successfully created $key_type keys for $key");
 	}
 	else {
-		my $key_type      = "dnssec";
-		my $key           = $self->req->json->{key};
-		my $name          = $self->req->json->{name};
-		my $ttl           = $self->req->json->{ttl};
-		my $k_exp_days    = $self->req->json->{kskExpirationDays};
-		my $z_exp_days    = $self->req->json->{zskExpirationDays};
-		my $effectiveDate = $self->req->json->{effectiveDate};
-		if ( !defined($effectiveDate) ) {
-			$effectiveDate = time();
-		}
-		my $res      = $self->generate_store_dnssec_keys( $key, $name, $ttl, $k_exp_days, $z_exp_days, $effectiveDate );
-		my $response = $res->{response};
-		my $rc       = $response->{_rc};
-		if ( $rc eq "204" ) {
-			&log( $self, "Generated DNSSEC keys for CDN $key", "APICHANGE" );
-			$self->success_message("Successfully created $key_type keys for $key");
-		}
-		else {
-			$self->alert( { Error => " - DNSSEC keys for $key could not be created.  Response was" . $response->content } );
-		}
+		$self->alert( { Error => " - DNSSEC keys for $key could not be created.  Response was" . $response->content } );
 	}
 }
 
@@ -1390,28 +1364,21 @@ sub delete_dnssec_keys {
 	my $key      = $self->param('name');
 	my $key_type = "dnssec";
 	my $response;
-	if ( !&is_admin($self) ) {
-		$self->alert( { Error => " - You must be an ADMIN to perform this operation!" } );
+
+	$self->app->log->info("deleting key_type = $key_type, key = $key");
+	my $response_container = $self->riak_delete( $key_type, $key );
+	$response = $response_container->{"response"};
+	if ( $response->is_success() ) {
+		&log( $self, "Deleted DNSSEC keys for CDN $key", "UICHANGE" );
+		$self->success("Successfully deleted $key_type keys for $key");
 	}
 	else {
-		$self->app->log->info("deleting key_type = $key_type, key = $key");
-		my $response_container = $self->riak_delete( $key_type, $key );
-		$response = $response_container->{"response"};
-		if ( $response->is_success() ) {
-			&log( $self, "Deleted DNSSEC keys for CDN $key", "UICHANGE" );
-			$self->success("Successfully deleted $key_type keys for $key");
-		}
-		else {
-			$self->alert( { Error => " - SSL keys for key type $key_type and key $key could not be deleted.  Response was" . $response->content } );
-		}
+		$self->alert( { Error => " - SSL keys for key type $key_type and key $key could not be deleted.  Response was" . $response->content } );
 	}
 }
 
 sub ssl_keys {
 	my $self = shift;
-	if ( !&is_admin($self) ) {
-		return $self->alert( { Error => " - You must be an ADMIN to perform this operation!" } );
-	}
 
 	my $cdn_name = $self->param('name');
 	my $keys;

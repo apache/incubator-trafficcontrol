@@ -100,7 +100,7 @@ func (role TORole) Validate() error {
 	errs := validation.Errors{
 		"name":        validation.Validate(role.Name, validation.Required),
 		"description": validation.Validate(role.Description, validation.Required),
-		"privLevel":   validation.Validate(role.PrivLevel, validation.Required)}
+	}
 
 	errsToReturn := tovalidate.ToErrors(errs)
 	checkCaps := `SELECT cap FROM UNNEST($1::text[]) AS cap WHERE NOT cap =  ANY(ARRAY(SELECT c.name FROM capability AS c WHERE c.name = ANY($1)))`
@@ -119,10 +119,6 @@ func (role TORole) Validate() error {
 }
 
 func (role *TORole) Create() (error, error, int) {
-	if *role.PrivLevel > role.ReqInfo.User.PrivLevel {
-		return errors.New("can not create a role with a higher priv level than your own"), nil, http.StatusBadRequest
-	}
-
 	userErr, sysErr, errCode := api.GenericCreate(role)
 	if userErr != nil || sysErr != nil {
 		return userErr, sysErr, errCode
@@ -133,6 +129,7 @@ func (role *TORole) Create() (error, error, int) {
 	if userErr != nil || sysErr != nil {
 		return userErr, sysErr, errCode
 	}
+	role.PrivLevel = util.IntPtr(0) // priv level is no longer used, but the API promises to return it, so always return 0
 	return nil, nil, http.StatusOK
 }
 
@@ -173,13 +170,11 @@ func (role *TORole) Read() ([]interface{}, error, error, int) {
 		caps := ([]string)(*rl.PQCapabilities)
 		rl.Capabilities = &caps
 	}
+	role.PrivLevel = util.IntPtr(0) // priv level is no longer used, but the API promises to return it, so always return 0
 	return vals, nil, nil, http.StatusOK
 }
 
 func (role *TORole) Update() (error, error, int) {
-	if *role.PrivLevel > role.ReqInfo.User.PrivLevel {
-		return errors.New("can not create a role with a higher priv level than your own"), nil, http.StatusForbidden
-	}
 	userErr, sysErr, errCode := api.GenericUpdate(role)
 	if userErr != nil || sysErr != nil {
 		return userErr, sysErr, errCode
@@ -189,6 +184,7 @@ func (role *TORole) Update() (error, error, int) {
 	if userErr != nil || sysErr != nil {
 		return userErr, sysErr, errCode
 	}
+	role.PrivLevel = util.IntPtr(0) // priv level is no longer used, but the API promises to return it, so always return 0
 	return role.createRoleCapabilityAssociations(role.ReqInfo.Tx)
 }
 
@@ -204,6 +200,7 @@ func (role *TORole) Delete() (error, error, int) {
 	if userErr != nil || sysErr != nil {
 		return userErr, sysErr, errCode
 	}
+	role.PrivLevel = util.IntPtr(0) // priv level is no longer used, but the API promises to return it, so always return 0
 	return role.deleteRoleCapabilityAssociations(role.ReqInfo.Tx)
 }
 
@@ -212,7 +209,6 @@ func selectQuery() string {
 id,
 name,
 description,
-priv_level,
 ARRAY(SELECT rc.cap_name FROM role_capability AS rc WHERE rc.role_id=id) AS capabilities
 FROM role`
 }
@@ -242,12 +238,10 @@ cap_name) WITH
 func insertQuery() string {
 	return `INSERT INTO role (
 name,
-description,
-priv_level
+description
 ) VALUES (
 :name,
-:description,
-:priv_level
+:description
 )
 RETURNING id, last_updated`
 }

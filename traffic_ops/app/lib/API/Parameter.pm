@@ -66,9 +66,6 @@ sub show {
     if ( !defined($find) ) {
         return $self->not_found("parameter [id:".$id."] does not exist.");
     }
-    if ( $find->secure != 0 && !&is_admin($self)) {
-        return $self->forbidden("You must be an admin to perform this operation!");
-    }
 
     my @data = ();
     push(
@@ -224,10 +221,6 @@ sub create {
         return $self->alert("parameters must be in JSON format,  please check!");
     }
 
-    if ( !&is_oper($self) ) {
-        return $self->forbidden("You must be an admin or oper to perform this operation!");
-    }
-
     if ( ref($params) ne 'ARRAY' ) {
         #not a array, create single parameter
         my @temparry;
@@ -264,10 +257,6 @@ sub create {
             }
             $param->{secure} = 0 if ($param->{secure} eq '0' );
             $param->{secure} = 1 if ($param->{secure} eq '1' );
-            if ( $param->{secure} != 0 && !&is_admin($self)) {
-                $self->db->txn_rollback();
-                return $self->forbidden("Parameter[name:".$param->{name}." , configFile:".$param->{configFile}." , value:".$param->{value}."] secure=1, You must be an admin to perform this operation!");
-            }
         }
 
         my $find = $self->db->resultset('Parameter')->find(
@@ -317,16 +306,9 @@ sub update {
         return $self->alert("parameters must be in JSON format,  please check!");
     }
 
-    if ( !&is_oper($self) ) {
-        return $self->forbidden("You must be an admin or oper to perform this operation!");
-    }
-
     my $find = $self->db->resultset('Parameter')->find({ id => $id } );
     if ( !defined($find) ) {
         return $self->not_found("parameter [id:".$id."] does not exist.");
-    }
-    if ( $find->secure != 0 && !&is_admin($self)) {
-        return $self->forbidden("You must be an admin to perform this operation!");
     }
 
     my $name = $params->{name} || $find->name;
@@ -364,17 +346,10 @@ sub delete {
     my $id     = $self->param('id');
     my $params = $self->req->json;
 
-    if ( !&is_oper($self) ) {
-        return $self->forbidden( "You must be an admin or oper to perform this operation!" );
-    }
-
     my $find = $self->db->resultset('Parameter')->find({ id => $id } );
 	$self->app->log->debug("defined find #-> " . defined($find));
     if ( !defined($find) ) {
         return $self->not_found("parameter [id:".$id."] does not exist.");
-    }
-    if ( $find->secure != 0 && !&is_admin($self)) {
-        return $self->forbidden("You must be an admin to perform this operation!");
     }
 
     my $find_profile = $self->db->resultset('ProfileParameter')->find( { parameter => $id } );

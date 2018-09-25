@@ -22,9 +22,8 @@ package systeminfo
 import (
 	"errors"
 	"net/http"
-	"time"
 
-	tc "github.com/apache/trafficcontrol/lib/go-tc"
+	"github.com/apache/trafficcontrol/lib/go-tc"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/api"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/auth"
 
@@ -38,10 +37,10 @@ func Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer inf.Close()
-	api.RespWriter(w, r, inf.Tx.Tx)(getSystemInfo(inf.Tx, inf.User.PrivLevel, time.Duration(inf.Config.DBQueryTimeoutSeconds)*time.Second))
+	api.RespWriter(w, r, inf.Tx.Tx)(getSystemInfo(inf.Tx, inf.User))
 }
 
-func getSystemInfo(tx *sqlx.Tx, privLevel int, timeout time.Duration) (*tc.SystemInfo, error) {
+func getSystemInfo(tx *sqlx.Tx, user *auth.CurrentUser) (*tc.SystemInfo, error) {
 	q := `
 SELECT
   p.name,
@@ -64,7 +63,7 @@ WHERE
 		if err = rows.StructScan(&p); err != nil {
 			return nil, errors.New("sqlx scanning system info global parameters: " + err.Error())
 		}
-		if p.Secure != nil && *p.Secure && privLevel < auth.PrivLevelAdmin {
+		if p.Secure != nil && *p.Secure && !user.HasCapability(tc.ParameterSecureCapability) {
 			continue
 		}
 		if p.Name != nil && p.Value != nil {

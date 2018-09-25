@@ -116,10 +116,6 @@ sub update {
 	my $id     = $self->param('id');
 	my $params = $self->req->json;
 
-	if ( !&is_oper($self) ) {
-		return $self->forbidden();
-	}
-
 	my ( $is_valid, $result ) = $self->is_phys_location_valid($params);
 
 	if ( !$is_valid ) {
@@ -193,10 +189,6 @@ sub create {
 	my $self        = shift;
 	my $params      = $self->req->json;
 
-	if ( !&is_oper($self) ) {
-		return $self->forbidden();
-	}
-
 	my ( $is_valid, $result ) = $self->is_phys_location_valid($params);
 
 	if ( !$is_valid ) {
@@ -262,9 +254,6 @@ sub create_for_region {
 	if ( !defined($params) ) {
 		return $self->alert("parameters must be in JSON format,  please check!");
 	}
-	if ( !&is_oper($self) ) {
-		return $self->alert("You must be an ADMIN or OPER to perform this operation!");
-	}
 
 	my $existing_physlocation = $self->db->resultset('PhysLocation')->search( { name => $params->{name} } )->get_column('name')->single();
 	if ( defined($existing_physlocation) ) {
@@ -320,10 +309,6 @@ sub create_for_region {
 sub delete {
 	my $self = shift;
 	my $id     = $self->param('id');
-
-	if ( !&is_oper($self) ) {
-		return $self->forbidden();
-	}
 
 	my $phys_location = $self->db->resultset('PhysLocation')->find( { id => $id } );
 	if ( !defined($phys_location) ) {

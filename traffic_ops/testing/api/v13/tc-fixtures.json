@@ -639,9 +639,9 @@
             "description": "super-user 2",
             "privLevel": 30,
             "capabilities": [
-                "all-read",
-                "all-write",
-                "cdn-read"
+                "users-read",
+                "users-write",
+                "cdns-read"
             ]
         },
         {
@@ -649,8 +649,8 @@
             "description": "super-user 3",
             "privLevel": 30,
             "capabilities": [
-                "all-read",
-                "all-write",
+                "users-read",
+                "users-write",
                 "invalid-capability"
             ]
         }

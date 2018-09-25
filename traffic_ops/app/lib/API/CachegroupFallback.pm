@@ -35,10 +35,6 @@ sub delete {
 	my $rs_backups = undef; 
 	my $result = ""; 
 
-	if ( !&is_oper($self) ) {
-		return $self->forbidden();
-	}
-
 	if ( defined ($cache_id) && defined($fallback_id) ) {
 		$rs_backups = $self->db->resultset('CachegroupFallback')->search( { primary_cg => $cache_id , backup_cg => $fallback_id} );
 		$result = "Backup Cachegroup $fallback_id  DELETED from cachegroup $cache_id fallback list";
@@ -111,10 +107,6 @@ sub create {
 	my $cache_id = $self->param('cacheGroupId');
 	my $params = $self->req->json;
 
-	if ( !&is_oper($self) ) {
-		return $self->forbidden();
-	}
-
 	if ( !defined($params) ) {
 		return $self->alert("parameters must be in JSON format,  please check!");
 	}
@@ -183,10 +175,6 @@ sub update {
 	my $self = shift;
 	my $cache_id = $self->param('cacheGroupId');
 	my $params = $self->req->json;
-
-	if ( !&is_oper($self) ) {
-		return $self->forbidden();
-	}
 
 	if ( !defined($params) ) {
 		return $self->alert("parameters must be in JSON format,  please check!");

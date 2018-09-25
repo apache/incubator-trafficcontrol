@@ -52,10 +52,10 @@ type Role struct {
 	// required: true
 	Description *string `json:"description" db:"description"`
 
-	// Priv Level of the Role
+	// Priv Level of the Role. This is no longer used, and new versions of Traffic Ops always return 0.
 	//
-	// required: true
-	PrivLevel *int `json:"privLevel" db:"priv_level"`
+	// required: false
+	PrivLevel *int `json:"privLevel"`
 
 	// Capabilities associated with the Role
 	//

@@ -31,6 +31,7 @@ import (
 	"encoding/json"
 
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/auth"
+	"github.com/lib/pq"
 	sqlmock "gopkg.in/DATA-DOG/go-sqlmock.v1"
 )
 
@@ -94,9 +95,11 @@ func TestGetParameters(t *testing.T) {
 	mock.ExpectQuery("SELECT").WillReturnRows(rows)
 	mock.ExpectCommit()
 
+	user := auth.CurrentUser{Capabilities: pq.StringArray([]string{tc.ParameterSecureCapability})}
+
 	reqInfo := api.APIInfo{
-		Tx:    db.MustBegin(),
-		User:   &auth.CurrentUser{PrivLevel: 30},
+		Tx:     db.MustBegin(),
+		User:   &user,
 		Params: map[string]string{"name": "1"},
 	}
 	pps, userErr, sysErr, _ := GetTypeSingleton()(&reqInfo).Read()

@@ -129,10 +129,6 @@ sub update {
 	my $id     = $self->param('id');
 	my $params = $self->req->json;
 
-	if ( !&is_oper($self) ) {
-		return $self->forbidden();
-	}
-
 	my ( $is_valid, $result ) = $self->is_cachegroup_valid($params);
 
 	if ( !$is_valid ) {
@@ -231,10 +227,6 @@ sub create {
 	my $self   = shift;
 	my $params = $self->req->json;
 
-	if ( !&is_oper($self) ) {
-		return $self->forbidden();
-	}
-
 	my ( $is_valid, $result ) = $self->is_cachegroup_valid($params);
 
 	if ( !$is_valid ) {
@@ -316,10 +308,6 @@ sub create {
 sub delete {
 	my $self = shift;
 	my $id     = $self->param('id');
-
-	if ( !&is_oper($self) ) {
-		return $self->forbidden();
-	}
 
 	my $cg = $self->db->resultset('Cachegroup')->find( { id => $id } );
 	if ( !defined($cg) ) {
@@ -410,10 +398,6 @@ sub available_for_parameter {
 sub postupdatequeue {
 	my $self   = shift;
 	my $params = $self->req->json;
-	if ( !&is_oper($self) ) {
-		return $self->forbidden("Forbidden. Insufficent privileges.");
-	}
-
 	my $name;
 	my $id = $self->param('id');
 	$name = $self->db->resultset('Cachegroup')->search( { id => $id } )->get_column('name')->single();

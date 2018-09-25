@@ -138,10 +138,6 @@ sub assign_ds_to_cachegroup {
 	my $cg_id  = $self->param('id');
 	my $params = $self->req->json;
 
-	if ( !&is_oper($self) ) {
-		return $self->forbidden();
-	}
-
 	my $cachegroup = $self->db->resultset('Cachegroup')->search( { id => $cg_id } )->single();
 	if ( !defined($cachegroup) ) {
 		return $self->not_found();

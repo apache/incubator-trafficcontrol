@@ -828,10 +828,6 @@ sub update_status {
 	my $id     	= $self->param('id');
 	my $params 	= $self->req->json;
 
-	if ( !&is_oper($self) ) {
-		return $self->forbidden();
-	}
-
 	my $server = $self->db->resultset('Server')->find( { id => $id }, { prefetch => [ 'type' ] } );
 	if ( !defined($server) ) {
 		return $self->not_found();
@@ -1081,9 +1077,6 @@ sub postupdatequeue {
 	my $self   = shift;
 	my $params = $self->req->json;
 	my $id     = $self->param('id');
-	if ( !&is_oper($self) ) {
-		return $self->forbidden("Forbidden. You must have the operations role to perform this operation.");
-	}
 
 	my $update = $self->db->resultset('Server')->find( { id => $id } );
 	if ( !defined($update) ) {

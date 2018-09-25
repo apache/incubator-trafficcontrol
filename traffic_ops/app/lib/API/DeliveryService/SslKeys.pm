@@ -39,10 +39,6 @@ sub add {
 	my $cdn = $self->req->json->{cdn};
 	my $deliveryservice = $self->req->json->{deliveryservice};
 
-	if ( !&is_oper($self) ) {
-		return $self->forbidden();
-	}
-
 	my $ds = $self->db->resultset('Deliveryservice')->search( { xml_id => $deliveryservice })->single();
 	if (!$ds) {
 		return $self->not_found("Could not found delivery service with xml_id=$deliveryservice" );
@@ -221,66 +217,61 @@ sub view_by_hostname {
 		$decode = 0;
 	}
 
-	if ( !&is_admin($self) ) {
-		return $self->alert( { Error => " - You must be an ADMIN to perform this operation!" } );
+	#use hostname to get hostname regex
+	my @split_url = split( /\./, $key );
+	my $host_regex = $split_url[1];
+	my $domain_name;
+
+	for ( my $i = 2; $i < $#split_url; $i++ ) {
+		$domain_name .= $split_url[$i] . ".";
 	}
-	else {
-		#use hostname to get hostname regex
-		my @split_url = split( /\./, $key );
-		my $host_regex = $split_url[1];
-		my $domain_name;
+	$domain_name .= $split_url[$#split_url];
 
-		for ( my $i = 2; $i < $#split_url; $i++ ) {
-			$domain_name .= $split_url[$i] . ".";
+	$host_regex = '.*\.' . $host_regex . '\..*';
+
+	if ( !$host_regex || !$domain_name ) {
+		return $self->alert( { Error => " - $key does not contain a valid delivery service." } ) if !$host_regex;
+		return $self->alert( { Error => " - $key does not contain a valid domain name." } )      if !$domain_name;
+	}
+
+	my $cdn_id = $self->db->resultset('Cdn')->search( { domain_name => $domain_name } )->get_column('id')->single();
+	if (!$cdn_id || $cdn_id == "") {
+		return $self->alert( {Error => " - a cdn does not exist for the domain: $domain_name parsed from hostname: $key" } );
+	}
+
+	my $ds = $self->db->resultset('Deliveryservice')->search( { 'regex.pattern' => "$host_regex", 'cdn_id' => "$cdn_id" }, { join => { deliveryservice_regexes => { regex => undef } } } )->single();
+	if (!$ds) {
+		return $self->alert( { Error => " - A delivery service does not exist for a host with hostname of $key" } );
+	}
+	my $tenant_utils = Utils::Tenant->new($self);
+	my $tenants_data = $tenant_utils->create_tenants_data_from_db();
+	if (!$tenant_utils->is_ds_resource_accessible($tenants_data, $ds->tenant_id)) {
+		return $self->forbidden("Forbidden. Delivery-service tenant is not available to the user.");
+	}
+	my $xml_id = $ds->xml_id;
+
+	if ( !$version ) {
+		$version = 'latest';
+	}
+	$key = "$xml_id-$version";
+	my $response_container = $self->riak_get( "ssl", $key );
+	my $response = $response_container->{"response"};
+
+
+	if ( $response->is_success() ){
+		my $toSend = decode_json( $response->content );
+
+		if ( $decode ){
+			$toSend->{certificate}->{csr} = decode_base64($toSend->{certificate}->{csr});
+			$toSend->{certificate}->{crt} = decode_base64($toSend->{certificate}->{crt});
+			$toSend->{certificate}->{key} = decode_base64($toSend->{certificate}->{key});
 		}
-		$domain_name .= $split_url[$#split_url];
 
-		$host_regex = '.*\.' . $host_regex . '\..*';
+	
+		$self->success( $toSend )
 
-		if ( !$host_regex || !$domain_name ) {
-			return $self->alert( { Error => " - $key does not contain a valid delivery service." } ) if !$host_regex;
-			return $self->alert( { Error => " - $key does not contain a valid domain name." } )      if !$domain_name;
-		}
-
-		my $cdn_id = $self->db->resultset('Cdn')->search( { domain_name => $domain_name } )->get_column('id')->single();
-		if (!$cdn_id || $cdn_id == "") {
-			return $self->alert( {Error => " - a cdn does not exist for the domain: $domain_name parsed from hostname: $key" } );
-		}
-
-		my $ds = $self->db->resultset('Deliveryservice')->search( { 'regex.pattern' => "$host_regex", 'cdn_id' => "$cdn_id" }, { join => { deliveryservice_regexes => { regex => undef } } } )->single();
-		if (!$ds) {
-			return $self->alert( { Error => " - A delivery service does not exist for a host with hostname of $key" } );
-		}
-		my $tenant_utils = Utils::Tenant->new($self);
-		my $tenants_data = $tenant_utils->create_tenants_data_from_db();
-		if (!$tenant_utils->is_ds_resource_accessible($tenants_data, $ds->tenant_id)) {
-			return $self->forbidden("Forbidden. Delivery-service tenant is not available to the user.");
-		}
-		my $xml_id = $ds->xml_id;
-
-		if ( !$version ) {
-			$version = 'latest';
-		}
-		$key = "$xml_id-$version";
-		my $response_container = $self->riak_get( "ssl", $key );
-		my $response = $response_container->{"response"};
-
-
-		if ( $response->is_success() ){
-			my $toSend = decode_json( $response->content );
-
-			if ( $decode ){
-				$toSend->{certificate}->{csr} = decode_base64($toSend->{certificate}->{csr});
-				$toSend->{certificate}->{crt} = decode_base64($toSend->{certificate}->{crt});
-				$toSend->{certificate}->{key} = decode_base64($toSend->{certificate}->{key});
-			}
-
-		
-			$self->success( $toSend )
-
-		} else {
-			$self->success({}, " - A record for ssl key $key could not be found. ");
-		}
+	} else {
+		$self->success({}, " - A record for ssl key $key could not be found. ");
 	}
 }
 
@@ -290,10 +281,6 @@ sub delete {
 	my $version = $self->param('version');
 	my $response_container;
 	my $response;
-
-	if ( !&is_oper($self) ) {
-		return $self->forbidden();
-	}
 
 	my $ds = $self->db->resultset('Deliveryservice')->search( { xml_id => $xml_id })->single();
 	if (!$ds) {

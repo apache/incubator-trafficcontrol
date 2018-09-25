@@ -28,10 +28,6 @@ sub delete {
     my $ds_id  	 	= $self->param('dsId');
     my $user_id	    = $self->param('userId');
 
-    if ( !&is_oper($self) ) {
-        return $self->forbidden();
-    }
-
     my $user = $self->db->resultset('TmUser')->find( { id => $user_id } );
     if ( !defined($user) ) {
         return $self->not_found();

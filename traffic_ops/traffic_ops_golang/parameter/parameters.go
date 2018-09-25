@@ -28,7 +28,6 @@ import (
 	"github.com/apache/trafficcontrol/lib/go-tc/tovalidate"
 	"github.com/apache/trafficcontrol/lib/go-util"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/api"
-	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/auth"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/dbhelpers"
 
 	validation "github.com/go-ozzo/ozzo-validation"
@@ -147,7 +146,7 @@ func (param *TOParameter) Read() ([]interface{}, error, error, int) {
 		if err = rows.StructScan(&p); err != nil {
 			return nil, nil, errors.New("scanning " + param.GetType() + ": " + err.Error()), http.StatusInternalServerError
 		}
-		if p.Secure != nil && *p.Secure && param.ReqInfo.User.PrivLevel < auth.PrivLevelAdmin {
+		if p.Secure != nil && *p.Secure && !param.ReqInfo.User.HasCapability(tc.ParameterSecureCapability) {
 			p.Value = &HiddenField
 		}
 		params = append(params, p)

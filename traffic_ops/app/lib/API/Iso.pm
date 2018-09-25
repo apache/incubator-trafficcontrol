@@ -71,10 +71,6 @@ sub generate {
 	my $self   = shift;
 	my $params = $self->req->json;
 
-	if ( !&is_oper($self) ) {
-		return $self->forbidden();
-	}
-
 	my ( $is_valid, $result ) = $self->is_valid($params);
 
 	if ( !$is_valid ) {

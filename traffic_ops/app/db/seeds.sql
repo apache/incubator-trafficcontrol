@@ -192,6 +192,13 @@ insert into capability (name, description) values ('users-register', 'Ability to
 insert into capability (name, description) values ('users-read', 'Ability to view users') ON CONFLICT (name) DO NOTHING;
 insert into capability (name, description) values ('users-write', 'Ability to edit users') ON CONFLICT (name) DO NOTHING;
 
+-- secure
+INSERT INTO capability (name, description) values ('parameters-read-secure', 'Ability to view secure parameter values') ON CONFLICT (name) DO NOTHING;
+INSERT INTO capability (name, description) values ('servers-read-secure', 'Ability to view secure server values') ON CONFLICT (name) DO NOTHING;
+
+-- about
+INSERT INTO capability (name, description) values ('about-read', 'Ability to read the server about information') ON CONFLICT (name) DO NOTHING;
+
 -- roles_capabilities
 -- out of the box, the admin role has ALL capabilities
 insert into role_capability (role_id, cap_name) values ((select id from role where name='admin'), 'auth') ON CONFLICT (role_id, cap_name) DO NOTHING;
@@ -265,6 +272,11 @@ insert into role_capability (role_id, cap_name) values ((select id from role whe
 insert into role_capability (role_id, cap_name) values ((select id from role where name='admin'), 'users-read') ON CONFLICT (role_id, cap_name) DO NOTHING;
 insert into role_capability (role_id, cap_name) values ((select id from role where name='admin'), 'users-write') ON CONFLICT (role_id, cap_name) DO NOTHING;
 
+INSERT INTO role_capability (role_id, cap_name) VALUES ((SELECT id FROM role WHERE name = 'admin'), 'parameters-read-secure') ON CONFLICT (role_id, cap_name) DO NOTHING;
+INSERT INTO role_capability (role_id, cap_name) VALUES ((SELECT id FROM role WHERE name = 'admin'), 'servers-read-secure') ON CONFLICT (role_id, cap_name) DO NOTHING;
+
+INSERT INTO role_capability (role_id, cap_name) VALUES ((SELECT id FROM role WHERE name = 'admin'), 'about-read') ON CONFLICT (role_id, cap_name) DO NOTHING;
+
 -- Using role 'read-only'
 
 INSERT INTO role_capability (role_id, cap_name) SELECT (SELECT id FROM role WHERE name = 'read-only'), 'auth' WHERE EXISTS (SELECT id FROM role WHERE name = 'read-only') ON CONFLICT DO NOTHING;
@@ -303,6 +315,7 @@ INSERT INTO role_capability (role_id, cap_name) SELECT (SELECT id FROM role WHER
 INSERT INTO role_capability (role_id, cap_name) SELECT (SELECT id FROM role WHERE name = 'read-only'), 'tenants-read' WHERE EXISTS (SELECT id FROM role WHERE name = 'read-only') ON CONFLICT DO NOTHING;
 INSERT INTO role_capability (role_id, cap_name) SELECT (SELECT id FROM role WHERE name = 'read-only'), 'types-read' WHERE EXISTS (SELECT id FROM role WHERE name = 'read-only') ON CONFLICT DO NOTHING;
 INSERT INTO role_capability (role_id, cap_name) SELECT (SELECT id FROM role WHERE name = 'read-only'), 'users-read' WHERE EXISTS (SELECT id FROM role WHERE name = 'read-only') ON CONFLICT DO NOTHING;
+INSERT INTO role_capability (role_id, cap_name) SELECT (SELECT id FROM role WHERE name = 'read-only'), 'about-read' WHERE EXISTS (SELECT id FROM role WHERE name = 'read-only') ON CONFLICT DO NOTHING;
 
 -- Using role 'operations'
 
@@ -381,6 +394,8 @@ INSERT INTO role_capability (role_id, cap_name) SELECT (SELECT id FROM role WHER
 INSERT INTO role_capability (role_id, cap_name) SELECT (SELECT id FROM role WHERE name = 'operations'), 'steering-targets-write' WHERE EXISTS (SELECT id FROM role WHERE name = 'operations') ON CONFLICT DO NOTHING;
 INSERT INTO role_capability (role_id, cap_name) SELECT (SELECT id FROM role WHERE name = 'operations'), 'users-register' WHERE EXISTS (SELECT id FROM role WHERE name = 'operations') ON CONFLICT DO NOTHING;
 INSERT INTO role_capability (role_id, cap_name) SELECT (SELECT id FROM role WHERE name = 'operations'), 'static-dns-entries-write' WHERE EXISTS (SELECT id FROM role WHERE name = 'operations') ON CONFLICT DO NOTHING;
+
+INSERT INTO role_capability (role_id, cap_name) SELECT (SELECT id FROM role WHERE name = 'operations'), 'about-read' WHERE EXISTS (SELECT id FROM role WHERE name = 'operations') ON CONFLICT DO NOTHING;
 
 -- api_capabilities
 
@@ -692,6 +707,8 @@ insert into api_capability (http_method, route, capability) values ('GET', 'user
 insert into api_capability (http_method, route, capability) values ('GET', 'users/*/deliveryservices/available', 'users-read') ON CONFLICT (http_method, route, capability) DO NOTHING;
 insert into api_capability (http_method, route, capability) values ('POST', 'deliveryservice_user', 'users-write') ON CONFLICT (http_method, route, capability) DO NOTHING;
 insert into api_capability (http_method, route, capability) values ('DELETE', 'deliveryservice_user/*/*', 'users-write') ON CONFLICT (http_method, route, capability) DO NOTHING;
+-- about
+INSERT INTO api_capability (http_method, route, capability) VALUES ('GET', 'about', 'about-read') ON CONFLICT (http_method, route, capability) DO NOTHING;
 
 -- types
 

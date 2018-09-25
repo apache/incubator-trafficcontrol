@@ -44,13 +44,11 @@ func getTestRoles() []tc.Role {
 			ID:          intAddr(1),
 			Name:        stringAddr("role1"),
 			Description: stringAddr("the first role"),
-			PrivLevel:   intAddr(30),
 		},
 		{
 			ID:          intAddr(2),
 			Name:        stringAddr("role2"),
 			Description: stringAddr("the second role"),
-			PrivLevel:   intAddr(10),
 		},
 	}
 	return roles
@@ -103,7 +101,6 @@ func TestValidate(t *testing.T) {
 
 	expectedErrs := util.JoinErrsStr([]error{
 		errors.New(`'description' cannot be blank`),
-		errors.New(`'privLevel' cannot be blank`),
 	})
 
 	if !reflect.DeepEqual(expectedErrs, errs) {
@@ -111,7 +108,7 @@ func TestValidate(t *testing.T) {
 	}
 
 	//  name,  domainname both valid
-	r = TORole{ReqInfo: &reqInfo, Role: tc.Role{Name: stringAddr("this is a valid name"), Description: stringAddr("this is a description"), PrivLevel: intAddr(30)}}
+	r = TORole{ReqInfo: &reqInfo, Role: tc.Role{Name: stringAddr("this is a valid name"), Description: stringAddr("this is a description")}}
 	err := r.Validate()
 	if err != nil {
 		t.Errorf("expected nil, got %s", err)

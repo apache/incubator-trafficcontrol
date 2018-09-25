@@ -48,11 +48,6 @@ sub get_config_metadata {
 	my $self     = shift;
 	my $id       = $self->param('id');
 
-	##check user access
-	if ( !&is_oper($self) ) {
-		return $self->forbidden();
-	}
-
 	##verify that a valid server ID has been used
 	my $server_obj = $self->server_data($id);
 	if ( !defined($server_obj) ) {
@@ -174,11 +169,6 @@ sub get_server_config {
 	my $filename = $self->param("filename");
 	my $id       = $self->param('id');
 
-	##check user access
-	if ( !&is_oper($self) ) {
-		return $self->forbidden();
-	}
-
 	##verify that a valid server ID has been used
 	my $server_obj = $self->server_data($id);
 	if ( !defined($server_obj) ) {
@@ -233,11 +223,6 @@ sub get_cdn_config {
 	my $scope    = $self->get_scope($filename);
 	my $ext_url  = $self->param('url');
 
-	##check user access
-	if ( !&is_oper($self) ) {
-		return $self->forbidden();
-	}
-
 	##check the scope - is this the correct route?
 	if ( $scope ne 'cdns' ) {
 		return $self->alert( "Error - incorrect file scope for route used.  Please use the " . $scope . " route." );
@@ -273,11 +258,6 @@ sub get_profile_config {
 	my $filename = $self->param("filename");
 	my $id       = $self->param('id');
 	my $scope    = $self->get_scope($filename);
-
-	##check user access
-	if ( !&is_oper($self) ) {
-		return $self->forbidden();
-	}
 
 	##check the scope - is this the correct route?
 	if ( $scope ne 'profiles' ) {

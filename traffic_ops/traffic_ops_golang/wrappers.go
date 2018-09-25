@@ -24,6 +24,7 @@ import (
 	"compress/gzip"
 	"context"
 	"crypto/sha512"
+	"database/sql"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -53,12 +54,13 @@ type AuthBase struct {
 }
 
 // GetWrapper ...
-func (a AuthBase) GetWrapper(privLevelRequired int) Middleware {
+func (a AuthBase) GetWrapper() Middleware {
 	if a.override != nil {
 		return a.override
 	}
 	return func(handlerFunc http.HandlerFunc) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
+			noTx := (*sql.Tx)(nil) // we don't use a tx here
 			// TODO remove, and make username available to wrapLogTime
 			iw := &Interceptor{w: w}
 			w = iw
@@ -106,24 +108,35 @@ func (a AuthBase) GetWrapper(privLevelRequired int) Middleware {
 				case *sqlx.DB:
 					DB = v
 				default:
-					handleErr(http.StatusInternalServerError, errors.New("No DB found"))
+					handleErr(http.StatusInternalServerError, fmt.Errorf("request context DB type '%T' unexpected", v))
+					return
 				}
 			} else {
 				handleErr(http.StatusInternalServerError, errors.New("No DB found"))
+				return
 			}
 
 			cfg, err := api.GetConfig(r.Context())
 			if err != nil {
 				handleErr(http.StatusInternalServerError, errors.New("No config found"))
-			}
-
-			currentUserInfo, userErr, sysErr, code := auth.GetCurrentUserFromDB(DB, username, time.Duration(cfg.DBQueryTimeoutSeconds)*time.Second)
-			if userErr != nil || sysErr != nil {
-				api.HandleErr(w, r, nil, code, userErr, sysErr)
 				return
 			}
-			if currentUserInfo.PrivLevel < privLevelRequired {
-				handleErr(http.StatusForbidden, errors.New("Forbidden."))
+			apiCapability, err := api.GetAPICapability(r.Context())
+			if err != nil {
+				api.HandleErr(w, r, noTx, http.StatusInternalServerError, nil, errors.New("No capability found in request context!"))
+				return
+			}
+
+			dbTimeout := time.Duration(cfg.DBQueryTimeoutSeconds) * time.Second
+			user, userErr, sysErr, code := auth.GetCurrentUserFromDB(DB, username, dbTimeout)
+			if userErr != nil || sysErr != nil {
+				api.HandleErr(w, r, noTx, code, userErr, sysErr)
+				return
+			}
+
+			userErr, sysErr, errCode := CheckAPICapability(DB.DB, dbTimeout, &user, r.Method, apiCapability)
+			if userErr != nil || sysErr != nil {
+				api.HandleErr(w, r, noTx, errCode, userErr, sysErr)
 				return
 			}
 
@@ -131,11 +144,40 @@ func (a AuthBase) GetWrapper(privLevelRequired int) Middleware {
 			http.SetCookie(w, &http.Cookie{Name: tocookie.Name, Value: newCookieVal, Path: "/", HttpOnly: true})
 
 			ctx := r.Context()
-			ctx = context.WithValue(ctx, auth.CurrentUserKey, currentUserInfo)
+			ctx = context.WithValue(ctx, auth.CurrentUserKey, user)
 
 			handlerFunc(w, r.WithContext(ctx))
 		}
 	}
+}
+
+// CheckAPICapability checks whether the given user has access to the given method and route, and returns any user error, any system error, and an error code.
+// If the user has as role with a capability with the "api capability" for the given route, the returned user error and system error will both be nil.
+func CheckAPICapability(db *sql.DB, dbTimeout time.Duration, user *auth.CurrentUser, method string, route string) (error, error, int) {
+	count := 0
+	qry := `
+SELECT
+  count(*)
+FROM
+       api_capability  ac
+  JOIN capability       c ON  c.name     = ac.capability
+  JOIN role_capability rc ON rc.cap_name =  c.name
+  JOIN tm_user          u ON  u.role     = rc.role_id
+WHERE
+       u.username    = $1
+  AND ac.http_method = $2
+  AND ac.route       = $3
+`
+	dbCtx, dbClose := context.WithTimeout(context.Background(), dbTimeout)
+	defer dbClose()
+	if err := db.QueryRowContext(dbCtx, qry, user.UserName, method, route).Scan(&count); err != nil {
+		return nil, errors.New("querying: " + err.Error()), http.StatusInternalServerError
+	}
+	hasCapability := count == 1
+	if !hasCapability {
+		return errors.New("Forbidden: user '" + user.UserName + "' role '" + user.Role + "' has no capability allowing the requested route"), nil, http.StatusForbidden
+	}
+	return nil, nil, http.StatusOK
 }
 
 func timeOutWrapper(timeout time.Duration) Middleware {

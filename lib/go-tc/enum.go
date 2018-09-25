@@ -100,6 +100,9 @@ func CacheTypeFromString(s string) CacheType {
 	return CacheTypeInvalid
 }
 
+const ParameterSecureCapability = `parameters-read-secure`
+const ServerSecureCapability = `servers-read-secure`
+
 // DSTypeCategory is the Delivery Service type category: HTTP or DNS
 type DSTypeCategory string
 
