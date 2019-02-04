@@ -344,14 +344,6 @@ func GetPooledCluster(tx *sql.Tx, authOptions *riak.AuthOptions) (StorageCluster
 	return RiakStorageCluster{Cluster: cluster}, nil
 }
 
-func WithCluster(tx *sql.Tx, authOpts *riak.AuthOptions, f func(StorageCluster) error) error {
-	cluster, err := GetPooledCluster(tx, authOpts)
-	if err != nil {
-		return errors.New("getting riak pooled cluster: " + err.Error())
-	}
-	return f(cluster)
-}
-
 // Search searches Riak for the given query. Returns nil and a nil error if no object was found.
 func Search(cluster StorageCluster, index string, query string, filterQuery string, numRows int) ([]*riak.SearchDoc, error) {
 	iCmd, err := riak.NewSearchCommandBuilder().
