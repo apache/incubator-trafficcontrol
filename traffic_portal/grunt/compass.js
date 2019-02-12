@@ -24,7 +24,7 @@ module.exports = {
         imagesDir: '<%= globalConfig.srcdir %>/assets/images',
         javascriptsDir: '<%= globalConfig.srcdir %>',
         fontsDir: '<%= globalConfig.srcdir %>/assets/fonts',
-        importPath: '<%= globalConfig.app %>/bower_components',
+        importPath: '<%= globalConfig.importdir %>',
         relativeAssets: false,
         assetCacheBuster: false,
         raw: 'Sass::Script::Number.precision = 10\n'

@@ -41,7 +41,6 @@ tar -xzvf $RPM_SOURCE_DIR/traffic_portal-%{version}.tgz
 
 %build
     /usr/bin/npm install
-    /usr/bin/bower install
     /usr/bin/grunt dist
 
 %install

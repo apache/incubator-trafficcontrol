@@ -25,7 +25,7 @@ module.exports = {
             expose: {
                 files: [
                     {
-                        cwd: '<%= globalConfig.app %>/bower_components/',
+                        cwd: '<%= globalConfig.importdir %>',
                         src:
                             [
                                 'angular/angular.min.js',
@@ -38,40 +38,39 @@ module.exports = {
                                 'angular-route/angular-route.min.js',
                                 'angular-sanitize/angular-sanitize.min.js',
                                 'angular-ui-router/release/angular-ui-router.min.js',
-                                'bootstrap-sass-official/assets/javascripts/bootstrap.min.js',
+                                'bootstrap-sass/assets/javascripts/bootstrap.min.js',
                                 'es5-shim/es5-shim.min.js',
-                                'jquery/jquery.min.js',
                                 'json3/lib/json3.min.js',
                                 'restangular/dist/restangular.min.js'
                             ]
                     },
                     {
-                        cwd: '<%= globalConfig.app %>/bower_components/',
-                        src: [ 'flot/jquery.flot.js' ],
+                        cwd: '<%= globalConfig.importdir %>',
+                        src: [ 'jquery.flot/jquery.flot.js' ],
                         rename: function () { return 'jquery-flot.js'; }
                     },
                     {
-                        cwd: '<%= globalConfig.app %>/bower_components/',
-                        src: [ 'flot/jquery.flot.pie.js' ],
+                        cwd: '<%= globalConfig.importdir %>',
+                        src: [ 'jquery.flot/jquery.flot.pie.js' ],
                         rename: function () { return 'jquery-flot-pie.js'; }
                     },
                     {
-                        cwd: '<%= globalConfig.app %>/bower_components/',
-                        src: [ 'flot/jquery.flot.stack.js' ],
+                        cwd: '<%= globalConfig.importdir %>',
+                        src: [ 'jquery.flot/jquery.flot.stack.js' ],
                         rename: function () { return 'jquery-flot-stack.js'; }
                     },
                     {
-                        cwd: '<%= globalConfig.app %>/bower_components/',
-                        src: [ 'flot/jquery.flot.time.js' ],
+                        cwd: '<%= globalConfig.importdir %>',
+                        src: [ 'jquery.flot/jquery.flot.time.js' ],
                         rename: function () { return 'jquery-flot-time.js'; }
                     },
                     {
-                        cwd: '<%= globalConfig.app %>/bower_components/',
-                        src: [ 'flot.tooltip/js/jquery.flot.tooltip.min.js' ],
+                        cwd: '<%= globalConfig.importdir %>',
+                        src: [ 'jquery.flot.tooltip/js/jquery.flot.tooltip.min.js' ],
                         rename: function () { return 'jquery-flot-tooltip.min.js'; }
                     },
                     {
-                        cwd: '<%= globalConfig.app %>/bower_components/',
+                        cwd: '<%= globalConfig.importdir %>',
                         src: [ 'flot-axislabels/jquery.flot.axislabels.js' ],
                         rename: function () { return 'jquery-flot-axislabels.js'; }
                     }
@@ -86,53 +85,52 @@ module.exports = {
             expose: {
                 files: [
                     {
-                        cwd: '<%= globalConfig.app %>/bower_components/',
+                        cwd: '<%= globalConfig.importdir %>',
                         src:
                             [
                                 'angular/angular.js',
                                 'angular-animate/angular-animate.js',
-                                'angular-bootstrap/ui-bootstrap.js',
-                                'angular-bootstrap/ui-bootstrap-tpls.js',
+                                'angular-ui-bootstrap/ui-bootstrap.js',
+                                'angular-ui-bootstrap/ui-bootstrap-tpls.js',
                                 'angular-jwt/dist/angular-jwt.js',
                                 'angular-loading-bar/build/loading-bar.js',
                                 'angular-resource/angular-resource.js',
                                 'angular-route/angular-route.js',
                                 'angular-sanitize/angular-sanitize.js',
-                                'angular-ui-router/release/angular-ui-router.js',
-                                'bootstrap-sass-official/assets/javascripts/bootstrap.js',
+                                '@uirouter/angularjs/release/angular-ui-router.js',
+                                'bootstrap-sass/assets/javascripts/bootstrap.js',
                                 'es5-shim/es5-shim.js',
-                                'jquery/jquery.js',
                                 'json3/lib/json3.js',
                                 'restangular/dist/restangular.js'
                             ]
                     },
                     {
-                        cwd: '<%= globalConfig.app %>/bower_components/',
-                        src: [ 'flot/jquery.flot.js' ],
+                        cwd: '<%= globalConfig.importdir %>',
+                        src: [ 'jquery.flot/jquery.flot.js' ],
                         rename: function () { return 'jquery-flot.js'; }
                     },
                     {
-                        cwd: '<%= globalConfig.app %>/bower_components/',
-                        src: [ 'flot/jquery.flot.pie.js' ],
+                        cwd: '<%= globalConfig.importdir %>',
+                        src: [ 'jquery.flot/jquery.flot.pie.js' ],
                         rename: function () { return 'jquery-flot-pie.js'; }
                     },
                     {
-                        cwd: '<%= globalConfig.app %>/bower_components/',
-                        src: [ 'flot/jquery.flot.stack.js' ],
+                        cwd: '<%= globalConfig.importdir %>',
+                        src: [ 'jquery.flot/jquery.flot.stack.js' ],
                         rename: function () { return 'jquery-flot-stack.js'; }
                     },
                     {
-                        cwd: '<%= globalConfig.app %>/bower_components/',
-                        src: [ 'flot/jquery.flot.time.js' ],
+                        cwd: '<%= globalConfig.importdir %>',
+                        src: [ 'jquery.flot/jquery.flot.time.js' ],
                         rename: function () { return 'jquery-flot-time.js'; }
                     },
                     {
-                        cwd: '<%= globalConfig.app %>/bower_components/',
-                        src: [ 'flot.tooltip/js/jquery.flot.tooltip.js' ],
+                        cwd: '<%= globalConfig.importdir %>',
+                        src: [ 'jquery.flot.tooltip/js/jquery.flot.tooltip.js' ],
                         rename: function () { return 'jquery-flot-tooltip.js'; }
                     },
                     {
-                        cwd: '<%= globalConfig.app %>/bower_components/',
+                        cwd: '<%= globalConfig.importdir %>',
                         src: [ 'flot-axislabels/jquery.flot.axislabels.js' ],
                         rename: function () { return 'jquery-flot-axislabels.js'; }
                     }

@@ -42,9 +42,6 @@ require('ui-bootstrap-tpls');
 // restangular
 require('restangular');
 
-// jquery
-require('jquery');
-
 // flot charts
 require('jquery-flot');
 require('jquery-flot-pie');

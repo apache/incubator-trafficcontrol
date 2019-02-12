@@ -433,7 +433,6 @@ var trafficPortal = angular.module('trafficPortal', [
                 }
             });
 
-            $controllerProvider.allowGlobals();
             $logProvider.debugEnabled(true);
             $stateProvider
                 .state('trafficPortal', {

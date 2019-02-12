@@ -28,7 +28,6 @@ To work on Traffic Portal you need a \*nix (MacOS and Linux are most commonly us
 	* `Ruby Devel 2.0.x or above <https://www.rpmfind.net/linux/rpm2html/search.php?query=ruby-devel>`_
 	* `Compass 1.0.x or above <http://compass-style.org/>`_
 	* `Node.js 6.0.x or above <https://nodejs.org/en/>`_
-	* `Bower 1.7.9 or above <https://nodejs.org/en/>`_
 	* `Grunt CLI 1.2.0 or above <https://github.com/gruntjs/grunt-cli>`_
 	* Access to a working instance of Traffic Ops
 
@@ -42,8 +41,7 @@ Installing The Traffic Portal Developer Environment
 ===================================================
 #. Clone the `Traffic Control Repository <https://github.com/apache/trafficcontrol>`_
 #. Navigate to the ``traffic_portal`` subdirectory of your cloned repository.
-#. Run ``npm install`` to install application dependencies into ``traffic_portal/node_modules``. Only needs to be done the first time unless ``traffic_portal/package.json`` changes.
-#. Run ``bower install`` to install client-side dependencies into ``traffic_portal/app/bower_components``. Only needs to be done the first time unless ``traffic_portal/bower.json`` changes.
+#. Run ``npm install`` to install client-side and application dependencies into ``traffic_portal/node_modules``. Only needs to be done the first time unless ``traffic_portal/package.json`` changes.
 #. Run ``grunt`` to package the application into ``traffic_portal/app/dist``, start a local HTTPS server (Express), and start a file watcher.
 #. Valid SSL certificates and keys are needed for Traffic Portal to run. Generate these (e.g. using `this SuperUser answer <https://superuser.com/questions/226192/avoid-password-prompt-for-keys-and-prompts-for-dn-information#answer-226229>`_) and edit the ``traffic_portal/conf/config.json`` file to reflect their names and locations
 #. Navigate to https://localhost:8443 (default listening address/port)
