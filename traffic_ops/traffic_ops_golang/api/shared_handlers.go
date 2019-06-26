@@ -112,6 +112,33 @@ func decodeAndValidateRequestBody(r *http.Request, v Validator) error {
 	return v.Validate()
 }
 
+// copy interface{} from src to dst by marshalling and unmarshalling into json
+// This should allow us to do the following:
+//
+// func (obj GenericCreator) GenericCreate() {
+//
+//		...
+//
+//		oddInterfaces, usrErr, sysErr, errCode := Read()
+//		ConvertFrom(obj, oddInterfaces[0])
+// }
+//
+// Basically, we are given an interface we know nothing about and we want it to represent
+// our object fully. We must use our `obj` handle, since it gets used further up the
+// function call stack. I guess we technically know what the interface is, but we can't
+// match it generically to the type we want easily.
+//
+func ConvertFrom(dst interface{}, src interface{}) {
+	blob, err := json.Marshal(src)
+	if err != nil {
+		log.Errorf("converting interface: %v", err)
+	}
+	err = json.Unmarshal(blob, dst)
+	if err != nil {
+		log.Errorf("converting interface: %v", err)
+	}
+}
+
 // ReadHandler creates a handler function from the pointer to a struct implementing the Reader interface
 //      this handler retrieves the user from the context
 //      combines the path and query parameters

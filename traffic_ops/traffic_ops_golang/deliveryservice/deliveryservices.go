@@ -181,7 +181,8 @@ func create(inf *api.APIInfo, ds tc.DeliveryServiceNullable) (tc.DeliveryService
 	if !resultRows.Next() {
 		return tc.DeliveryServiceNullable{}, http.StatusInternalServerError, nil, errors.New("no deliveryservice request inserted, no id was returned")
 	}
-	if err := resultRows.Scan(&id, &lastUpdated); err != nil {
+
+	if err := resultRows.Scan(&id, &ds.CDNName, &ds.Type, &ds.ProfileName, &ds.ProfileDesc, &ds.Tenant, &lastUpdated); err != nil {
 		return tc.DeliveryServiceNullable{}, http.StatusInternalServerError, nil, errors.New("could not scan id from insert: " + err.Error())
 	}
 	if resultRows.Next() {
@@ -434,7 +435,7 @@ func update(inf *api.APIInfo, ds *tc.DeliveryServiceNullable) (tc.DeliveryServic
 		return tc.DeliveryServiceNullable{}, http.StatusNotFound, errors.New("no delivery service found with this id"), nil
 	}
 	lastUpdated := tc.TimeNoMod{}
-	if err := resultRows.Scan(&lastUpdated); err != nil {
+	if err := resultRows.Scan(&ds.CDNName, &ds.Type, &ds.ProfileName, &ds.ProfileDesc, &ds.Tenant, &lastUpdated); err != nil {
 		return tc.DeliveryServiceNullable{}, http.StatusInternalServerError, nil, errors.New("scan updating delivery service: " + err.Error())
 	}
 	if resultRows.Next() {
@@ -1381,8 +1382,13 @@ anonymous_blocking_enabled=$50,
 consistent_hash_regex=$51,
 max_origin_connections=$52
 WHERE id=$53
-RETURNING last_updated
-`
+RETURNING
+	(select name from cdn where cdn.id = cdn_id),
+	(select name from type where type.id = type),
+	(select name from profile where profile.id = profile),
+	(select description from profile where profile.id = profile),
+	(select name from tenant where tenant.id = tenant_id),
+	last_updated`
 }
 
 func insertQuery() string {
@@ -1442,6 +1448,12 @@ type,
 xml_id
 )
 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33,$34,$35,$36,$37,$38,$39,$40,$41,$42,$43,$44,$45,$46,$47,$48,$49,$50,$51,$52)
-RETURNING id, last_updated
-`
+RETURNING
+	id,
+	(select name from cdn where cdn.id = cdn_id),
+	(select name from type where type.id = type),
+	(select name from profile where profile.id = profile),
+	(select description from profile where profile.id = profile),
+	(select name from tenant where tenant.id = tenant_id),
+	last_updated`
 }

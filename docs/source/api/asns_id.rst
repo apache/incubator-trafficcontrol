@@ -139,7 +139,7 @@ Response Structure
 	],
 	"response": {
 		"asn": 2,
-		"cachegroup": null,
+		"cachegroup": "CDN_in_a_Box_Mid",
 		"cachegroupId": 1,
 		"id": 1,
 		"lastUpdated": "2018-11-08 14:37:39+00"

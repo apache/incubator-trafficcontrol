@@ -55,6 +55,7 @@ Response Structure
 :id:          The integral, unique identifier of this tenant
 :name:        This tenant's name
 :parentId:    The integral, unique identifier of this tenant's parent
+:parentName:  The name of the parent tenant
 
 .. code-block:: http
 	:caption: Response Example
@@ -128,6 +129,7 @@ Response Structure
 :id:          The integral, unique identifier of this tenant
 :name:        This tenant's name
 :parentId:    The integral, unique identifier of this tenant's parent
+:parentName:  The name of the parent tenant
 
 .. code-block:: http
 	:caption: Response Example
@@ -155,7 +157,8 @@ Response Structure
 		"name": "quest",
 		"active": true,
 		"lastUpdated": "2018-12-11 20:30:54+00",
-		"parentId": 3
+		"parentId": 3,
+		"parentName": "tenant-01"
 	}}
 
 ``DELETE``

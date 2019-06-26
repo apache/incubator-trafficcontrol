@@ -23,6 +23,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/apache/trafficcontrol/lib/go-tc"
 	"github.com/apache/trafficcontrol/lib/go-util"
@@ -80,8 +81,33 @@ func GenericCreate(val GenericCreator) (error, error, int) {
 	} else if rowsAffected > 1 {
 		return nil, errors.New("too many ids returned from " + val.GetType() + " insert"), http.StatusInternalServerError
 	}
+
 	val.SetKeys(map[string]interface{}{"id": id})
 	val.SetLastUpdated(lastUpdated)
+
+	if r, ok := val.(Reader); ok {
+		return ReadBack(r)
+	}
+
+	return nil, nil, http.StatusOK
+}
+
+func ReadBack(val Reader) (error, error, int) {
+
+	i := val.(Identifier)
+	keys, _ := i.GetKeys()
+	inf := val.APIInfo()
+	inf.Params["id"] = strconv.Itoa(keys["id"].(int))
+
+	results, usrErr, sysErr, errCode := val.Read()
+	if usrErr != nil || sysErr != nil {
+		return usrErr, sysErr, errCode
+	}
+	if len(results) != 1 {
+		return nil, errors.New("bad result in reading back a POST"), http.StatusInternalServerError
+	}
+	ConvertFrom(&val, results[0])
+
 	return nil, nil, http.StatusOK
 }
 
@@ -128,6 +154,11 @@ func GenericUpdate(val GenericUpdater) (error, error, int) {
 	if rows.Next() {
 		return nil, errors.New(val.GetType() + " update affected too many rows: >1"), http.StatusInternalServerError
 	}
+
+	if r, ok := val.(Reader); ok {
+		return ReadBack(r)
+	}
+
 	return nil, nil, http.StatusOK
 }
 

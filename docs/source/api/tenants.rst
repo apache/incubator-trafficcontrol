@@ -113,7 +113,8 @@ Request Structure
 	{
 		"active": true,
 		"name": "test",
-		"parentId": 1
+		"parentId": 1,
+		"parentName": "root"
 	}
 
 Response Structure
@@ -122,6 +123,7 @@ Response Structure
 :id:          The integral, unique identifier of this tenant
 :name:        This tenant's name
 :parentId:    The integral, unique identifier of this tenant's parent
+:parentName:  The name of the parent of this tenant
 
 .. code-block:: http
 	:caption: Response Example
@@ -149,5 +151,6 @@ Response Structure
 		"name": "test",
 		"active": true,
 		"lastUpdated": "2018-12-11 19:37:16+00",
-		"parentId": 1
+		"parentId": 1,
+		"parentName": "root"
 	}}

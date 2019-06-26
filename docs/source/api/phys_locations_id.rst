@@ -156,8 +156,6 @@ Request Structure
 		"zip": "20500"
 	}
 
-.. [1] The only "region" key that actually matters in the request body is ``regionId``; ``region`` is not validated and has no effect - particularly not the effect of re-naming the region - beyond changing the name in the API response to this request. Subsequent requests will reveal the true name of the region. Note that if ``region`` is not present in the request body it will be ``null`` in the response, but again further requests will show the true region name.
-
 Response Structure
 ------------------
 :address:     The physical location's street address
@@ -207,7 +205,7 @@ Response Structure
 		"phone": "1-202-456-1414",
 		"poc": "Donald J. Trump",
 		"regionId": 2,
-		"region": null,
+		"region": "Washington, D.C.",
 		"shortName": "ciab",
 		"state": "DC",
 		"zip": "20500"
