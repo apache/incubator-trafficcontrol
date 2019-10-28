@@ -24,6 +24,7 @@ import com.comcast.cdn.traffic_control.traffic_router.core.router.TrafficRouterM
 import com.comcast.cdn.traffic_control.traffic_router.geolocation.GeolocationException;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import javax.servlet.FilterChain;
@@ -146,7 +147,7 @@ public class RouterFilter extends OncePerRequestFilter {
 			response.setStatus(HttpServletResponse.SC_OK);
 			httpAccessRecordBuilder.responseCode(HttpServletResponse.SC_OK);
 		} else {
-			response.setHeader("Location", routeResult.getUrl().toString());
+			response.setHeader(HttpHeaders.LOCATION, routeResult.getUrl().toString());
 			response.setStatus(HttpServletResponse.SC_MOVED_TEMPORARILY);
 			httpAccessRecordBuilder.responseCode(HttpServletResponse.SC_MOVED_TEMPORARILY);
 			httpAccessRecordBuilder.responseURL(routeResult.getUrl());
@@ -184,7 +185,8 @@ public class RouterFilter extends OncePerRequestFilter {
 
 			httpAccessRecordBuilder.responseCode(HttpServletResponse.SC_OK);
 		} else {
-			response.sendRedirect(location.toString());
+			response.setHeader(HttpHeaders.LOCATION, location.toString());
+			response.setStatus(HttpServletResponse.SC_MOVED_TEMPORARILY);
 			httpAccessRecordBuilder.responseCode(HttpServletResponse.SC_MOVED_TEMPORARILY);
 			httpAccessRecordBuilder.responseURL(location);
 		}
