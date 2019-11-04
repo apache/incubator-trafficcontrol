@@ -35,7 +35,7 @@ public class LocationController {
 	@Autowired
 	private DataExporter dataExporter;
 
-	@RequestMapping(value = "/{locID}/caches", method = RequestMethod.GET)
+	@RequestMapping(value = "/{locID}/caches", method = {RequestMethod.GET, RequestMethod.HEAD})
 	public @ResponseBody
 	Map<String, List<CacheModel>> getCaches(@PathVariable("locID") final String locId) {
 		final Map<String, List<CacheModel>> map = new HashMap<String, List<CacheModel>>();
@@ -43,17 +43,17 @@ public class LocationController {
 		return map;
 	}
 
-	@RequestMapping(value = "", method = RequestMethod.GET)
+	@RequestMapping(value = "", method = {RequestMethod.GET, RequestMethod.HEAD})
 	public @ResponseBody
-	Map<String,List<String>> getLocations() {
-		final Map<String, List<String >> locations = new HashMap<String, List<String>>();
+	Map<String, List<String>> getLocations() {
+		final Map<String, List<String>> locations = new HashMap<String, List<String>>();
 		locations.put("locations", dataExporter.getLocations());
 		return locations;
 	}
 
-	@RequestMapping(value = "/caches", method = RequestMethod.GET)
+	@RequestMapping(value = "/caches", method = {RequestMethod.GET, RequestMethod.HEAD})
 	public @ResponseBody
-	Map<String,Map<String, List<CacheModel>>> getCaches() {
+	Map<String, Map<String, List<CacheModel>>> getCaches() {
 		final Map<String, Map<String, List<CacheModel>>> map = new HashMap<String, Map<String, List<CacheModel>>>();
 		final Map<String, List<CacheModel>> innerMap = new HashMap<String, List<CacheModel>>();
 
