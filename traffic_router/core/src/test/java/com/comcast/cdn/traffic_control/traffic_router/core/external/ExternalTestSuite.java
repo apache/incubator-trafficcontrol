@@ -48,6 +48,7 @@ import static org.springframework.util.SocketUtils.findAvailableUdpPort;
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
 	SteeringTest.class,
+	BufferedResponseTest.class,
 	ConsistentHashTest.class,
 	CoverageZoneTest.class,
 	DeliveryServicesTest.class,
