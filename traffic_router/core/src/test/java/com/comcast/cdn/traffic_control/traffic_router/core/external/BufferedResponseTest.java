@@ -157,6 +157,8 @@ public class BufferedResponseTest {
 			requests.add(new HttpHead("http://localhost:" + routerHttpPort + path));
 			requests.add(new HttpGet("http://localhost:" + routerHttpPort + path));
 
+			final List<Integer> contentLengths = new ArrayList<>();
+
 			for (final HttpRequestBase request : requests) {
 				CloseableHttpResponse response = null;
 				request.setConfig(config);
@@ -164,13 +166,18 @@ public class BufferedResponseTest {
 
 				try {
 					response = httpClient.execute(request);
+					final Header contentLengthHeader = response.getFirstHeader("Content-Length");
 
 					assertThat(response.getFirstHeader("Transfer-Encoding"), nullValue());
-					assertThat(response.getFirstHeader("Content-Length"), notNullValue());
+					assertThat(contentLengthHeader, notNullValue());
+					contentLengths.add(Integer.parseInt(contentLengthHeader.getValue()));
 				} finally {
 					if (response != null) response.close();
 				}
 			}
+
+			assertThat(contentLengths.size(), equalTo(2));
+			assertThat("Expected HEAD and GET requests for " + testHostName + path + "to have the same Content-Length", contentLengths.get(0), equalTo(contentLengths.get(1)));
 		}
 	}
 }
