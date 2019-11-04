@@ -43,24 +43,24 @@ Request Structure
 
 	GET /crs/stats HTTP/1.1
 	Host: trafficrouter.infra.ciab.test
-	User-Agent: curl/7.47.0
+	User-Agent: curl/7.52.1
 	Accept: */*
 
 Response Structure
 ------------------
 .. code-block:: http
-	:caption: Response Example
+	:caption: Response Example (JSON expanded)
 
-	HTTP/1.1 200 OK
+	HTTP/1.1 200
 	Content-Type: application/json;charset=UTF-8
-	Transfer-Encoding: chunked
-	Date: Tue, 15 Jan 2019 21:02:09 GMT
+	Content-Length: 1213
+	Date: Sun, 03 Nov 2019 05:57:17 GMT
 
 	{ "app": {
-		"buildTimestamp": "2019-01-10",
+		"buildTimestamp": "2019-11-03",
 		"name": "traffic_router",
 		"deploy-dir": "/opt/traffic_router",
-		"git-revision": "437e9df81",
+		"git-revision": "3ebc920b7",
 		"version": "3.0.0"
 	},
 	"stats": {
@@ -68,7 +68,7 @@ Response Structure
 		"httpMap": {
 			"video.demo1.mycdn.ciab.test": {
 				"czCount": 0,
-				"geoCount": 0,
+				"geoCount": 1,
 				"deepCzCount": 0,
 				"missCount": 0,
 				"dsrCount": 0,
@@ -80,29 +80,29 @@ Response Structure
 			}
 		},
 		"totalDnsCount": 0,
-		"totalHttpCount": 1,
-		"totalDsMissCount": 0,
-		"appStartTime": 1547584831677,
-		"averageDnsTime": 0,
-		"averageHttpTime": 1547584863270,
+		"totalHttpCount": 2,
+		"totalDsMissCount": 1,
+		"appStartTime": 1572759663457,
+		"averageHttpTime": 786379849939,
 		"updateTracker": {
-			"lastHttpsCertificatesCheck": 1547586068932,
-			"lastGeolocationDatabaseUpdaterUpdate": 1547584858917,
-			"lastCacheStateCheck": 1547586128932,
-			"lastCacheStateChange": 1547584867102,
-			"lastNetworkUpdaterUpdate": 1547584857484,
-			"lastHttpsCertificatesUpdate": 1547586071079,
-			"lastSteeringWatcherUpdate": 1547584923514,
-			"lastConfigCheck": 1547586127344,
-			"lastConfigChange": 1547584863406,
-			"lastNetworkUpdaterCheck": 1547584857465,
-			"lastGeolocationDatabaseUpdaterCheck": 1547584858906,
-			"lastFederationsWatcherUpdate": 1547584863433,
-			"lastHttpsCertificatesFetchSuccess": 1547586069070,
-			"lastSteeringWatcherCheck": 1547586124630,
-			"lastFederationsWatcherCheck": 1547586124584,
-			"lastHttpsCertificatesFetchAttempt": 1547586068932
-		}
+			"lastHttpsCertificatesCheck": 1572760605162,
+			"lastGeolocationDatabaseUpdaterUpdate": 1572759695064,
+			"lastCacheStateCheck": 1572760637365,
+			"lastCacheStateChange": 1572759703763,
+			"lastNetworkUpdaterUpdate": 1572759694009,
+			"lastHttpsCertificatesUpdate": 1572760607280,
+			"lastSteeringWatcherUpdate": 1572759760062,
+			"lastConfigCheck": 1572760633918,
+			"lastConfigChange": 1572759699962,
+			"lastNetworkUpdaterCheck": 1572759693998,
+			"lastGeolocationDatabaseUpdaterCheck": 1572759695056,
+			"lastFederationsWatcherUpdate": 1572759699998,
+			"lastHttpsCertificatesFetchSuccess": 1572760605275,
+			"lastSteeringWatcherCheck": 1572760601104,
+			"lastFederationsWatcherCheck": 1572760601085,
+			"lastHttpsCertificatesFetchAttempt": 1572760605162
+		},
+		"averageDnsTime": 0
 	}}
 
 .. _tr-api-crs-stats-ip-ip:
@@ -126,19 +126,19 @@ Request Structure
 
 	GET /crs/stats/ip/255.255.255.255 HTTP/1.1
 	Host: trafficrouter.infra.ciab.test
-	User-Agent: curl/7.47.0
+	User-Agent: curl/7.52.1
 	Accept: */*
 
 Response Structure
 ------------------
 .. code-block:: http
-	:caption: Response Example
+	:caption: Response Example (JSON expanded)
 
-	HTTP/1.1 200 OK
+	HTTP/1.1 200
 	Content-Disposition: inline;filename=f.txt
 	Content-Type: application/json;charset=UTF-8
-	Transfer-Encoding: chunked
-	Date: Tue, 15 Jan 2019 21:06:09 GMT
+	Content-Length: 131
+	Date: Sun, 03 Nov 2019 06:06:26 GMT
 
 	{ "locationByGeo": {
 		"city": "Woodridge",
@@ -166,7 +166,7 @@ Request Structure
 
 	GET /crs/locations HTTP/1.1
 	Host: trafficrouter.infra.ciab.test
-	User-Agent: curl/7.47.0
+	User-Agent: curl/7.52.1
 	Accept: */*
 
 Response Structure
@@ -174,12 +174,12 @@ Response Structure
 :locations: An array of strings that are the :ref:`Names of Cache Groups <cache-group-name>` to which this Traffic Router is capable of routing client traffic
 
 .. code-block:: http
-	:caption: Response Example
+	:caption: Response Example (JSON expanded)
 
-	HTTP/1.1 200 OK
+	HTTP/1.1 200
 	Content-Type: application/json;charset=UTF-8
-	Transfer-Encoding: chunked
-	Date: Tue, 15 Jan 2019 21:12:17 GMT
+	Content-Length: 35
+	Date: Sun, 03 Nov 2019 06:12:41 GMT
 
 	{ "locations": [
 		"CDN_in_a_Box_Edge"
@@ -198,18 +198,18 @@ Request Structure
 
 	GET /crs/locations/caches HTTP/1.1
 	Host: trafficrouter.infra.ciab.test
-	User-Agent: curl/7.47.0
+	User-Agent: curl/7.52.1
 	Accept: */*
 
 Response Structure
 ------------------
 .. code-block:: http
-	:caption: Response Example
+	:caption: Response Example (JSON expanded)
 
-	HTTP/1.1 200 OK
+	HTTP/1.1 200
 	Content-Type: application/json;charset=UTF-8
-	Transfer-Encoding: chunked
-	Date: Tue, 15 Jan 2019 21:15:53 GMT
+	Content-Length: 278
+	Date: Sun, 03 Nov 2019 06:21:06 GMT
 
 	{ "locations": {
 		"CDN_in_a_Box_Edge": [
@@ -217,8 +217,8 @@ Response Structure
 				"cacheId": "edge",
 				"fqdn": "edge.infra.ciab.test",
 				"ipAddresses": [
-					"172.16.239.100",
-					"fc01:9400:1000:8:0:0:0:100"
+					"172.16.239.4",
+					"fc01:9400:1000:8:0:0:0:4"
 				],
 				"port": 0,
 				"adminStatus": null,
@@ -254,26 +254,26 @@ Request Structure
 
 	GET /crs/locations/CDN_in_a_Box_Edge/caches HTTP/1.1
 	Host: trafficrouter.infra.ciab.test
-	User-Agent: curl/7.47.0
+	User-Agent: curl/7.52.1
 	Accept: */*
 
 Response Structure
 ------------------
 .. code-block:: http
-	:caption: Response Example
+	:caption: Response Example (JSON expanded)
 
-	HTTP/1.1 200 OK
+	HTTP/1.1 200
 	Content-Type: application/json;charset=UTF-8
-	Transfer-Encoding: chunked
-	Date: Tue, 15 Jan 2019 21:18:25 GMT
+	Content-Length: 253
+	Date: Sun, 03 Nov 2019 06:23:20 GMT
 
 	{ "caches": [
 		{
 			"cacheId": "edge",
 			"fqdn": "edge.infra.ciab.test",
 			"ipAddresses": [
-				"172.16.239.100",
-				"fc01:9400:1000:8:0:0:0:100"
+				"172.16.239.4",
+				"fc01:9400:1000:8:0:0:0:4"
 			],
 			"port": 0,
 			"adminStatus": null,
@@ -381,18 +381,18 @@ Request Structure
 
 	GET /crs/consistenthash/deliveryservice?deliveryServiceId=demo1&requestPath=/ HTTP/1.1
 	Host: trafficrouter.infra.ciab.test
-	User-Agent: curl/7.47.0
+	User-Agent: curl/7.52.1
 	Accept: */*
 
 Response Structure
 ------------------
 .. code-block:: http
-	:caption: Response Example
+	:caption: Response Example (JSON expanded)
 
-	HTTP/1.1 200 OK
+	HTTP/1.1 200
 	Content-Type: application/json;charset=UTF-8
-	Transfer-Encoding: chunked
-	Date: Tue, 15 Jan 2019 21:40:51 GMT
+	Content-Length: 828
+	Date: Sun, 03 Nov 2019 06:26:30 GMT
 
 	{ "id": "demo1",
 	"coverageZoneOnly": false,
@@ -401,8 +401,8 @@ Response Structure
 	"geoRedirectUrlType": "INVALID_URL",
 	"routingName": "video",
 	"missLocation": {
-		"latitude": 42,
-		"longitude": -88,
+		"latitude": 42.0,
+		"longitude": -88.0,
 		"postalCode": null,
 		"city": null,
 		"countryCode": null,
@@ -430,6 +430,13 @@ Response Structure
 	"sslEnabled": true,
 	"acceptHttp": true,
 	"deepCache": "NEVER",
+	"consistentHashRegex": "",
+	"consistentHashQueryParams": [
+		"abc",
+		"zyx",
+		"xxx",
+		"pdq"
+	],
 	"dns": false,
 	"locationLimit": 0,
 	"maxDnsIps": 0,
@@ -524,23 +531,22 @@ Request Structure
 
 	GET /crs/consistenthash/patternbased/regex?regex=%2F.*%3F%28%2F.*%3F%2F%29.*%3F%28%5C.m3u8%29&requestPath=%2Ftext1234%2Fname%2Fasset.m3u8 HTTP/1.1
 	Host: localhost:3333
-	User-Agent: curl/7.54.0
+	User-Agent: curl/7.52.1
 	Accept: */*
 
 Response Structure
 ------------------
 .. code-block:: http
-	:caption: Response Example
+	:caption: Response Example (JSON expanded)
 
-	HTTP/1.1 200 OK
+	HTTP/1.1 200
 	Content-Type: application/json;charset=UTF-8
-	Transfer-Encoding: chunked
-	Date: Fri, 15 Feb 2019 22:06:53 GMT
+	Content-Length: 137
+	Date: Sun, 03 Nov 2019 06:36:28 GMT
 
-	{
-	"resultingPathToConsistentHash":"/name/.m3u8",
-	"consistentHashRegex":"/.*?(/.*?/).*?(\\.m3u8)",
-	"requestPath":"/text1234/name/asset.m3u8"
+	{ "resultingPathToConsistentHash": "/name/.m3u8",
+	"consistentHashRegex": "/.*?(/.*?/).*?(\\.m3u8)",
+	"requestPath": "/text1234/name/asset.m3u8"
 	}
 
 .. _tr-api-crs-consistenthash-patternbased-deliveryservice:
@@ -564,25 +570,24 @@ Request Structure
 .. code-block:: http
 	:caption: Request Example
 
-	GET /crs/consistenthash/patternbased/deliveryservice?deliveryServiceId=asdf&requestPath=%2Fsometext1234%2Fstream_name%2Fasset_name.m3u8 HTTP/1.1
+	GET /crs/consistenthash/patternbased/deliveryservice?deliveryServiceId=demo1&requestPath=%2Fsometext1234%2Fstream_name%2Fasset_name.m3u8 HTTP/1.1
 	Host: localhost:3333
-	User-Agent: curl/7.54.0
+	User-Agent: curl/7.52.1
 	Accept: */*
 
 Response Structure
 ------------------
 .. code-block:: http
-	:caption: Response Example
+	:caption: Response Example (JSON expanded)
 
-	HTTP/1.1 200 OK
+	HTTP/1.1 200
 	Content-Type: application/json;charset=UTF-8
-	Transfer-Encoding: chunked
-	Date: Fri, 15 Feb 2019 22:12:38 GMT
+	Content-Length: 163
+	Date: Sun, 03 Nov 2019 06:45:07 GMT
 
-	{
-	"resultingPathToConsistentHash":"/sometext1234/stream_name/asset_name.m3u8",
-	"deliveryServiceId":"asdf",
-	"requestPath":"/sometext1234/stream_name/asset_name.m3u8"
+	{ "resultingPathToConsistentHash": "/sometext1234/stream_name/asset_name.m3u8",
+	"deliveryServiceId": "demo1",
+	"requestPath": "/sometext1234/stream_name/asset_name.m3u8"
 	}
 
 .. _tr-api-crs-consistenthash-cache-coveragezone-steering:
