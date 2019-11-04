@@ -51,16 +51,16 @@ Response Structure
 .. code-block:: http
 	:caption: Response Example (JSON expanded)
 
-	HTTP/1.1 200
+	HTTP/1.1 200 OK
 	Content-Type: application/json;charset=UTF-8
-	Content-Length: 1213
-	Date: Sun, 03 Nov 2019 05:57:17 GMT
+	Content-Length: 1214
+	Date: Mon, 04 Nov 2019 19:48:04 GMT
 
 	{ "app": {
-		"buildTimestamp": "2019-11-03",
+		"buildTimestamp": "2019-11-04",
 		"name": "traffic_router",
 		"deploy-dir": "/opt/traffic_router",
-		"git-revision": "3ebc920b7",
+		"git-revision": "eabc2b82e",
 		"version": "3.0.0"
 	},
 	"stats": {
@@ -68,7 +68,7 @@ Response Structure
 		"httpMap": {
 			"video.demo1.mycdn.ciab.test": {
 				"czCount": 0,
-				"geoCount": 1,
+				"geoCount": 0,
 				"deepCzCount": 0,
 				"missCount": 0,
 				"dsrCount": 0,
@@ -80,29 +80,29 @@ Response Structure
 			}
 		},
 		"totalDnsCount": 0,
-		"totalHttpCount": 2,
-		"totalDsMissCount": 1,
-		"appStartTime": 1572759663457,
-		"averageHttpTime": 786379849939,
+		"totalHttpCount": 1,
+		"totalDsMissCount": 0,
+		"appStartTime": 1572895915703,
+		"averageDnsTime": 0,
+		"averageHttpTime": 1572895947202,
 		"updateTracker": {
-			"lastHttpsCertificatesCheck": 1572760605162,
-			"lastGeolocationDatabaseUpdaterUpdate": 1572759695064,
-			"lastCacheStateCheck": 1572760637365,
-			"lastCacheStateChange": 1572759703763,
-			"lastNetworkUpdaterUpdate": 1572759694009,
-			"lastHttpsCertificatesUpdate": 1572760607280,
-			"lastSteeringWatcherUpdate": 1572759760062,
-			"lastConfigCheck": 1572760633918,
-			"lastConfigChange": 1572759699962,
-			"lastNetworkUpdaterCheck": 1572759693998,
-			"lastGeolocationDatabaseUpdaterCheck": 1572759695056,
-			"lastFederationsWatcherUpdate": 1572759699998,
-			"lastHttpsCertificatesFetchSuccess": 1572760605275,
-			"lastSteeringWatcherCheck": 1572760601104,
-			"lastFederationsWatcherCheck": 1572760601085,
-			"lastHttpsCertificatesFetchAttempt": 1572760605162
-		},
-		"averageDnsTime": 0
+			"lastHttpsCertificatesCheck": 1572896852436,
+			"lastGeolocationDatabaseUpdaterUpdate": 1572895942543,
+			"lastCacheStateCheck": 1572896884465,
+			"lastCacheStateChange": 1572895951089,
+			"lastNetworkUpdaterUpdate": 1572895941407,
+			"lastHttpsCertificatesUpdate": 1572896854512,
+			"lastSteeringWatcherUpdate": 1572896007369,
+			"lastConfigCheck": 1572896881213,
+			"lastConfigChange": 1572895947297,
+			"lastNetworkUpdaterCheck": 1572895941392,
+			"lastGeolocationDatabaseUpdaterCheck": 1572895942533,
+			"lastFederationsWatcherUpdate": 1572895947336,
+			"lastHttpsCertificatesFetchSuccess": 1572896852506,
+			"lastSteeringWatcherCheck": 1572896848090,
+			"lastFederationsWatcherCheck": 1572896848067,
+			"lastHttpsCertificatesFetchAttempt": 1572896852436
+		}
 	}}
 
 .. _tr-api-crs-stats-ip-ip:
@@ -134,11 +134,11 @@ Response Structure
 .. code-block:: http
 	:caption: Response Example (JSON expanded)
 
-	HTTP/1.1 200
+	HTTP/1.1 200 OK
 	Content-Disposition: inline;filename=f.txt
 	Content-Type: application/json;charset=UTF-8
 	Content-Length: 131
-	Date: Sun, 03 Nov 2019 06:06:26 GMT
+	Date: Mon, 04 Nov 2019 19:48:04 GMT
 
 	{ "locationByGeo": {
 		"city": "Woodridge",
@@ -176,10 +176,10 @@ Response Structure
 .. code-block:: http
 	:caption: Response Example (JSON expanded)
 
-	HTTP/1.1 200
+	HTTP/1.1 200 OK
 	Content-Type: application/json;charset=UTF-8
 	Content-Length: 35
-	Date: Sun, 03 Nov 2019 06:12:41 GMT
+	Date: Mon, 04 Nov 2019 19:48:04 GMT
 
 	{ "locations": [
 		"CDN_in_a_Box_Edge"
@@ -206,10 +206,10 @@ Response Structure
 .. code-block:: http
 	:caption: Response Example (JSON expanded)
 
-	HTTP/1.1 200
+	HTTP/1.1 200 OK
 	Content-Type: application/json;charset=UTF-8
 	Content-Length: 278
-	Date: Sun, 03 Nov 2019 06:21:06 GMT
+	Date: Mon, 04 Nov 2019 19:48:04 GMT
 
 	{ "locations": {
 		"CDN_in_a_Box_Edge": [
@@ -262,10 +262,10 @@ Response Structure
 .. code-block:: http
 	:caption: Response Example (JSON expanded)
 
-	HTTP/1.1 200
+	HTTP/1.1 200 OK
 	Content-Type: application/json;charset=UTF-8
 	Content-Length: 253
-	Date: Sun, 03 Nov 2019 06:23:20 GMT
+	Date: Mon, 04 Nov 2019 19:48:04 GMT
 
 	{ "caches": [
 		{
@@ -389,10 +389,10 @@ Response Structure
 .. code-block:: http
 	:caption: Response Example (JSON expanded)
 
-	HTTP/1.1 200
+	HTTP/1.1 200 OK
 	Content-Type: application/json;charset=UTF-8
 	Content-Length: 828
-	Date: Sun, 03 Nov 2019 06:26:30 GMT
+	Date: Mon, 04 Nov 2019 19:48:04 GMT
 
 	{ "id": "demo1",
 	"coverageZoneOnly": false,
@@ -539,10 +539,10 @@ Response Structure
 .. code-block:: http
 	:caption: Response Example (JSON expanded)
 
-	HTTP/1.1 200
+	HTTP/1.1 200 OK
 	Content-Type: application/json;charset=UTF-8
 	Content-Length: 137
-	Date: Sun, 03 Nov 2019 06:36:28 GMT
+	Date: Mon, 04 Nov 2019 19:48:04 GMT
 
 	{ "resultingPathToConsistentHash": "/name/.m3u8",
 	"consistentHashRegex": "/.*?(/.*?/).*?(\\.m3u8)",
@@ -580,10 +580,10 @@ Response Structure
 .. code-block:: http
 	:caption: Response Example (JSON expanded)
 
-	HTTP/1.1 200
+	HTTP/1.1 200 OK
 	Content-Type: application/json;charset=UTF-8
 	Content-Length: 163
-	Date: Sun, 03 Nov 2019 06:45:07 GMT
+	Date: Mon, 04 Nov 2019 19:48:04 GMT
 
 	{ "resultingPathToConsistentHash": "/sometext1234/stream_name/asset_name.m3u8",
 	"deliveryServiceId": "demo1",
