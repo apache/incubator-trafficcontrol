@@ -1,0 +1,4 @@
+mock
+mock.o
+*.key
+*.crt

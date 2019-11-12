@@ -66,6 +66,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/).
 - Added ATS config generation omitting parents without Delivery Service Required Capabilities.
 - In Traffic Portal, added the ability to create, view and delete server capabilities and associate those server capabilities with servers and delivery services. See [blueprint](./blueprints/server-capabilitites.md)
 - Added validation to prevent assigning servers to delivery services without required capabilities.
+- Traffic Ops mock server under [`traffic_ops/client_tests`](./traffic_ops/client_tests)
 
 ### Changed
 - Traffic Router:  TR will now allow steering DSs and steering target DSs to have RGB enabled. (fixes #3910)
@@ -111,7 +112,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/).
 ## [3.0.0] - 2018-10-30
 ### Added
 - Removed MySQL-to-Postgres migration tools.  This tool is supported for 1.x to 2.x upgrades only and should not be used with 3.x.
-- Backup Edge Cache group: If the matched group in the CZF is not available, this list of backup edge cache group configured via Traffic Ops API can be used as backup. In the event of all backup edge cache groups not available, GEO location can be optionally used as further backup. APIs detailed [here](http://traffic-control-cdn.readthedocs.io/en/latest/development/traffic_ops_api/v12/cachegroup_fallbacks.html)
+- Backup Edge Cache group: If the matched group in the CZF is not available, this list of backup edge cache group configured via Traffic Ops API can be used as backup. In the event of all backup edge cache groups not available, GEO location can be optionally used as further backup. APIs detailed [here](https://traffic-control-cdn.readthedocs.io/en/release-3.0.0/api/v12/cachegroup_fallbacks.html)
 - Traffic Ops Golang Proxy Endpoints
   - /api/1.4/users `(GET,POST,PUT)`
   - /api/1.3/origins `(GET,POST,PUT,DELETE)`
@@ -133,8 +134,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/).
 
 ## [2.2.0] - 2018-06-07
 ### Added
-- Per-DeliveryService Routing Names: you can now choose a Delivery Service's Routing Name (rather than a hardcoded "tr" or "edge" name). This might require a few pre-upgrade steps detailed [here](http://traffic-control-cdn.readthedocs.io/en/latest/admin/traffic_ops/migration_from_20_to_22.html#per-deliveryservice-routing-names)
-- [Delivery Service Requests](http://traffic-control-cdn.readthedocs.io/en/latest/admin/quick_howto/ds_requests.html#ds-requests): When enabled, delivery service requests are created when ALL users attempt to create, update or delete a delivery service. This allows users with higher level permissions to review delivery service changes for completeness and accuracy before deploying the changes.
+- Per-DeliveryService Routing Names: you can now choose a Delivery Service's Routing Name (rather than a hardcoded "tr" or "edge" name). This might require a few pre-upgrade steps detailed [here](http://traffic-control-cdn.readthedocs.io/en/release-2.2.0/admin/traffic_ops/migration_from_20_to_22.html#per-deliveryservice-routing-names)
+- [Delivery Service Requests](https://traffic-control-cdn.readthedocs.io/en/release-3.0.0/admin/quick_howto/ds_requests.html): When enabled, delivery service requests are created when ALL users attempt to create, update or delete a delivery service. This allows users with higher level permissions to review delivery service changes for completeness and accuracy before deploying the changes.
 - Traffic Ops Golang Proxy Endpoints
   - /api/1.3/about `(GET)`
   - /api/1.3/asns `(GET,POST,PUT,DELETE)`

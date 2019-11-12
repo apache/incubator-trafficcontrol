@@ -58,9 +58,8 @@ type UserV13 struct {
 	TenantID         int       `json:"tenantId"`
 }
 
-// commonUserFields is unexported, but its contents are still visible when it is embedded
 // LastUpdated is a new field for some structs
-type commonUserFields struct {
+type CommonUserFields struct {
 	AddressLine1    *string `json:"addressLine1" db:"address_line1"`
 	AddressLine2    *string `json:"addressLine2" db:"address_line2"`
 	City            *string `json:"city" db:"city"`
@@ -90,7 +89,7 @@ type User struct {
 	RegistrationSent *TimeNoMod `json:"registrationSent" db:"registration_sent"`
 	LocalPassword    *string    `json:"localPasswd,omitempty" db:"local_passwd"`
 	RoleName         *string    `json:"roleName,omitempty" db:"-"`
-	commonUserFields
+	CommonUserFields
 }
 
 // UserCurrent represents the profile for the authenticated user
@@ -98,7 +97,7 @@ type UserCurrent struct {
 	UserName  *string `json:"username"`
 	LocalUser *bool   `json:"localUser"`
 	RoleName  *string `json:"roleName"`
-	commonUserFields
+	CommonUserFields
 }
 
 // ------------------- Response structs -------------------- //

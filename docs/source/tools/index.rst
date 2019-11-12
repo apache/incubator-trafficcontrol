@@ -22,8 +22,6 @@ This is a living list of tools used to interact with, test, and develop for the 
 
 .. toctree::
 	:maxdepth: 2
+	:glob:
 
-	compare
-	python_client
-	traffic_vault_util
-	toaccess
+	*

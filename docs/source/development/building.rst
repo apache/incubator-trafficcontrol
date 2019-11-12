@@ -22,6 +22,8 @@ The build steps for Traffic Control components are all pretty much the same, des
 
 .. note:: Currently, both listed methods of building Traffic Control components will produce ``*.rpm`` files, meaning that the support of these components is limited to RedHat-based distributions - and none of them are currently tested (or guaranteed to work) outside of CentOS7, specifically.
 
+.. _dev-building-downloading:
+
 Downloading Traffic Control
 ===========================
 If any local work on Traffic Monitor, Traffic Router Golang, Grove or Traffic Ops is to be done, it is **highly** recommended that `the Traffic Control repository <https://github.com/apache/trafficcontrol>`_ be downloaded inside the ``$GOPATH`` directory. Specifically, the best location is ``$GOPATH/src/github.com/apache/trafficcontrol``. Cloning the repository outside of this location will require either linking the actual directory to that point, or moving/copying it there.
