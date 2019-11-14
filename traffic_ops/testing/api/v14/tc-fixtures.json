@@ -298,7 +298,7 @@
             "sslKeyVersion": 2,
             "tenant": "tenant1",
             "tenantName": "tenant1",
-            "type": "HTTP_LIVE",
+            "type": "HTTP",
             "xmlId": "ds1",
             "anonymousBlockingEnabled": true
         },

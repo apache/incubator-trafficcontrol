@@ -181,6 +181,34 @@ RETURNING job.asset_url,
           job.start_time
 `
 
+func (job InvalidationJob) GetType() string {
+	return "invalidation_job"
+}
+
+func (job InvalidationJob) GetAuditName() string {
+	if job.ID != nil {
+		return strconv.Itoa(int(*job.ID))
+	}
+	return "unknown"
+}
+
+func (job InvalidationJob) GetKeyFieldsInfo() []api.KeyFieldInfo {
+	return []api.KeyFieldInfo{{"id", api.GetIntKey}}
+}
+
+func (job InvalidationJob) GetKeys() (map[string]interface{}, bool) {
+	if job.ID == nil {
+		return map[string]interface{}{"id": 0}, false
+	}
+	return map[string]interface{}{"id": *job.ID}, true
+}
+
+func (job *InvalidationJob) SetKeys(keys map[string]interface{}) {
+	i, _ := keys["id"].(int) //this utilizes the non panicking type assertion, if the thrown away ok variable is false i will be the zero of the type, 0 here.
+	ii := uint64(i)
+	job.ID = &ii
+}
+
 type apiResponse struct {
 	Alerts   []tc.Alert         `json:"alerts,omitempty"`
 	Response tc.InvalidationJob `json:"response,omitempty"`

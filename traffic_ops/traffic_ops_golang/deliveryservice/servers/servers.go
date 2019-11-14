@@ -615,6 +615,33 @@ type TODSSDeliveryService struct {
 	tc.DeliveryServiceNullable
 }
 
+func (ds *TODSSDeliveryService) GetAuditName() string {
+	if ds.XMLID != nil {
+		return *ds.XMLID
+	}
+	return ""
+}
+
+func (ds TODSSDeliveryService) GetKeyFieldsInfo() []api.KeyFieldInfo {
+	return []api.KeyFieldInfo{{"id", api.GetIntKey}}
+}
+
+func (ds TODSSDeliveryService) GetKeys() (map[string]interface{}, bool) {
+	if ds.ID == nil {
+		return map[string]interface{}{"id": 0}, false
+	}
+	return map[string]interface{}{"id": *ds.ID}, true
+}
+
+func (ds *TODSSDeliveryService) SetKeys(keys map[string]interface{}) {
+	i, _ := keys["id"].(int) //this utilizes the non panicking type assertion, if the thrown away ok variable is false i will be the zero of the type, 0 here.
+	ds.ID = &i
+}
+
+func (ds *TODSSDeliveryService) GetType() string {
+	return "ds"
+}
+
 // Read shows all of the delivery services associated with the specified server.
 func (dss *TODSSDeliveryService) Read() ([]interface{}, error, error, int) {
 	returnable := []interface{}{}
@@ -660,9 +687,9 @@ func (dss *TODSSDeliveryService) Read() ([]interface{}, error, error, int) {
 	log.Debugln("generated deliveryServices query: " + query)
 	log.Debugf("executing with values: %++v\n", queryValues)
 
-	dses, userErr, sysErr, _ := deliveryservice.GetDeliveryServices(query, queryValues, dss.APIInfo().Tx)
+	dses, _, userErr, sysErr, _ := deliveryservice.GetDeliveryServices(query, queryValues, dss.APIInfo().Tx)
 	if sysErr != nil {
-		sysErr = fmt.Errorf("reading server dses: %v ", sysErr)
+		sysErr = errors.New("reading server dses: " + sysErr.Error())
 	}
 	if userErr != nil || sysErr != nil {
 		return nil, userErr, sysErr, http.StatusInternalServerError

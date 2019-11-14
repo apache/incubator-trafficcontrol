@@ -25,10 +25,12 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/apache/trafficcontrol/lib/go-log"
 	"github.com/apache/trafficcontrol/lib/go-tc"
 
+	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 )
 
@@ -516,4 +518,57 @@ func GetFederationIDForUserIDByXMLID(tx *sql.Tx, userID int, xmlid string) (uint
 		return 0, false, fmt.Errorf("Getting Federation ID for user #%d by DS XMLID '%s': %v", userID, xmlid, err)
 	}
 	return id, true, nil
+}
+
+// ResourceModified is a helper to get whether the last modified time of any table used by the resource is newer than the If-Modified-Since or If-None-Match time sent by the client.
+//
+// The lastModified should be the If-Modified-Since or If-None-Match time sent the by the client.
+//
+// The query should be a query, which selects the latest modified time of any table used by the resource.
+// For an example, see server/cachecontrol.go makeServerModfiiedQry.
+//
+// The queryParams should be named argument for the query, in the sqlx named argument format.
+//
+func ResourceModified(tx *sqlx.Tx, lastModified time.Time, query string, queryParams map[string]interface{}) bool {
+	modTime, ok, err := resourceModifiedTime(tx, query, queryParams)
+	if err != nil {
+		// log, but don't let this prevent us from trying to get the DS otherwise, just consider it modified
+		log.Errorln("Getting resource modified time: " + err.Error())
+		return true
+	} else if !ok {
+		return true
+	}
+
+	// if the given lastModified is exactly on the second, it must have been from Last-Modified and not ETag, so truncate the queried time to the second too (otherwise, it'd never be unmodified)
+	if lastModified.Truncate(time.Second) == lastModified {
+		modTime = modTime.Truncate(time.Second)
+	}
+
+	if modTime.After(lastModified) {
+		return true
+	}
+	return false
+}
+
+func resourceModifiedTime(tx *sqlx.Tx, query string, queryParams map[string]interface{}) (time.Time, bool, error) {
+	rows, err := tx.NamedQuery(query, queryParams)
+	if err != nil {
+		return time.Time{}, false, errors.New("querying: " + err.Error())
+	}
+	defer rows.Close()
+
+	if !rows.Next() {
+		return time.Time{}, false, nil
+	}
+
+	modTime := time.Time{}
+	if err := rows.Scan(&modTime); err != nil {
+		return time.Time{}, false, errors.New("scanning: " + err.Error())
+	}
+
+	if rows.Next() {
+		return time.Time{}, false, errors.New("scanning: expected 1 row, but got many")
+	}
+
+	return modTime, true, nil
 }

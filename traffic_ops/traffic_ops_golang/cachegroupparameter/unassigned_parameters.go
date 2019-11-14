@@ -51,6 +51,32 @@ func (cgunparam *TOCacheGroupUnassignedParameter) GetType() string {
 	return "cachegroup_unassigned_params"
 }
 
+func (cgunparam TOCacheGroupUnassignedParameter) GetAuditName() string {
+	if cgunparam.Name != nil {
+		return *cgunparam.Name
+	}
+	if cgunparam.ID != nil {
+		return strconv.Itoa(*cgunparam.ID)
+	}
+	return "unknown"
+}
+
+func (cgunparam TOCacheGroupUnassignedParameter) GetKeyFieldsInfo() []api.KeyFieldInfo {
+	return []api.KeyFieldInfo{{"id", api.GetIntKey}}
+}
+
+func (cgunparam TOCacheGroupUnassignedParameter) GetKeys() (map[string]interface{}, bool) {
+	if cgunparam.ID == nil {
+		return map[string]interface{}{"id": 0}, false
+	}
+	return map[string]interface{}{"id": *cgunparam.ID}, true
+}
+
+func (cgunparam *TOCacheGroupUnassignedParameter) SetKeys(keys map[string]interface{}) {
+	i, _ := keys["id"].(int) //this utilizes the non panicking type assertion, if the thrown away ok variable is false i will be the zero of the type, 0 here.
+	cgunparam.ID = &i
+}
+
 func (cgunparam *TOCacheGroupUnassignedParameter) Read() ([]interface{}, error, error, int) {
 	queryParamsToQueryCols := cgunparam.ParamColumns()
 	parameters := cgunparam.APIInfo().Params

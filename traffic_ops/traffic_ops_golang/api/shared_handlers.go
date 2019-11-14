@@ -30,6 +30,7 @@ import (
 	"strings"
 
 	"github.com/apache/trafficcontrol/lib/go-log"
+	"github.com/apache/trafficcontrol/lib/go-rfc"
 	"github.com/apache/trafficcontrol/lib/go-tc"
 )
 
@@ -140,6 +141,21 @@ func ReadHandler(reader Reader) http.HandlerFunc {
 			HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
 			return
 		}
+
+		if errCode == http.StatusNotModified {
+			w.WriteHeader(http.StatusNotModified)
+			return
+		}
+
+		// TODO: Type assertions are incredibly fragile and brittle, but there's not a reasonable way to do this for a few endpoints, in the "CRUDer" framework
+		// TODO: Remove this and add to Reader interface, once all endpoints support Last-Modified.
+		// TODO: Add ETagger interface - endpoints should be able to generate their own ETags, based on the path and query, and possibly headers.
+		//       This adds an additional level of safety, if a client erroneously uses an ETag from one resource on another, e.g. /deliveryservices?id=42 and /deliveryservices/?id=43 and /cdns.
+		//       With this generic ETag, they can't be distinguished. but if the Reader sets its own, it can put the ID in the ETag, as well as a resource-unique string.
+		if modifieder, ok := obj.(Modifieder); ok && !modifieder.LastModified().IsZero() {
+			rfc.AddModifiedHdrs(w, modifieder.LastModified())
+		}
+
 		WriteResp(w, r, results)
 	}
 }

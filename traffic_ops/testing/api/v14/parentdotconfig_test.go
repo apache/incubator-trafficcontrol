@@ -20,6 +20,9 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/apache/trafficcontrol/lib/go-log"
+	"github.com/apache/trafficcontrol/lib/go-tc"
 )
 
 func TestParentDotConfig(t *testing.T) {
@@ -73,16 +76,38 @@ func CreateTestDeliveryServiceServers(t *testing.T) {
 	if err != nil {
 		t.Errorf("cannot GET DeliveryServices: %v\n", err)
 	}
-	if len(dses) < 1 {
-		t.Errorf("GET DeliveryServices returned no dses, must have at least 1 to test ds-servers")
+	ds := tc.DeliveryService{}
+	for _, tods := range dses {
+		if !tods.Type.IsHTTP() && !tods.Type.IsDNS() {
+			continue
+		}
+		if !tods.Type.UsesMidCache() {
+			continue
+		}
+		if ds.ID == 0 || tods.ID < ds.ID {
+			ds = tods
+		}
+	}
+	if ds.ID == 0 {
+		t.Fatalf("GET DeliveryServices returned no DNS or HTTP dses, must have at least 1 to test")
 	}
 
 	servers, _, err := TOSession.GetServers()
 	if err != nil {
 		t.Errorf("cannot GET Servers: %v\n", err)
 	}
-	if len(servers) < 1 {
-		t.Errorf("GET Servers returned no dses, must have at least 1 to test ds-servers")
+
+	server := tc.Server{}
+	for _, toserver := range servers {
+		if toserver.Type != string(tc.CacheTypeEdge) {
+			continue
+		}
+		if server.ID == 0 || toserver.ID > server.ID {
+			server = toserver
+		}
+	}
+	if server.ID == 0 {
+		t.Fatalf("GET Servers returned no EDGE server, must have at least 1 to test")
 	}
 
 	for _, ds := range dses {
@@ -104,21 +129,38 @@ func DeleteTestDeliveryServiceServersCreated(t *testing.T) {
 	if err != nil {
 		t.Errorf("cannot GET DeliveryServices: %v\n", err)
 	}
-	if len(dses) < 1 {
-		t.Errorf("GET DeliveryServices returned no dses, must have at least 1 to test ds-servers")
+	ds := tc.DeliveryService{}
+	for _, tods := range dses {
+		if !tods.Type.IsHTTP() && !tods.Type.IsDNS() {
+			continue
+		}
+		if ds.ID == 0 || tods.ID < ds.ID {
+			ds = tods
+		}
 	}
-	ds := dses[0]
+	if ds.ID == 0 {
+		t.Fatalf("GET DeliveryServices returned no DNS or HTTP dses, must have at least 1 to test")
+	}
 
 	servers, _, err := TOSession.GetServers()
 	if err != nil {
 		t.Errorf("cannot GET Servers: %v\n", err)
 	}
-	if len(servers) < 1 {
-		t.Errorf("GET Servers returned no dses, must have at least 1 to test ds-servers")
-	}
-	server := servers[0]
 
-	dsServers, _, err := TOSession.GetDeliveryServiceServersN(1000000)
+	server := tc.Server{}
+	for _, toserver := range servers {
+		if toserver.Type != string(tc.CacheTypeEdge) {
+			continue
+		}
+		if server.ID == 0 || toserver.ID > server.ID {
+			server = toserver
+		}
+	}
+	if server.ID == 0 {
+		t.Fatalf("GET Servers returned no EDGE server, must have at least 1 to test")
+	}
+
+	dsServers, _, err := TOSession.GetDeliveryServiceServersN(999999999)
 	if err != nil {
 		t.Errorf("GET delivery service servers: %v\n", err)
 	}

@@ -297,13 +297,14 @@ func Parse(r io.Reader, tx *sql.Tx, v ParseValidator) error {
 }
 
 type APIInfo struct {
-	Params    map[string]string
-	IntParams map[string]int
-	User      *auth.CurrentUser
-	ReqID     uint64
-	Version   *Version
-	Tx        *sqlx.Tx
-	Config    *config.Config
+	Params       map[string]string
+	IntParams    map[string]int
+	User         *auth.CurrentUser
+	ReqID        uint64
+	Version      *Version
+	Tx           *sqlx.Tx
+	Config       *config.Config
+	LastModified *time.Time
 }
 
 // Creates a deprecation warning for an endpoint, with a proposed alternative.
@@ -371,14 +372,21 @@ func NewInfo(r *http.Request, requiredParams []string, intParamNames []string) (
 	if err != nil {
 		return &APIInfo{Tx: &sqlx.Tx{}}, userErr, errors.New("could not begin transaction: " + err.Error()), http.StatusInternalServerError
 	}
+
+	lastModified := (*time.Time)(nil)
+	if lastModifiedHdr, ok := rfc.GetModifiedHdr(r); ok {
+		lastModified = &lastModifiedHdr
+	}
+
 	return &APIInfo{
-		Config:    cfg,
-		ReqID:     reqID,
-		Version:   version,
-		Params:    params,
-		IntParams: intParams,
-		User:      user,
-		Tx:        tx,
+		Config:       cfg,
+		ReqID:        reqID,
+		Version:      version,
+		Params:       params,
+		IntParams:    intParams,
+		User:         user,
+		Tx:           tx,
+		LastModified: lastModified,
 	}, nil, nil, http.StatusOK
 }
 

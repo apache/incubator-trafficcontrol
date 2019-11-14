@@ -30,8 +30,15 @@ import (
 func ColsFromStructByTag(tagName string, thing interface{}) []string {
 	cols := []string{}
 	t := reflect.TypeOf(thing)
+	v := reflect.ValueOf(thing)
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i)
+		vField := v.Field(i)
+		if vField.Kind() == reflect.Struct && field.Anonymous {
+			structCols := ColsFromStructByTag(tagName, vField.Interface())
+			cols = append(cols, structCols...)
+			continue
+		}
 		if (strings.Compare(tagName, "db") == 0) && (tagName != "") {
 			// Get the field tag value
 			tag := field.Tag.Get(tagName)

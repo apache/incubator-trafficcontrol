@@ -54,6 +54,32 @@ func (cgparam *TOCacheGroupParameter) GetType() string {
 	return "cachegroup_params"
 }
 
+func (cgparam TOCacheGroupParameter) GetAuditName() string {
+	if cgparam.Name != nil {
+		return *cgparam.Name
+	}
+	if cgparam.ID != nil {
+		return strconv.Itoa(*cgparam.ID)
+	}
+	return "unknown"
+}
+
+func (cgparam TOCacheGroupParameter) GetKeyFieldsInfo() []api.KeyFieldInfo {
+	return []api.KeyFieldInfo{{"id", api.GetIntKey}}
+}
+
+func (cgparam TOCacheGroupParameter) GetKeys() (map[string]interface{}, bool) {
+	if cgparam.ID == nil {
+		return map[string]interface{}{"id": 0}, false
+	}
+	return map[string]interface{}{"id": *cgparam.ID}, true
+}
+
+func (cgparam *TOCacheGroupParameter) SetKeys(keys map[string]interface{}) {
+	i, _ := keys["id"].(int) //this utilizes the non panicking type assertion, if the thrown away ok variable is false i will be the zero of the type, 0 here.
+	cgparam.ID = &i
+}
+
 func (cgparam *TOCacheGroupParameter) Read() ([]interface{}, error, error, int) {
 	queryParamsToQueryCols := cgparam.ParamColumns()
 	parameters := cgparam.APIInfo().Params

@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/apache/trafficcontrol/lib/go-log"
+	"github.com/apache/trafficcontrol/lib/go-rfc"
 )
 
 type Hdr struct {
@@ -178,22 +179,7 @@ func GetHTTPDate(headers http.Header, key string) (time.Time, bool) {
 	if maybeDate == "" {
 		return time.Time{}, false
 	}
-	return ParseHTTPDate(maybeDate)
-}
-
-// ParseHTTPDate parses the given RFC7231§7.1.1 HTTP-date
-func ParseHTTPDate(d string) (time.Time, bool) {
-	if t, err := time.Parse(time.RFC1123, d); err == nil {
-		return t, true
-	}
-	if t, err := time.Parse(time.RFC850, d); err == nil {
-		return t, true
-	}
-	if t, err := time.Parse(time.ANSIC, d); err == nil {
-		return t, true
-	}
-	return time.Time{}, false
-
+	return rfc.ParseHTTPDate(maybeDate)
 }
 
 // RemapTextKey is the plugin shared data key inserted by grovetccfg for the Remap Line of the Delivery Service in Traffic Control, Traffic Ops.

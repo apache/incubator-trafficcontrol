@@ -105,12 +105,13 @@ func TestGetServersByCachegroup(t *testing.T) {
 	defer db.Close()
 
 	testServers := getTestServers()
-	cols := test.ColsFromStructByTag("db", tc.Server{})
+	cols := test.ColsFromStructByTag("db", DBServerNullable{})
 	rows := sqlmock.NewRows(cols)
 
 	//TODO: drichardson - build helper to add these Rows from the struct values
 	//                    or by CSV if types get in the way
 	for _, ts := range testServers {
+		lastUpdatedAny := time.Now()
 		rows = rows.AddRow(
 			ts.Cachegroup,
 			ts.CachegroupID,
@@ -155,15 +156,17 @@ func TestGetServersByCachegroup(t *testing.T) {
 			ts.UpdPending,
 			ts.XMPPID,
 			ts.XMPPPasswd,
+			lastUpdatedAny,
 		)
 	}
 	mock.ExpectBegin()
+
 	mock.ExpectQuery("SELECT").WillReturnRows(rows)
 	v := map[string]string{"cachegroup": "2"}
 
 	user := auth.CurrentUser{}
 
-	servers, userErr, sysErr, errCode := getServers(v, db.MustBegin(), &user)
+	servers, _, userErr, sysErr, errCode := getServers(v, db.MustBegin(), nil, &user)
 	if userErr != nil || sysErr != nil {
 		t.Errorf("getServers expected: no errors, actual: %v %v with status: %s", userErr, sysErr, http.StatusText(errCode))
 	}

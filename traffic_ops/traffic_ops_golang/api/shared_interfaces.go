@@ -20,6 +20,8 @@ package api
  */
 
 import (
+	"time"
+
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/auth"
 )
 
@@ -62,6 +64,7 @@ type Reader interface {
 	// Read returns the object to write to the user, any user error, any system error, and the HTTP error code to be returned if there was an error.
 	Read() ([]interface{}, error, error, int)
 	APIInfoer
+	Identifier
 }
 
 type Updater interface {
@@ -92,4 +95,10 @@ type Tenantable interface {
 type APIInfoer interface {
 	SetInfo(*APIInfo)
 	APIInfo() *APIInfo
+}
+
+// Modifieder allows Readers to set a LastModified time, to be returned to clients.
+// If a Reader implements Modifieder, the "CRUDer" ReadHandler will use it to set an ETag and Last-Modified header.
+type Modifieder interface {
+	LastModified() time.Time
 }

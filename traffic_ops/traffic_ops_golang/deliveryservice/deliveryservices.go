@@ -27,6 +27,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/apache/trafficcontrol/lib/go-log"
 	"github.com/apache/trafficcontrol/lib/go-tc"
@@ -46,8 +47,13 @@ import (
 
 type TODeliveryService struct {
 	api.APIInfoImpl
+	LastUpdatedAny time.Time `json:"-" db:"last_updated_any"`
 	tc.DeliveryServiceNullable
 }
+
+// LastModified implements api.Modifieder.
+// Note this does NOT return tc.DeliveryServiceNullable.LastModified, which is the last_updated of the deliveryservice table only. Rather, this returns a time which is the last modified of any queried table.
+func (ds TODeliveryService) LastModified() time.Time { return ds.LastUpdatedAny }
 
 func (ds TODeliveryService) MarshalJSON() ([]byte, error) {
 	return json.Marshal(ds.DeliveryServiceNullable)
@@ -380,8 +386,7 @@ func (ds *TODeliveryService) Read() ([]interface{}, error, error, int) {
 	}
 
 	returnable := []interface{}{}
-	dses, userErr, sysErr, errCode := readGetDeliveryServices(ds.APIInfo().Params, ds.APIInfo().Tx, ds.APIInfo().User)
-
+	dses, lastUpdatedAny, userErr, sysErr, errCode := readGetDeliveryServices(ds.APIInfo().Params, ds.APIInfo().Tx, ds.APIInfo().LastModified, ds.APIInfo().User)
 	if sysErr != nil {
 		sysErr = errors.New("reading dses: " + sysErr.Error())
 		errCode = http.StatusInternalServerError
@@ -389,6 +394,11 @@ func (ds *TODeliveryService) Read() ([]interface{}, error, error, int) {
 	if userErr != nil || sysErr != nil {
 		return nil, userErr, sysErr, errCode
 	}
+	if errCode == http.StatusNotModified {
+		return nil, nil, nil, http.StatusNotModified
+	}
+
+	ds.LastUpdatedAny = lastUpdatedAny
 
 	for _, ds := range dses {
 		switch {
@@ -797,12 +807,20 @@ func (v *TODeliveryService) DeleteQuery() string {
 	return `DELETE FROM deliveryservice WHERE id = :id`
 }
 
-func readGetDeliveryServices(params map[string]string, tx *sqlx.Tx, user *auth.CurrentUser) ([]tc.DeliveryServiceNullable, error, error, int) {
+// readGetDeliveryServices returns the delivery services, the last updated time of any table of any DS, any user error, any system error, and the error code to return.
+// If both errors are nil, the caller is expected to ignore the error code and return whatever code it finds appropriate (usually http.StatusOK). If both errors are nil, the code is not guaranteed to be an appropriate code to return to clients.
+// Note as a special case, the delivery services and both errors may be nil, with the code http.StatusNotModified. In which case, it is expected to return a 304 Not Modified with no body to the client.
+func readGetDeliveryServices(params map[string]string, tx *sqlx.Tx, lastModified *time.Time, user *auth.CurrentUser) ([]tc.DeliveryServiceNullable, time.Time, error, error, int) {
 	if strings.HasSuffix(params["id"], ".json") {
 		params["id"] = params["id"][:len(params["id"])-len(".json")]
 	}
 	if _, ok := params["orderby"]; !ok {
 		params["orderby"] = "xml_id"
+	}
+
+	tenantIDs, err := tenant.GetUserTenantIDListTx(tx.Tx, user.TenantID)
+	if err != nil {
+		return nil, time.Time{}, nil, errors.New("getting user tenant id list: " + err.Error()), http.StatusInternalServerError
 	}
 
 	// Query Parameters to Database Query column mappings
@@ -821,24 +839,28 @@ func readGetDeliveryServices(params map[string]string, tx *sqlx.Tx, user *auth.C
 
 	where, orderBy, pagination, queryValues, errs := dbhelpers.BuildWhereAndOrderByAndPagination(params, queryParamsToSQLCols)
 	if len(errs) > 0 {
-		return nil, util.JoinErrs(errs), nil, http.StatusBadRequest
-	}
-
-	tenantIDs, err := tenant.GetUserTenantIDListTx(tx.Tx, user.TenantID)
-
-	if err != nil {
-		log.Errorln("received error querying for user's tenants: " + err.Error())
-		return nil, nil, tc.DBError, http.StatusInternalServerError
+		return nil, time.Time{}, util.JoinErrs(errs), nil, http.StatusBadRequest
 	}
 
 	where, queryValues = dbhelpers.AddTenancyCheck(where, queryValues, "ds.tenant_id", tenantIDs)
+
+	if lastModified != nil && !dsModified(tx, *lastModified, where+pagination, queryValues) {
+		return nil, time.Time{}, nil, nil, http.StatusNotModified
+	}
 
 	query := selectQuery() + where + orderBy + pagination
 
 	log.Debugln("generated deliveryServices query: " + query)
 	log.Debugf("executing with values: %++v\n", queryValues)
 
-	return GetDeliveryServices(query, queryValues, tx)
+	dses, lastUpdatedAny, userErr, sysErr, errCode := GetDeliveryServices(query, queryValues, tx)
+	if sysErr != nil {
+		sysErr = errors.New("getting delivery services: " + sysErr.Error())
+	}
+	if userErr != nil || sysErr != nil {
+		return nil, time.Time{}, userErr, sysErr, errCode
+	}
+	return dses, lastUpdatedAny, nil, nil, http.StatusOK
 }
 
 func getOldHostName(id int, tx *sql.Tx) (string, error) {
@@ -957,10 +979,10 @@ func getDSType(tx *sql.Tx, xmlid string) (tc.DSType, bool, error) {
 	return tc.DSTypeFromString(name), true, nil
 }
 
-func GetDeliveryServices(query string, queryValues map[string]interface{}, tx *sqlx.Tx) ([]tc.DeliveryServiceNullable, error, error, int) {
+func GetDeliveryServices(query string, queryValues map[string]interface{}, tx *sqlx.Tx) ([]tc.DeliveryServiceNullable, time.Time, error, error, int) {
 	rows, err := tx.NamedQuery(query, queryValues)
 	if err != nil {
-		return nil, nil, fmt.Errorf("querying: %v", err), http.StatusInternalServerError
+		return nil, time.Time{}, nil, fmt.Errorf("querying: %v", err), http.StatusInternalServerError
 	}
 	defer rows.Close()
 
@@ -970,7 +992,10 @@ func GetDeliveryServices(query string, queryValues map[string]interface{}, tx *s
 	// ensure json generated from this slice won't come out as `null` if empty
 	dsQueryParams := []string{}
 
+	lastUpdatedAny := time.Time{}
+
 	for rows.Next() {
+		lastUpdatedAnyThisDS := time.Time{}
 		ds := tc.DeliveryServiceNullable{}
 		cdnDomain := ""
 		err := rows.Scan(&ds.Active,
@@ -1002,6 +1027,7 @@ func GetDeliveryServices(query string, queryValues map[string]interface{}, tx *s
 			&ds.InitialDispersion,
 			&ds.IPV6RoutingEnabled,
 			&ds.LastUpdated,
+			&lastUpdatedAnyThisDS,
 			&ds.LogsEnabled,
 			&ds.LongDesc,
 			&ds.LongDesc1,
@@ -1037,7 +1063,7 @@ func GetDeliveryServices(query string, queryValues map[string]interface{}, tx *s
 			&cdnDomain)
 
 		if err != nil {
-			return nil, nil, fmt.Errorf("getting delivery services: %v", err), http.StatusInternalServerError
+			return nil, time.Time{}, nil, errors.New("getting delivery services: " + err.Error()), http.StatusInternalServerError
 		}
 
 		ds.ConsistentHashQueryParams = []string{}
@@ -1059,6 +1085,9 @@ func GetDeliveryServices(query string, queryValues map[string]interface{}, tx *s
 		}
 		ds.Signed = ds.SigningAlgorithm != nil && *ds.SigningAlgorithm == tc.SigningAlgorithmURLSig
 
+		if lastUpdatedAnyThisDS.After(lastUpdatedAny) {
+			lastUpdatedAny = lastUpdatedAnyThisDS
+		}
 		dses = append(dses, ds)
 	}
 
@@ -1069,7 +1098,7 @@ func GetDeliveryServices(query string, queryValues map[string]interface{}, tx *s
 
 	matchLists, err := GetDeliveryServicesMatchLists(dsNames, tx.Tx)
 	if err != nil {
-		return nil, nil, errors.New("getting delivery service matchlists: " + err.Error()), http.StatusInternalServerError
+		return nil, time.Time{}, nil, errors.New("getting delivery service matchlists: " + err.Error()), http.StatusInternalServerError
 	}
 	for i, ds := range dses {
 		matchList, ok := matchLists[*ds.XMLID]
@@ -1081,7 +1110,7 @@ func GetDeliveryServices(query string, queryValues map[string]interface{}, tx *s
 		dses[i] = ds
 	}
 
-	return dses, nil, nil, http.StatusOK
+	return dses, lastUpdatedAny, nil, nil, http.StatusOK
 }
 
 func updateSSLKeys(ds *tc.DeliveryServiceNullable, hostName string, tx *sql.Tx, cfg *config.Config) error {
@@ -1496,6 +1525,17 @@ func GetXMLID(tx *sql.Tx, id int) (string, bool, error) {
 }
 
 func selectQuery() string {
+	//
+	// WARNING: if you add a table to this query, you MUST make sure makeDSModifiedQry is correct, as well as last_updated_any!
+	//
+	// For tables with IDs directly in the deliveryservice table, make sure the table is added to makeDSModifiedQry.
+	//
+	// If the ID is _not_ in deliveryservice (for example, a one-to-many relationship like origin),
+	// you must instead create triggers on update, insert and delete to update the last_updated of the associated delivery service.
+	// See traffic_ops/app/db/migrations/20190810000000_add-ds-update-last-modified-triggers.sql
+	//
+	// Also, be sure to add your table to the last_updated_any subquery.
+	//
 	return `
 SELECT
 ds.active,
@@ -1527,6 +1567,14 @@ ds.info_url,
 ds.initial_dispersion,
 ds.ipv6_routing_enabled,
 ds.last_updated,
+GREATEST(
+  ds.last_updated,
+  type.last_updated,
+  cdn.last_updated,
+  profile.last_updated,
+  tenant.last_updated,
+  o.last_updated
+) AS last_updated_any,
 ds.logs_enabled,
 ds.long_desc,
 ds.long_desc_1,
@@ -1537,10 +1585,7 @@ ds.mid_header_rewrite,
 COALESCE(ds.miss_lat, 0.0),
 COALESCE(ds.miss_long, 0.0),
 ds.multi_site_origin,
-(SELECT o.protocol::::text || ':://' || o.fqdn || rtrim(concat('::', o.port::::text), '::')
-	FROM origin o
-	WHERE o.deliveryservice = ds.id
-	AND o.is_primary) as org_server_fqdn,
+(o.protocol::::text || ':://' || o.fqdn || rtrim(concat('::', o.port::::text), '::')) as org_server_fqdn,
 ds.origin_shield,
 ds.profile as profileID,
 profile.name as profile_name,
@@ -1570,6 +1615,7 @@ JOIN type ON ds.type = type.id
 JOIN cdn ON ds.cdn_id = cdn.id
 LEFT JOIN profile ON ds.profile = profile.id
 LEFT JOIN tenant ON ds.tenant_id = tenant.id
+LEFT JOIN origin o ON (o.deliveryservice = ds.id AND o.is_primary)
 `
 }
 

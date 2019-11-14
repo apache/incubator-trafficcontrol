@@ -25,6 +25,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/apache/trafficcontrol/lib/go-log"
 	"github.com/apache/trafficcontrol/lib/go-tc"
@@ -44,8 +45,13 @@ import (
 //we need a type alias to define functions on
 type TOServer struct {
 	api.APIInfoImpl `json:"-"`
+	LastUpdatedAny  time.Time `json:"-" db:"last_updated_any"`
 	tc.ServerNullable
 }
+
+// LastModified implements api.Modifieder.
+// Note this does NOT return tc.ServerNullable.LastModified, which is the last_updated of the server table only. Rather, this returns a time which is the last modified of any queried table.
+func (v TOServer) LastModified() time.Time { return v.LastUpdatedAny }
 
 func (v *TOServer) SetLastUpdated(t tc.TimeNoMod) { v.LastUpdated = &t }
 func (v *TOServer) InsertQuery() string           { return insertQuery() }
@@ -171,14 +177,23 @@ func (server TOServer) ChangeLogMessage(action string) (string, error) {
 	return message, nil
 }
 
+type DBServerNullable struct {
+	tc.ServerNullable
+	LastUpdatedAny *time.Time `json:"-" db:"last_updated_any"`
+}
+
 func (server *TOServer) Read() ([]interface{}, error, error, int) {
 	returnable := []interface{}{}
 
-	servers, userErr, sysErr, errCode := getServers(server.ReqInfo.Params, server.ReqInfo.Tx, server.ReqInfo.User)
-
+	servers, lastUpdatedAny, userErr, sysErr, errCode := getServers(server.ReqInfo.Params, server.ReqInfo.Tx, server.ReqInfo.LastModified, server.ReqInfo.User)
 	if userErr != nil || sysErr != nil {
 		return nil, userErr, sysErr, errCode
 	}
+	if errCode == http.StatusNotModified {
+		return nil, nil, nil, http.StatusNotModified
+	}
+
+	server.LastUpdatedAny = lastUpdatedAny
 
 	for _, server := range servers {
 		returnable = append(returnable, server)
@@ -187,7 +202,10 @@ func (server *TOServer) Read() ([]interface{}, error, error, int) {
 	return returnable, nil, nil, http.StatusOK
 }
 
-func getServers(params map[string]string, tx *sqlx.Tx, user *auth.CurrentUser) ([]tc.ServerNullable, error, error, int) {
+// getServers returns the list of servers, the last updated time of any table on any server, any user error, any system error, and the error code to use in the event of an error.
+// If both errors are nil, the caller is expected to ignore the error code and return whatever code it finds appropriate (usually http.StatusOK). If both errors are nil, the code is not guaranteed to be an appropriate code to return to clients.
+// Note as a special case, the servers and both errors may be nil, with the code http.StatusNotModified. In which case, it is expected to return a 304 Not Modified with no body to the client.
+func getServers(params map[string]string, tx *sqlx.Tx, lastModified *time.Time, user *auth.CurrentUser) ([]tc.ServerNullable, time.Time, error, error, int) {
 	// Query Parameters to Database Query column mappings
 	// see the fields mapped in the SQL query
 	queryParamsToSQLCols := map[string]dbhelpers.WhereColumnInfo{
@@ -209,20 +227,20 @@ func getServers(params map[string]string, tx *sqlx.Tx, user *auth.CurrentUser) (
 		// don't allow query on ds outside user's tenant
 		dsID, err := strconv.Atoi(dsIDStr)
 		if err != nil {
-			return nil, errors.New("dsId must be an integer"), nil, http.StatusNotFound
+			return nil, time.Time{}, errors.New("dsId must be an integer"), nil, http.StatusBadRequest
 		}
 		userErr, sysErr, _ := tenant.CheckID(tx.Tx, user, dsID)
 		if userErr != nil || sysErr != nil {
-			return nil, errors.New("Forbidden"), sysErr, http.StatusForbidden
+			return nil, time.Time{}, errors.New("Forbidden"), nil, http.StatusForbidden
 		}
 		// only if dsId is part of params: add join on deliveryservice_server table
 		queryAddition = `
-FULL OUTER JOIN deliveryservice_server dss ON dss.server = s.id
+LEFT JOIN deliveryservice_server dss ON dss.server = s.id
 `
 		// depending on ds type, also need to add mids
 		dsType, err := deliveryservice.GetDeliveryServiceType(dsID, tx.Tx)
 		if err != nil {
-			return nil, err, nil, http.StatusBadRequest
+			return nil, time.Time{}, err, nil, http.StatusBadRequest
 		}
 		usesMids = dsType.UsesMidCache()
 		log.Debugf("Servers for ds %d; uses mids? %v\n", dsID, usesMids)
@@ -230,15 +248,39 @@ FULL OUTER JOIN deliveryservice_server dss ON dss.server = s.id
 
 	where, orderBy, pagination, queryValues, errs := dbhelpers.BuildWhereAndOrderByAndPagination(params, queryParamsToSQLCols)
 	if len(errs) > 0 {
-		return nil, util.JoinErrs(errs), nil, http.StatusBadRequest
+		return nil, time.Time{}, util.JoinErrs(errs), nil, http.StatusBadRequest
 	}
 
-	query := selectQuery() + queryAddition + where + orderBy + pagination
+	if lastModified != nil {
+		serversModified := serverModified(tx, *lastModified, queryAddition+where+pagination, queryValues)
+		if usesMids {
+			// have to do a second modified check, because this endpoint does 2 queries if dsId exists and usesMids.
+			edgeIDQuery := `select id from server ` + queryAddition + where + pagination
+			midWhere := getMidServersWhereServersQuery(edgeIDQuery)
+			// If the edgeIDQuery contained a join of deliveryservice_server, it got added to the where,
+			// but there's no top-level JOIN, and serverModified will think there is when it sees the table name.
+			// Therefore, we have to add it, so the table exists when serverModified adds 'dss.last_modified'.
+			if strings.Contains(midWhere, "deliveryservice_server") {
+				midWhere = ` LEFT JOIN deliveryservice_server dss ON dss.server = s.id ` + midWhere
+			}
+			midsModified := serverModified(tx, *lastModified, midWhere, queryValues)
+			if midsModified {
+				serversModified = true
+			}
+		}
+		if !serversModified {
+			return nil, time.Time{}, nil, nil, http.StatusNotModified
+		}
+	}
+
+	query := selectQuery(queryAddition + where + orderBy + pagination)
+
 	log.Debugln("Query is ", query)
 
 	rows, err := tx.NamedQuery(query, queryValues)
 	if err != nil {
-		return nil, nil, errors.New("querying: " + err.Error()), http.StatusInternalServerError
+		userErr, sysErr, errCode := api.ParseDBError(err)
+		return nil, time.Time{}, userErr, sysErr, errCode
 	}
 	defer rows.Close()
 
@@ -246,76 +288,97 @@ FULL OUTER JOIN deliveryservice_server dss ON dss.server = s.id
 
 	HiddenField := "********"
 
+	lastUpdatedAny := time.Time{}
+
 	for rows.Next() {
-		var s tc.ServerNullable
+		s := DBServerNullable{}
 		if err = rows.StructScan(&s); err != nil {
-			return nil, nil, errors.New("getting servers: " + err.Error()), http.StatusInternalServerError
+			userErr, sysErr, errCode := api.ParseDBError(err)
+			return nil, time.Time{}, userErr, sysErr, errCode
 		}
 		if user.PrivLevel < auth.PrivLevelOperations {
 			s.ILOPassword = &HiddenField
 			s.XMPPPasswd = &HiddenField
 		}
-		servers = append(servers, s)
+		if s.LastUpdatedAny.After(lastUpdatedAny) {
+			lastUpdatedAny = *s.LastUpdatedAny
+		}
+		servers = append(servers, s.ServerNullable)
 	}
 
 	// if ds requested uses mid-tier caches, add those to the list as well
 	if usesMids {
-		mids, userErr, sysErr, errCode := getMidServers(servers, tx)
-
-		log.Debugf("getting mids: %v, %v, %s\n", userErr, sysErr, http.StatusText(errCode))
-
+		mids, midLastUpdatedAny, userErr, sysErr, errCode := getMidServers(servers, tx)
 		if userErr != nil || sysErr != nil {
-			return nil, userErr, sysErr, errCode
+			return nil, time.Time{}, userErr, sysErr, errCode
 		}
+
+		if midLastUpdatedAny.After(lastUpdatedAny) {
+			lastUpdatedAny = midLastUpdatedAny
+		}
+
 		for _, server := range mids {
 			servers = append(servers, server)
 		}
 	}
 
-	return servers, nil, nil, http.StatusOK
+	return servers, lastUpdatedAny, nil, nil, http.StatusOK
 }
 
 // getMidServers gets mids used by the servers in this ds
 // Original comment from the Perl code:
 // if the delivery service employs mids, we're gonna pull mid servers too by pulling the cachegroups of the edges and finding those cachegroups parent cachegroup...
 // then we see which servers have cachegroup in parent cachegroup list...that's how we find mids for the ds :)
-func getMidServers(servers []tc.ServerNullable, tx *sqlx.Tx) ([]tc.ServerNullable, error, error, int) {
+func getMidServers(servers []tc.ServerNullable, tx *sqlx.Tx) ([]tc.ServerNullable, time.Time, error, error, int) {
 	if len(servers) == 0 {
-		return nil, nil, nil, http.StatusOK
+		return nil, time.Time{}, nil, nil, http.StatusOK
 	}
-	var ids []string
-	for _, s := range servers {
-		ids = append(ids, strconv.Itoa(*s.ID))
+	where := getMidServersWhere(servers)
+	qry := selectQuery(where)
+	rows, err := tx.Queryx(qry)
+	if err != nil {
+		userErr, sysErr, errCode := api.ParseDBError(err)
+		return nil, time.Time{}, userErr, sysErr, errCode
 	}
 
+	lastUpdatedAny := time.Time{}
+	var mids []tc.ServerNullable
+	for rows.Next() {
+		s := DBServerNullable{}
+		if err := rows.StructScan(&s); err != nil {
+			userErr, sysErr, errCode := api.ParseDBError(err)
+			return nil, time.Time{}, userErr, sysErr, errCode
+		}
+		if s.LastUpdatedAny.After(lastUpdatedAny) {
+			lastUpdatedAny = *s.LastUpdatedAny
+		}
+		mids = append(mids, s.ServerNullable)
+	}
+	return mids, lastUpdatedAny, nil, nil, http.StatusOK
+}
+
+func getMidServersWhere(edgeServers []tc.ServerNullable) string {
+	ids := []string{}
+	for _, s := range edgeServers {
+		ids = append(ids, strconv.Itoa(*s.ID))
+	}
 	edgeIDs := strings.Join(ids, ",")
 	// TODO: include secondary parent?
-	q := selectQuery() + `
+
+	return getMidServersWhereServersQuery(edgeIDs)
+}
+
+func getMidServersWhereServersQuery(serverIDQuery string) string {
+	return `
 WHERE s.id IN (
 	SELECT mid.id FROM server mid
 	JOIN cachegroup cg ON cg.id IN (
 		SELECT cg.parent_cachegroup_id
 		FROM server s
 		JOIN cachegroup cg ON cg.id = s.cachegroup
-		WHERE s.id IN (` + edgeIDs + `))
+		WHERE s.id IN (` + serverIDQuery + `))
 	JOIN type t ON mid.type = (SELECT id FROM type WHERE name = 'MID'))
 `
-	rows, err := tx.Queryx(q)
-	if err != nil {
-		return nil, err, nil, http.StatusBadRequest
-	}
-	defer rows.Close()
-
-	var mids []tc.ServerNullable
-	for rows.Next() {
-		var s tc.ServerNullable
-		if err := rows.StructScan(&s); err != nil {
-			log.Error.Printf("could not scan mid servers: %s\n", err)
-			return nil, nil, err, http.StatusInternalServerError
-		}
-		mids = append(mids, s)
-	}
-	return mids, nil, nil, http.StatusOK
 }
 
 func (sv *TOServer) Update() (error, error, int) {
@@ -339,7 +402,22 @@ func (sv *TOServer) Create() (error, error, int) {
 
 func (sv *TOServer) Delete() (error, error, int) { return api.GenericDelete(sv) }
 
-func selectQuery() string {
+func selectQuery(where string) string {
+	//
+	// WARNING: if you add a table to this query, you MUST make sure makeServerModifiedQry is correct, as well as last_updated_any!
+	//
+	// For tables with IDs directly in the server table, make sure the table is added to makeServerModifiedQry.
+	//
+	// If the ID is _not_ in server (for example, a one-to-many relationship like deliveryservice_server),
+	// you must instead create triggers on update, insert and delete to update the last_updated of the associated server.
+	// See traffic_ops/app/db/migrations/20190810000000_add-ds-update-last-modified-triggers.sql
+	//
+	// Also, be sure to add your table to the last_updated_any subquery.
+	//
+	maybeDSSLastUpdated := ``
+	if strings.Contains(where, "deliveryservice_server") {
+		maybeDSSLastUpdated += `dss.last_updated,`
+	}
 	const JumboFrameBPS = 9000
 	return `SELECT
 cg.name as cachegroup,
@@ -364,6 +442,16 @@ s.ip_address,
 s.ip_gateway,
 s.ip_netmask,
 s.last_updated,
+GREATEST(
+  s.last_updated,
+  cg.last_updated,
+  cdn.last_updated,
+  pl.last_updated,
+  p.last_updated,
+  st.last_updated,
+  ` + maybeDSSLastUpdated + `
+  t.last_updated
+) AS last_updated_any,
 s.mgmt_ip_address,
 s.mgmt_ip_gateway,
 s.mgmt_ip_netmask,
@@ -392,7 +480,7 @@ JOIN cdn cdn ON s.cdn_id = cdn.id
 JOIN phys_location pl ON s.phys_location = pl.id
 JOIN profile p ON s.profile = p.id
 JOIN status st ON s.status = st.id
-JOIN type t ON s.type = t.id`
+JOIN type t ON s.type = t.id` + where
 }
 
 func insertQuery() string {
