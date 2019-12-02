@@ -48,6 +48,9 @@ import (
 // set the version at build time: `go build -X "main.version=..."`
 var version = "development"
 
+// Traffic Ops version, set before building
+const Version = "3.0.0"
+
 func init() {
 	about.SetAbout(version)
 }

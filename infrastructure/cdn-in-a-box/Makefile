@@ -15,12 +15,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
-############################################################
-# Dockerfile to build Edge-Tier Cache container images for
-# Apache Traffic Control
-# Based on CentOS 7.2
-############################################################
-
 # Check for proper invocation
 PWD := $(strip $(lastword $(patsubst %/,%,$(notdir $(shell pwd)))))
 makefile_dir := $(strip $(notdir $(patsubst %/,%,$(dir $(abspath $(lastword $(MAKEFILE_LIST)))))))
@@ -40,7 +34,6 @@ SPECIAL_SAUCE := $(TC_VERSION)-$(BUILD_NUMBER).$(RHEL_VERSION).x86_64.rpm
 SPECIAL_SEASONING := $(TOMCAT_VERSION).$(TOMCAT_RELEASE)-$(BUILD_NUMBER).$(RHEL_VERSION).x86_64.rpm
 
 TO_SOURCE := $(wildcard ../../traffic_ops/**/*)
-ORT_SOURCE:= $(wildcard ../../traffic_ops/bin/*)
 TO_SOURCE += $(wildcard ../../traffic_ops_db/**/*)
 TM_SOURCE := $(wildcard ../../traffic_monitor/**/*)
 TP_SOURCE := $(wildcard ../../traffic_portal/**/*)
