@@ -24,6 +24,7 @@ import com.comcast.cdn.traffic_control.traffic_router.core.router.TrafficRouterM
 import com.comcast.cdn.traffic_control.traffic_router.geolocation.GeolocationException;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import javax.servlet.FilterChain;
@@ -40,7 +41,6 @@ import java.util.Set;
 public class RouterFilter extends OncePerRequestFilter {
 	private static final Logger ACCESS = Logger.getLogger("com.comcast.cdn.traffic_control.traffic_router.core.access");
 	public static final String REDIRECT_QUERY_PARAM = "trred";
-	private static final String HEAD = "HEAD";
 
 	@Autowired
 	private TrafficRouterManager trafficRouterManager;
@@ -135,18 +135,16 @@ public class RouterFilter extends OncePerRequestFilter {
 
 		final String redirect = httpServletRequest.getParameter(REDIRECT_QUERY_PARAM);
 
-		if (!HEAD.equals(httpServletRequest.getMethod())) {
-			response.setContentType("application/json");
-			response.getWriter().println(routeResult.toMultiLocationJSONString());
-			httpAccessRecordBuilder.responseURLs(routeResult.getUrls());
-		}
+		response.setContentType("application/json");
+		response.getWriter().println(routeResult.toMultiLocationJSONString());
+		httpAccessRecordBuilder.responseURLs(routeResult.getUrls());
 
 		// don't actually parse the boolean value; trred would always be false unless the query param is "true"
 		if ("false".equalsIgnoreCase(redirect)) {
 			response.setStatus(HttpServletResponse.SC_OK);
 			httpAccessRecordBuilder.responseCode(HttpServletResponse.SC_OK);
 		} else {
-			response.setHeader("Location", routeResult.getUrl().toString());
+			response.setHeader(HttpHeaders.LOCATION, routeResult.getUrl().toString());
 			response.setStatus(HttpServletResponse.SC_MOVED_TEMPORARILY);
 			httpAccessRecordBuilder.responseCode(HttpServletResponse.SC_MOVED_TEMPORARILY);
 			httpAccessRecordBuilder.responseURL(routeResult.getUrl());
@@ -168,23 +166,18 @@ public class RouterFilter extends OncePerRequestFilter {
 		}
 
 		if ("false".equalsIgnoreCase(redirect)) {
-			if (!HEAD.equals(httpServletRequest.getMethod())) {
-				response.setContentType("application/json");
-				response.getWriter().println(routeResult.toMultiLocationJSONString());
-				httpAccessRecordBuilder.responseURLs(routeResult.getUrls());
-			}
-
+			response.setContentType("application/json");
+			response.getWriter().println(routeResult.toMultiLocationJSONString());
+			httpAccessRecordBuilder.responseURLs(routeResult.getUrls());
 			httpAccessRecordBuilder.responseCode(HttpServletResponse.SC_OK);
 		} else if ("json".equals(format)) {
-			if (!HEAD.equals(httpServletRequest.getMethod())) {
-				response.setContentType("application/json");
-				response.getWriter().println(routeResult.toLocationJSONString());
-				httpAccessRecordBuilder.responseURL(location);
-			}
-
+			response.setContentType("application/json");
+			response.getWriter().println(routeResult.toLocationJSONString());
+			httpAccessRecordBuilder.responseURL(location);
 			httpAccessRecordBuilder.responseCode(HttpServletResponse.SC_OK);
 		} else {
-			response.sendRedirect(location.toString());
+			response.setHeader(HttpHeaders.LOCATION, location.toString());
+			response.setStatus(HttpServletResponse.SC_MOVED_TEMPORARILY);
 			httpAccessRecordBuilder.responseCode(HttpServletResponse.SC_MOVED_TEMPORARILY);
 			httpAccessRecordBuilder.responseURL(location);
 		}

@@ -47,6 +47,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/).
 - Modified Traffic Monitor to poll over IPv6 as well as IPv4 and separate the availability statuses.
 - Modified Traffic Router to separate availability statuses between IPv4 and IPv6.
 - Modified Traffic Portal and Traffic Ops to accept IPv6 only servers.
+- Traffic Router now includes a `Content-Length` header in each response.
 
 ### Deprecated/Removed
 - Traffic Ops Python client no longer supports Python 2.

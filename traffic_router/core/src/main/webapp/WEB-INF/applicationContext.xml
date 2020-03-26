@@ -340,6 +340,9 @@
 		</property>
 	</bean>
 
+	<bean name="bufferedResponseFilter" class="com.comcast.cdn.traffic_control.traffic_router.core.http.BufferedResponseFilter">
+	</bean>
+
 	<util:list id="staticContentWhiteList" value-type="java.lang.String">
 		<value>/crossdomain.xml</value>
 		<value>/clientaccesspolicy.xml</value>
