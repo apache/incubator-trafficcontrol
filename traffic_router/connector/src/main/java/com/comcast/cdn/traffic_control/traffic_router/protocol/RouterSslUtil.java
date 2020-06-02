@@ -22,6 +22,7 @@ import org.apache.tomcat.util.net.SSLHostConfigCertificate;
 import org.apache.tomcat.util.net.SSLUtilBase;
 import org.apache.tomcat.util.net.openssl.OpenSSLContext;
 import org.apache.tomcat.util.net.openssl.OpenSSLEngine;
+//import org.apache.tomcat.util.net.openssl.OpenSSLUtil;
 
 import javax.net.ssl.SSLSessionContext;
 import javax.net.ssl.TrustManager;
@@ -56,8 +57,14 @@ public class RouterSslUtil extends SSLUtilBase {
 
     @Override
     @SuppressWarnings({"PMD.SignatureDeclareThrowsException"})
-    public SSLContext createSSLContext(final List<String> negotiableProtocols) throws Exception {
+    public SSLContext createSSLContextInternal(final List<String> negotiableProtocols) throws Exception {
         return new OpenSSLContext(certificate, negotiableProtocols);
+    }
+
+    @Override
+    @SuppressWarnings({"PMD.SignatureDeclareThrowsException"})
+    public boolean isTls13RenegAuthAvailable() {
+      return true;
     }
 
     @Override

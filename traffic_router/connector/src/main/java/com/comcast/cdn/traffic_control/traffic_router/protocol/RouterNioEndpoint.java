@@ -70,7 +70,7 @@ public class RouterNioEndpoint extends NioEndpoint {
 			sslHostConfig.addCertificate(cert);
 			sslHostConfig.setCertificateKeyAlias(alias);
 			sslHostConfig.setProtocols(protocols != null ? protocols : "all");
-			sslHostConfig.setConfigType(getSslConfigType());
+			// sslHostConfig.setConfigType(getSslConfigType());
 			sslHostConfig.setCertificateVerification("none");
 			LOGGER.info("sslHostConfig: "+sslHostConfig.getHostName() + " " + sslHostConfig.getTruststoreAlgorithm());
 
@@ -106,7 +106,7 @@ public class RouterNioEndpoint extends NioEndpoint {
 			try{
 				final HandshakeData data = cr.get(alias);
 				final SSLHostConfig sslHostConfig = sslHostConfigs.get(data.getHostname());
-				sslHostConfig.setConfigType(getSslConfigType());
+				// sslHostConfig.setConfigType(getSslConfigType());
 				createSSLContext(sslHostConfig);
 			}
 			catch (Exception rfubar) {
@@ -170,4 +170,3 @@ public class RouterNioEndpoint extends NioEndpoint {
 	}
 
 }
-
