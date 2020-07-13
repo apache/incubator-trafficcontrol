@@ -28,22 +28,32 @@ module.exports = {
                         cwd: '<%= globalConfig.app %>/bower_components/',
                         src:
                             [
-                                'angular/angular.min.js',
-                                'angular-animate/angular-animate.min.js',
-                                'angular-bootstrap-contextmenu/contextMenu.js',
                                 'angular-bootstrap/ui-bootstrap.min.js',
                                 'angular-bootstrap/ui-bootstrap-tpls.min.js',
-                                'angular-jwt/dist/angular-jwt.min.js',
                                 'angular-loading-bar/build/loading-bar.min.js',
                                 'angular-resource/angular-resource.min.js',
                                 'angular-route/angular-route.min.js',
                                 'angular-sanitize/angular-sanitize.min.js',
                                 'angular-ui-router/release/angular-ui-router.min.js',
                                 'bootstrap-sass-official/assets/javascripts/bootstrap.min.js',
-                                'es5-shim/es5-shim.min.js',
                                 'jquery/jquery.min.js',
-                                'json3/lib/json3.min.js'
                             ]
+                    },
+                    {
+                        cwd: "<%= globalConfig.importdir %>",
+                        src: [ "angular/angular.min.js" ]
+                    },
+                    {
+                        cwd: "<%= globalConfig.importdir %>",
+                        src: [ "angular-animate/angular-animate.min.js" ]
+                    },
+                    {
+                        cwd: "<%= globalConfig.importdir %>",
+                        src: [ "angular-bootstrap-contextmenu/contextMenu.js" ]
+                    },
+                    {
+                        cwd: "<%= globalConfig.importdir %>",
+                        src: [ "angular-jwt/dist/angular-jwt.min.js" ],
                     },
                     {
                         cwd: '<%= globalConfig.app %>/bower_components/',
@@ -89,22 +99,32 @@ module.exports = {
                         cwd: '<%= globalConfig.app %>/bower_components/',
                         src:
                             [
-                                'angular/angular.js',
-                                'angular-animate/angular-animate.js',
-                                'angular-bootstrap-contextmenu/contextMenu.js',
-                                'angular-bootstrap/ui-bootstrap.js',
-                                'angular-bootstrap/ui-bootstrap-tpls.js',
-                                'angular-jwt/dist/angular-jwt.js',
-                                'angular-loading-bar/build/loading-bar.js',
-                                'angular-resource/angular-resource.js',
-                                'angular-route/angular-route.js',
-                                'angular-sanitize/angular-sanitize.js',
-                                'angular-ui-router/release/angular-ui-router.js',
-                                'bootstrap-sass-official/assets/javascripts/bootstrap.js',
-                                'es5-shim/es5-shim.js',
-                                'jquery/jquery.js',
-                                'json3/lib/json3.js'
+                                'angular-bootstrap/ui-bootstrap.min.js',
+                                'angular-bootstrap/ui-bootstrap-tpls.min.js',
+                                'angular-loading-bar/build/loading-bar.min.js',
+                                'angular-resource/angular-resource.min.js',
+                                'angular-route/angular-route.min.js',
+                                'angular-sanitize/angular-sanitize.min.js',
+                                'angular-ui-router/release/angular-ui-router.min.js',
+                                'bootstrap-sass-official/assets/javascripts/bootstrap.min.js',
+                                'jquery/jquery.min.js',
                             ]
+                    },
+                    {
+                        cwd: "<%= globalConfig.importdir %>",
+                        src: [ "angular/angular.min.js" ]
+                    },
+                    {
+                        cwd: "<%= globalConfig.importdir %>",
+                        src: [ "angular-animate/angular-animate.min.js" ]
+                    },
+                    {
+                        cwd: "<%= globalConfig.importdir %>",
+                        src: [ "angular-bootstrap-contextmenu/contextMenu.js" ]
+                    },
+                    {
+                        cwd: "<%= globalConfig.importdir %>",
+                        src: [ "angular-jwt/dist/angular-jwt.min.js" ],
                     },
                     {
                         cwd: '<%= globalConfig.app %>/bower_components/',

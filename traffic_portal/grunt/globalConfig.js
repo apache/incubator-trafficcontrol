@@ -25,6 +25,7 @@ module.exports = function() {
         distdir: 'app/dist',
         srcserverdir: './server',
         srcdir: 'app/src',
+        importdir: "node_modules",
         tmpdir: '.tmp',
         srcfiles: {
             js: ['./app/src/**/*.js'],
