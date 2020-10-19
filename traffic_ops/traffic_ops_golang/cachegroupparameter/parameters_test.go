@@ -197,30 +197,30 @@ func TestReadCacheGroupParameters(t *testing.T) {
 				reqInfo := api.APIInfo{Tx: db.MustBegin(), Params: testCase.params}
 				toParameterReader.SetInfo(&reqInfo)
 
-				parameters, userErr, sysErr, returnCode, _ := toParameterReader.Read(nil, false)
+				parameters, errs, _ := toParameterReader.Read(nil, false)
 
 				if testCase.storageError != nil {
-					if sysErr == nil {
+					if errs.SystemError == nil {
 						t.Errorf("Read error expected: received no sysErr")
 					}
 				} else if testCase.expectedUserError {
-					if userErr == nil {
+					if errs.UserError == nil {
 						t.Errorf("User error expected: received no userErr")
 					}
 				} else if testCase.cgExistsStorageError != nil {
-					if sysErr == nil {
+					if errs.SystemError == nil {
 						t.Errorf("Read error expected: received no sysErr")
 					}
 				} else {
-					if userErr != nil || sysErr != nil {
-						t.Errorf("Read expected: no errors, actual: %v %v", userErr, sysErr)
+					if errs.Occurred() {
+						t.Errorf("Read expected: no errors, actual: %s", errs)
 					}
 					if len(parameters) != len(testCase.cgParams) {
 						t.Errorf("cdn.Read expected: len(parameters) == %v, actual: %v", len(testCase.cgParams), len(parameters))
 					}
 				}
-				if testCase.expectedReturnCode != returnCode {
-					t.Errorf("Expected return code: %d, actual %d", testCase.expectedReturnCode, returnCode)
+				if testCase.expectedReturnCode != errs.Code {
+					t.Errorf("Expected return code: %d, actual %d", testCase.expectedReturnCode, errs.Code)
 				}
 			})
 		}

@@ -38,9 +38,9 @@ import (
 )
 
 func Get(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, nil, nil)
-	if userErr != nil || sysErr != nil {
-		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
+	inf, errs := api.NewInfo(r, nil, nil)
+	if errs.Occurred() {
+		inf.HandleErrs(w, r, errs)
 		return
 	}
 	defer inf.Close()
@@ -88,9 +88,9 @@ WHERE ds.tenant_id = ANY($1)
 }
 
 func DSGet(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"dsid"}, []string{"dsid"})
-	if userErr != nil || sysErr != nil {
-		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
+	inf, errs := api.NewInfo(r, []string{"dsid"}, []string{"dsid"})
+	if errs.Occurred() {
+		inf.HandleErrs(w, r, errs)
 		return
 	}
 	defer inf.Close()
@@ -104,9 +104,9 @@ JOIN type as rt ON r.type = rt.id
 	queryParamsToQueryCols := map[string]dbhelpers.WhereColumnInfo{
 		"dsid": dbhelpers.WhereColumnInfo{"ds.ID", api.IsInt},
 		"id":   dbhelpers.WhereColumnInfo{"r.id", api.IsInt}}
-	where, _, pagination, queryValues, errs := dbhelpers.BuildWhereAndOrderByAndPagination(inf.Params, queryParamsToQueryCols)
-	if len(errs) > 0 {
-		api.HandleErr(w, r, inf.Tx.Tx, http.StatusBadRequest, util.JoinErrs(errs), nil)
+	where, _, pagination, queryValues, dbErrs := dbhelpers.BuildWhereAndOrderByAndPagination(inf.Params, queryParamsToQueryCols)
+	if len(dbErrs) > 0 {
+		api.HandleErr(w, r, inf.Tx.Tx, http.StatusBadRequest, util.JoinErrs(dbErrs), nil)
 		return
 	}
 
@@ -147,11 +147,12 @@ JOIN type as rt ON r.type = rt.id
 func DSGetID(w http.ResponseWriter, r *http.Request) {
 	alerts := tc.CreateAlerts(tc.WarnLevel, "This endpoint is deprecated, please use GET '/deliveryservices/{dsid}/regexes' with query parameter id instead")
 
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"dsid", "regexid"}, []string{"dsid", "regexid"})
-	if userErr != nil || sysErr != nil {
-		userErr = api.LogErr(r, errCode, userErr, sysErr)
+	inf, errs := api.NewInfo(r, []string{"dsid", "regexid"}, []string{"dsid", "regexid"})
+	if errs.Occurred() {
+		// TODO: I think this should just be using HandleErrs
+		userErr := api.LogErrs(r, errs)
 		alerts.AddNewAlert(tc.ErrorLevel, userErr.Error())
-		api.WriteAlerts(w, r, errCode, alerts)
+		api.WriteAlerts(w, r, errs.Code, alerts)
 		return
 	}
 	defer inf.Close()
@@ -172,9 +173,12 @@ ORDER BY dsr.set_number ASC
 	}
 	rows, err := inf.Tx.Tx.Query(q, inf.IntParams["dsid"], pq.Array(accessibleTenants), inf.IntParams["regexid"])
 	if err != nil {
-		userErr = api.LogErr(r, errCode, userErr, errors.New("querying deliveryserviceregexes getid: "+err.Error()))
+		// TODO: Not only do I think this should just use HandleErrs, but it
+		// also looks like it's logging - and even writing - the wrong error
+		// code.
+		userErr := api.LogErr(r, errs.Code, errs.UserError, errors.New("querying deliveryserviceregexes getid: "+err.Error()))
 		alerts.AddNewAlert(tc.ErrorLevel, userErr.Error())
-		api.WriteAlerts(w, r, errCode, alerts)
+		api.WriteAlerts(w, r, errs.Code, alerts)
 		return
 	}
 	defer rows.Close()
@@ -182,9 +186,12 @@ ORDER BY dsr.set_number ASC
 	for rows.Next() {
 		rx := tc.DeliveryServiceIDRegex{}
 		if err = rows.Scan(&rx.SetNumber, &rx.ID, &rx.Pattern, &rx.Type, &rx.TypeName); err != nil {
-			userErr = api.LogErr(r, errCode, userErr, errors.New("scanning deliveryserviceregexes getid: "+err.Error()))
+			// TODO: Not only do I think this should just use HandleErrs, but it
+			// also looks like it's logging - and even writing - the wrong error
+			// code.
+			userErr := api.LogErr(r, errs.Code, errs.UserError, errors.New("scanning deliveryserviceregexes getid: "+err.Error()))
 			alerts.AddNewAlert(tc.ErrorLevel, userErr.Error())
-			api.WriteAlerts(w, r, errCode, alerts)
+			api.WriteAlerts(w, r, errs.Code, alerts)
 			return
 		}
 		regexes = append(regexes, rx)
@@ -193,9 +200,9 @@ ORDER BY dsr.set_number ASC
 }
 
 func Post(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"dsid"}, []string{"dsid"})
-	if userErr != nil || sysErr != nil {
-		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
+	inf, errs := api.NewInfo(r, []string{"dsid"}, []string{"dsid"})
+	if errs.Occurred() {
+		inf.HandleErrs(w, r, errs)
 		return
 	}
 	defer inf.Close()
@@ -264,9 +271,9 @@ func Post(w http.ResponseWriter, r *http.Request) {
 }
 
 func Put(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"dsid", "regexid"}, []string{"dsid", "regexid"})
-	if userErr != nil || sysErr != nil {
-		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
+	inf, errs := api.NewInfo(r, []string{"dsid", "regexid"}, []string{"dsid", "regexid"})
+	if errs.Occurred() {
+		inf.HandleErrs(w, r, errs)
 		return
 	}
 	defer inf.Close()
@@ -357,9 +364,9 @@ where deliveryservice = $1 and set_number = $2`,
 }
 
 func Delete(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"dsid", "regexid"}, []string{"dsid", "regexid"})
-	if userErr != nil || sysErr != nil {
-		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
+	inf, errs := api.NewInfo(r, []string{"dsid", "regexid"}, []string{"dsid", "regexid"})
+	if errs.Occurred() {
+		inf.HandleErrs(w, r, errs)
 		return
 	}
 	defer inf.Close()

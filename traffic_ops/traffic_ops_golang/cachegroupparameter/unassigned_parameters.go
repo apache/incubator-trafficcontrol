@@ -22,11 +22,13 @@ package cachegroupparameter
 import (
 	"errors"
 	"fmt"
-	"github.com/apache/trafficcontrol/lib/go-log"
-	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/util/ims"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/apache/trafficcontrol/lib/go-log"
+	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/apierrors"
+	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/util/ims"
 
 	"github.com/apache/trafficcontrol/lib/go-tc"
 	"github.com/apache/trafficcontrol/lib/go-util"
@@ -54,21 +56,25 @@ func (cgunparam *TOCacheGroupUnassignedParameter) GetType() string {
 	return "cachegroup_unassigned_params"
 }
 
-func (cgunparam *TOCacheGroupUnassignedParameter) Read(h http.Header, useIMS bool) ([]interface{}, error, error, int, *time.Time) {
+func (cgunparam *TOCacheGroupUnassignedParameter) Read(h http.Header, useIMS bool) ([]interface{}, apierrors.Errors, *time.Time) {
 	var maxTime time.Time
 	var runSecond bool
+	errs := apierrors.New()
 	queryParamsToQueryCols := cgunparam.ParamColumns()
 	parameters := cgunparam.APIInfo().Params
-	where, orderBy, pagination, queryValues, errs := dbhelpers.BuildWhereAndOrderByAndPagination(parameters, queryParamsToQueryCols)
-	if len(errs) > 0 {
-		return nil, util.JoinErrs(errs), nil, http.StatusBadRequest, nil
+	where, orderBy, pagination, queryValues, es := dbhelpers.BuildWhereAndOrderByAndPagination(parameters, queryParamsToQueryCols)
+	if len(es) > 0 {
+		errs.UserError = util.JoinErrs(es)
+		errs.Code = http.StatusBadRequest
+		return nil, errs, nil
 	}
 
 	if useIMS {
 		runSecond, maxTime = ims.TryIfModifiedSinceQuery(cgunparam.APIInfo().Tx, h, queryValues, selectMaxLastUpdatedQuery(where))
 		if !runSecond {
 			log.Debugln("IMS HIT")
-			return []interface{}{}, nil, nil, http.StatusNotModified, &maxTime
+			errs.Code = http.StatusNotModified
+			return []interface{}{}, errs, &maxTime
 		}
 		log.Debugln("IMS MISS")
 	} else {
@@ -77,14 +83,20 @@ func (cgunparam *TOCacheGroupUnassignedParameter) Read(h http.Header, useIMS boo
 
 	cgID, err := strconv.Atoi(parameters[CacheGroupIDQueryParam])
 	if err != nil {
-		return nil, errors.New("cache group id must be an integer"), nil, http.StatusBadRequest, nil
+		errs.SetUserError("cache group id must be an integer")
+		errs.Code = http.StatusBadRequest
+		return nil, errs, nil
 	}
 
 	_, ok, err := dbhelpers.GetCacheGroupNameFromID(cgunparam.ReqInfo.Tx.Tx, cgID)
 	if err != nil {
-		return nil, nil, err, http.StatusInternalServerError, nil
+		errs.Code = http.StatusInternalServerError
+		errs.SystemError = err
+		return nil, errs, nil
 	} else if !ok {
-		return nil, errors.New("cachegroup does not exist"), nil, http.StatusNotFound, nil
+		errs.Code = http.StatusNotFound
+		errs.SetUserError("cachegroup does not exist")
+		return nil, errs, nil
 	}
 
 	// TODO: enhance build query to handle cols that are not in WHERE as well as appending to existing WHERE
@@ -96,7 +108,9 @@ func (cgunparam *TOCacheGroupUnassignedParameter) Read(h http.Header, useIMS boo
 	query := selectUnassignedParametersQuery() + where + orderBy + pagination
 	rows, err := cgunparam.ReqInfo.Tx.NamedQuery(query, queryValues)
 	if err != nil {
-		return nil, nil, errors.New("querying " + cgunparam.GetType() + ": " + err.Error()), http.StatusInternalServerError, nil
+		errs.SystemError = errors.New("querying " + cgunparam.GetType() + ": " + err.Error())
+		errs.Code = http.StatusInternalServerError
+		return nil, errs, nil
 	}
 	defer rows.Close()
 
@@ -104,7 +118,9 @@ func (cgunparam *TOCacheGroupUnassignedParameter) Read(h http.Header, useIMS boo
 	for rows.Next() {
 		var p tc.CacheGroupParameterNullable
 		if err = rows.StructScan(&p); err != nil {
-			return nil, nil, errors.New("scanning " + cgunparam.GetType() + ": " + err.Error()), http.StatusInternalServerError, nil
+			errs.SystemError = errors.New("scanning " + cgunparam.GetType() + ": " + err.Error())
+			errs.Code = http.StatusInternalServerError
+			return nil, errs, nil
 		}
 		if p.Secure != nil && *p.Secure && cgunparam.ReqInfo.User.PrivLevel < auth.PrivLevelAdmin {
 			p.Value = &parameter.HiddenField
@@ -112,7 +128,7 @@ func (cgunparam *TOCacheGroupUnassignedParameter) Read(h http.Header, useIMS boo
 		params = append(params, p)
 	}
 
-	return params, nil, nil, http.StatusOK, &maxTime
+	return params, errs, &maxTime
 }
 
 func selectUnassignedParametersQuery() string {

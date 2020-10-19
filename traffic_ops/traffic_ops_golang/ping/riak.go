@@ -31,12 +31,13 @@ import (
 
 func Riak(w http.ResponseWriter, r *http.Request) {
 	alerts := tc.CreateAlerts(tc.WarnLevel, fmt.Sprintf("This endpoint is deprecated, please use GET /api/2.0/vault/ping instead"))
-	inf, userErr, sysErr, errCode := api.NewInfo(r, nil, nil)
+	inf, errs := api.NewInfo(r, nil, nil)
 
-	if userErr != nil || sysErr != nil {
-		userErr = api.LogErr(r, errCode, userErr, sysErr)
+	if errs.Occurred() {
+		// TODO: I think this should just be using the deprecated error handler
+		userErr := api.LogErrs(r, errs)
 		alerts.AddAlerts(tc.CreateErrorAlerts(userErr))
-		api.WriteAlerts(w, r, errCode, alerts)
+		api.WriteAlerts(w, r, errs.Code, alerts)
 		return
 	}
 
@@ -45,7 +46,7 @@ func Riak(w http.ResponseWriter, r *http.Request) {
 	pingResp, err := riaksvc.Ping(inf.Tx.Tx, inf.Config.RiakAuthOptions, inf.Config.RiakPort)
 
 	if err != nil {
-		userErr = api.LogErr(r, http.StatusInternalServerError, nil, errors.New("error pinging Riak: "+err.Error()))
+		userErr := api.LogErr(r, http.StatusInternalServerError, nil, errors.New("error pinging Riak: "+err.Error()))
 		alerts.AddAlerts(tc.CreateErrorAlerts(userErr))
 		api.WriteAlerts(w, r, http.StatusInternalServerError, alerts)
 		return

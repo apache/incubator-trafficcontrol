@@ -30,6 +30,7 @@ import (
 	"github.com/apache/trafficcontrol/lib/go-tc"
 	"github.com/apache/trafficcontrol/lib/go-util"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/api"
+	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/apierrors"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/auth"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/dbhelpers"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/tenant"
@@ -78,7 +79,7 @@ func (req TODeliveryServiceRequest) GetType() string {
 }
 
 // Read implements the api.Reader interface
-func (req *TODeliveryServiceRequest) Read(h http.Header, useIMS bool) ([]interface{}, error, error, int, *time.Time) {
+func (req *TODeliveryServiceRequest) Read(h http.Header, useIMS bool) ([]interface{}, apierrors.Errors, *time.Time) {
 	var maxTime time.Time
 	var runSecond bool
 	deliveryServiceRequests := []interface{}{}
@@ -93,6 +94,8 @@ func (req *TODeliveryServiceRequest) Read(h http.Header, useIMS bool) ([]interfa
 		"xmlId":      dbhelpers.WhereColumnInfo{Column: "r.deliveryservice->>'xmlId'"},
 	}
 
+	errs := apierrors.New()
+
 	p := req.APIInfo().Params
 	if _, ok := req.APIInfo().Params["orderby"]; !ok {
 		// if orderby not provided, default to orderby xmlId.  Making a copy of parameters to not modify input arg
@@ -103,15 +106,18 @@ func (req *TODeliveryServiceRequest) Read(h http.Header, useIMS bool) ([]interfa
 		p["orderby"] = "xmlId"
 	}
 
-	where, orderBy, pagination, queryValues, errs := dbhelpers.BuildWhereAndOrderByAndPagination(p, queryParamsToQueryCols)
-	if len(errs) > 0 {
-		return nil, util.JoinErrs(errs), nil, http.StatusBadRequest, nil
+	where, orderBy, pagination, queryValues, dbErrs := dbhelpers.BuildWhereAndOrderByAndPagination(p, queryParamsToQueryCols)
+	if len(dbErrs) > 0 {
+		errs.UserError = util.JoinErrs(dbErrs)
+		errs.Code = http.StatusBadRequest
+		return nil, errs, nil
 	}
 	if useIMS {
 		runSecond, maxTime = ims.TryIfModifiedSinceQuery(req.APIInfo().Tx, h, queryValues, selectMaxLastUpdatedQuery(where))
 		if !runSecond {
 			log.Debugln("IMS HIT")
-			return deliveryServiceRequests, nil, nil, http.StatusNotModified, &maxTime
+			errs.Code = http.StatusNotModified
+			return deliveryServiceRequests, errs, &maxTime
 		}
 		log.Debugln("IMS MISS")
 	} else {
@@ -119,7 +125,9 @@ func (req *TODeliveryServiceRequest) Read(h http.Header, useIMS bool) ([]interfa
 	}
 	tenantIDs, err := tenant.GetUserTenantIDListTx(req.APIInfo().Tx.Tx, req.APIInfo().User.TenantID)
 	if err != nil {
-		return nil, nil, errors.New("dsr getting tenant list: " + err.Error()), http.StatusInternalServerError, nil
+		errs.SystemError = errors.New("dsr getting tenant list: " + err.Error())
+		errs.Code = http.StatusInternalServerError
+		return nil, errs, nil
 	}
 	where, queryValues = dbhelpers.AddTenancyCheck(where, queryValues, "CAST(r.deliveryservice->>'tenantId' AS bigint)", tenantIDs)
 
@@ -128,19 +136,23 @@ func (req *TODeliveryServiceRequest) Read(h http.Header, useIMS bool) ([]interfa
 
 	rows, err := req.APIInfo().Tx.NamedQuery(query, queryValues)
 	if err != nil {
-		return nil, nil, errors.New("dsr querying: " + err.Error()), http.StatusInternalServerError, &maxTime
+		errs.Code = http.StatusInternalServerError
+		errs.SystemError = errors.New("dsr querying: " + err.Error())
+		return nil, errs, nil
 	}
 	defer rows.Close()
 
 	for rows.Next() {
 		var s TODeliveryServiceRequest
 		if err = rows.StructScan(&s); err != nil {
-			return nil, nil, errors.New("dsr scanning: " + err.Error()), http.StatusInternalServerError, &maxTime
+			errs.Code = http.StatusInternalServerError
+			errs.SystemError = errors.New("dsr scanning: " + err.Error())
+			return nil, errs, &maxTime
 		}
 		deliveryServiceRequests = append(deliveryServiceRequests, s)
 	}
 
-	return deliveryServiceRequests, nil, nil, http.StatusOK, &maxTime
+	return deliveryServiceRequests, errs, &maxTime
 }
 
 func selectMaxLastUpdatedQuery(where string) string {
@@ -198,29 +210,40 @@ func (req TODeliveryServiceRequest) IsTenantAuthorized(user *auth.CurrentUser) (
 //ParsePQUniqueConstraintError is used to determine if a request with conflicting values exists
 //if so, it will return an errorType of DataConflict and the type should be appended to the
 //generic error message returned
-func (req *TODeliveryServiceRequest) Update() (error, error, int) {
+func (req *TODeliveryServiceRequest) Update() apierrors.Errors {
+	errs := apierrors.New()
 	if req.ID == nil {
-		return errors.New("missing id"), nil, http.StatusBadRequest
+		errs.SetUserError("missing id")
+		errs.Code = http.StatusBadRequest
+		return errs
 	}
 
 	current := TODeliveryServiceRequest{}
 	err := req.ReqInfo.Tx.QueryRowx(selectDeliveryServiceRequestsQuery()+`WHERE r.id=$1`, *req.ID).StructScan(&current)
 	if err != nil {
-		return nil, errors.New("dsr update querying: " + err.Error()), http.StatusInternalServerError
+		errs.SetSystemError("dsr update querying: " + err.Error())
+		errs.Code = http.StatusInternalServerError
+		return errs
 	}
 
 	// Update can only change status between draft & submitted.  All other transitions must go thru
 	// the PUT /api/<version>/deliveryservice_request/:id/status endpoint
 	if current.Status == nil || req.Status == nil {
-		return errors.New("Missing status for DeliveryServiceRequest"), nil, http.StatusBadRequest
+		errs.SetUserError("Missing status for DeliveryServiceRequest")
+		errs.Code = http.StatusBadRequest
+		return errs
 	}
 
 	if *current.Status != tc.RequestStatusDraft && *current.Status != tc.RequestStatusSubmitted {
-		return fmt.Errorf("Cannot change DeliveryServiceRequest in '%s' status.", string(*current.Status)), nil, http.StatusBadRequest
+		errs.UserError = fmt.Errorf("Cannot change DeliveryServiceRequest in '%s' status.", string(*current.Status))
+		errs.Code = http.StatusBadRequest
+		return errs
 	}
 
 	if *req.Status != tc.RequestStatusDraft && *req.Status != tc.RequestStatusSubmitted {
-		return fmt.Errorf("Cannot change DeliveryServiceRequest status from '%s' to '%s'", string(*current.Status), string(*req.Status)), nil, http.StatusBadRequest
+		errs.UserError = fmt.Errorf("Cannot change DeliveryServiceRequest status from '%s' to '%s'", string(*current.Status), string(*req.Status))
+		errs.Code = http.StatusBadRequest
+		return errs
 	}
 
 	userID := tc.IDNoMod(req.APIInfo().User.ID)
@@ -236,30 +259,43 @@ func (req *TODeliveryServiceRequest) Update() (error, error, int) {
 //generic error message returned
 //The insert sql returns the id and lastUpdated values of the newly inserted request and have
 //to be added to the struct
-func (req *TODeliveryServiceRequest) Create() (error, error, int) {
+func (req *TODeliveryServiceRequest) Create() apierrors.Errors {
+	errs := apierrors.New()
+
 	// TODO move to Validate()
 	if req.Status == nil {
-		return errors.New("missing status"), nil, http.StatusBadRequest
+		errs.Code = http.StatusBadRequest
+		errs.SetUserError("missing status")
+		return errs
 	}
 	if *req.Status != tc.RequestStatusDraft && *req.Status != tc.RequestStatusSubmitted {
-		return fmt.Errorf("invalid initial request status '%v'.  Must be '%v' or '%v'",
-			*req.Status, tc.RequestStatusDraft, tc.RequestStatusSubmitted), nil, http.StatusBadRequest
+		errs.Code = http.StatusBadRequest
+		errs.UserError = fmt.Errorf("invalid initial request status '%v'.  Must be '%v' or '%v'", *req.Status, tc.RequestStatusDraft, tc.RequestStatusSubmitted)
+		return errs
 	}
 	// first, ensure there's not an active request with this XMLID
 	ds := req.DeliveryService
 	if ds == nil {
-		return errors.New("no delivery service associated with this request"), nil, http.StatusBadRequest
+		errs.Code = http.StatusBadRequest
+		errs.SetUserError("no delivery service associated with this request")
+		return errs
 	}
 	if ds.XMLID == nil {
-		return errors.New("no xmlId associated with this request"), nil, http.StatusBadRequest
+		errs.Code = http.StatusBadRequest
+		errs.SetUserError("no xmlId associated with this request")
+		return errs
 	}
 	XMLID := *ds.XMLID
 	active, err := isActiveRequest(req.APIInfo().Tx, XMLID)
 	if err != nil {
-		return errors.New("checking request active: " + err.Error()), nil, http.StatusInternalServerError
+		errs.SystemError = fmt.Errorf("checking request active: %v", err)
+		errs.Code = http.StatusInternalServerError
+		return errs
 	}
 	if active {
-		return errors.New(`An active request exists for delivery service '` + XMLID + `'`), nil, http.StatusBadRequest
+		errs.Code = http.StatusBadRequest
+		errs.SetUserError("An active request exists for delivery service '" + XMLID + "'")
+		return errs
 	}
 
 	userID := tc.IDNoMod(req.APIInfo().User.ID)
@@ -269,17 +305,26 @@ func (req *TODeliveryServiceRequest) Create() (error, error, int) {
 	return api.GenericCreate(req)
 }
 
-func (req *TODeliveryServiceRequest) Delete() (error, error, int) {
+func (req *TODeliveryServiceRequest) Delete() apierrors.Errors {
+	errs := apierrors.New()
 	if req.ID == nil {
-		return errors.New("missing id"), nil, http.StatusBadRequest
+		errs.SetUserError("missing id")
+		errs.Code = http.StatusBadRequest
+		return errs
 	}
 
 	st := tc.RequestStatusInvalid
 	if err := req.APIInfo().Tx.Tx.QueryRow(`SELECT status FROM deliveryservice_request WHERE id=$1`, *req.ID).Scan(&st); err != nil {
-		return nil, errors.New("dsr delete querying status: " + err.Error()), http.StatusBadRequest
+		// TODO: this should return an appropriate error message to the client
+		// if it's going to tell them it's their fault the request failed
+		errs.SetSystemError("dsr delete querying status: " + err.Error())
+		errs.Code = http.StatusBadRequest
+		return errs
 	}
 	if st == tc.RequestStatusComplete || st == tc.RequestStatusPending || st == tc.RequestStatusRejected {
-		return errors.New("cannot delete a deliveryservice_request with state " + string(st)), nil, http.StatusBadRequest
+		errs.SetUserError("cannot delete a deliveryservice_request with state " + string(st))
+		errs.Code = http.StatusBadRequest
+		return errs
 	}
 
 	return api.GenericDelete(req)
@@ -359,23 +404,28 @@ type deliveryServiceRequestAssignment struct {
 }
 
 // Update assignee only
-func (req *deliveryServiceRequestAssignment) Update() (error, error, int) {
+func (req *deliveryServiceRequestAssignment) Update() apierrors.Errors {
+	errs := apierrors.New()
 	// req represents the state the deliveryservice_request is to transition to
 	// we want to limit what changes here -- only assignee can change
 	if req.ID == nil {
-		return errors.New("missing id"), nil, http.StatusBadRequest
+		errs.SetUserError("missing id")
+		errs.Code = http.StatusBadRequest
+		return errs
 	}
 
 	current := TODeliveryServiceRequest{}
 	err := req.ReqInfo.Tx.QueryRowx(selectDeliveryServiceRequestsQuery()+`WHERE r.id = $1`, *req.ID).StructScan(&current)
 	if err != nil {
-		return nil, errors.New("dsr assignment querying existing: " + err.Error()), http.StatusInternalServerError
+		errs.SetSystemError("dsr assignment querying existing: " + err.Error())
+		errs.Code = http.StatusInternalServerError
+		return errs
 	}
 
 	// unchanged (maybe both nil)
 	if current.AssigneeID == req.AssigneeID {
 		log.Infof("dsr assignment update: assignee unchanged")
-		return nil, nil, http.StatusOK
+		return errs
 	}
 
 	// Only assigneeID changes -- nothing else
@@ -389,10 +439,11 @@ func (req *deliveryServiceRequestAssignment) Update() (error, error, int) {
 	}
 
 	if err = req.APIInfo().Tx.QueryRowx(selectDeliveryServiceRequestsQuery()+` WHERE r.id = $1`, *req.ID).StructScan(req); err != nil {
-		return nil, errors.New("dsr assignment querying: " + err.Error()), http.StatusInternalServerError
+		errs.SetSystemError("dsr assignment querying: " + err.Error())
+		errs.Code = http.StatusInternalServerError
 	}
 
-	return nil, nil, http.StatusOK
+	return errs
 }
 
 func (req deliveryServiceRequestAssignment) Validate() error {
@@ -422,22 +473,29 @@ type deliveryServiceRequestStatus struct {
 	TODeliveryServiceRequest
 }
 
-func (req *deliveryServiceRequestStatus) Update() (error, error, int) {
+func (req *deliveryServiceRequestStatus) Update() apierrors.Errors {
+	errs := apierrors.New()
 	// req represents the state the deliveryservice_request is to transition to
 	// we want to limit what changes here -- only status can change,  and only according to the established rules
 	// for status transition
 	if req.ID == nil {
-		return errors.New("missing id"), nil, http.StatusBadRequest
+		errs.SetUserError("missing id")
+		errs.Code = http.StatusBadRequest
+		return errs
 	}
 
 	current := TODeliveryServiceRequest{}
 	err := req.APIInfo().Tx.QueryRowx(selectDeliveryServiceRequestsQuery()+` WHERE r.id = $1`, *req.ID).StructScan(&current)
 	if err != nil {
-		return nil, errors.New("dsr status querying existing: " + err.Error()), http.StatusInternalServerError
+		errs.SetSystemError("dsr status querying existing: " + err.Error())
+		errs.Code = http.StatusInternalServerError
+		return errs
 	}
 
 	if err = current.Status.ValidTransition(*req.Status); err != nil {
-		return err, nil, http.StatusBadRequest // TODO verify err is secure to send to user
+		errs.UserError = err // TODO verify err is secure to send to user
+		errs.Code = http.StatusBadRequest
+		return errs
 	}
 
 	// keep everything else the same -- only update status
@@ -452,10 +510,11 @@ func (req *deliveryServiceRequestStatus) Update() (error, error, int) {
 	}
 
 	if err = req.APIInfo().Tx.QueryRowx(selectDeliveryServiceRequestsQuery()+` WHERE r.id = $1`, *req.ID).StructScan(req); err != nil {
-		return nil, errors.New("dsr status update querying: " + err.Error()), http.StatusInternalServerError
+		errs.SetSystemError("dsr status update querying: " + err.Error())
+		errs.Code = http.StatusInternalServerError
 	}
 
-	return nil, nil, http.StatusOK
+	return errs
 }
 
 // Validate is not needed when only Status is updated

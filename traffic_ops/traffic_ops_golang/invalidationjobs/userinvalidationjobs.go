@@ -19,16 +19,18 @@ package invalidationjobs
  * under the License.
  */
 
-import "database/sql"
-import "errors"
-import "fmt"
-import "net/http"
-import "strconv"
-import "time"
+import (
+	"database/sql"
+	"errors"
+	"fmt"
+	"net/http"
+	"strconv"
+	"time"
 
-import "github.com/apache/trafficcontrol/lib/go-tc"
-import "github.com/apache/trafficcontrol/lib/go-log"
-import "github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/api"
+	"github.com/apache/trafficcontrol/lib/go-log"
+	"github.com/apache/trafficcontrol/lib/go-tc"
+	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/api"
+)
 
 const userReadQuery = `
 SELECT job.agent,
@@ -64,34 +66,39 @@ type response struct {
 func CreateUserJob(w http.ResponseWriter, r *http.Request) {
 	alerts := tc.CreateAlerts(tc.WarnLevel, "This endpoint is deprecated, please use the POST method /jobs instead")
 
-	inf, userErr, sysErr, errCode := api.NewInfo(r, nil, nil)
-	if userErr != nil || sysErr != nil {
-		userErr = api.LogErr(r, errCode, userErr, sysErr)
+	inf, errs := api.NewInfo(r, nil, nil)
+	if errs.Occurred() {
+		// TODO: I think this should just be using HandleErrs
+		userErr := api.LogErrs(r, errs)
 		alerts.AddNewAlert(tc.ErrorLevel, userErr.Error())
-		api.WriteAlerts(w, r, errCode, alerts)
+		api.WriteAlerts(w, r, errs.Code, alerts)
 		return
 	}
 	defer inf.Close()
 
 	job := tc.UserInvalidationJobInput{}
 	if err := api.Parse(r.Body, inf.Tx.Tx, &job); err != nil {
-		userErr = api.LogErr(r, http.StatusBadRequest, err, fmt.Errorf("error parsing jobs POST body: %v", err))
+		// TODO: I think this should just be using HandleErrs
+		userErr := api.LogErr(r, http.StatusBadRequest, err, fmt.Errorf("error parsing jobs POST body: %v", err))
 		alerts.AddNewAlert(tc.ErrorLevel, userErr.Error())
 		api.WriteAlerts(w, r, http.StatusBadRequest, alerts)
 		return
 	}
 
 	if ok, err := IsUserAuthorizedToModifyDSID(inf, *job.DSID); err != nil {
+		// TODO: I think this should just be using HandleErrs
 		err = fmt.Errorf("Checking user permissions on DS #%d: %v", *job.DSID, err)
-		errCode = http.StatusInternalServerError
-		userErr = api.LogErr(r, errCode, nil, err)
+		errCode := http.StatusInternalServerError
+		userErr := api.LogErr(r, errCode, nil, err)
 		alerts.AddNewAlert(tc.ErrorLevel, userErr.Error())
 		api.WriteAlerts(w, r, errCode, alerts)
 		return
 	} else if !ok {
-		userErr = api.LogErr(r, http.StatusNotFound, errors.New("No such Delivery Service!"), nil)
+		// TODO: I think this should just be using HandleErrs - and also I
+		// think it's erroneously returning a 200 OK status code.
+		userErr := api.LogErr(r, http.StatusNotFound, errors.New("No such Delivery Service!"), nil)
 		alerts.AddNewAlert(tc.ErrorLevel, userErr.Error())
-		api.WriteAlerts(w, r, errCode, alerts)
+		api.WriteAlerts(w, r, errs.Code, alerts)
 		return
 	}
 
@@ -113,18 +120,20 @@ func CreateUserJob(w http.ResponseWriter, r *http.Request) {
 		&result.Parameters,
 		&result.StartTime)
 	if err != nil {
-		userErr, sysErr, code := api.ParseDBError(err)
-		userErr = api.LogErr(r, code, userErr, sysErr)
+		// TODO: I feel like this should be using api.HandleErr or
+		// inf.HandleErrs
+		errs := api.ParseDBError(err)
+		errs.UserError = api.LogErrs(r, errs)
 		if err := inf.Tx.Tx.Rollback(); err != nil && err != sql.ErrTxDone {
 			log.Errorln("rolling back transaction: " + err.Error())
 		}
-		alerts.AddNewAlert(tc.ErrorLevel, userErr.Error())
-		api.WriteAlerts(w, r, code, alerts)
+		alerts.AddNewAlert(tc.ErrorLevel, errs.UserError.Error())
+		api.WriteAlerts(w, r, errs.Code, alerts)
 		return
 	}
 
 	if err := setRevalFlags(*job.DSID, inf.Tx.Tx); err != nil {
-		errCode = http.StatusInternalServerError
+		errCode := http.StatusInternalServerError
 		alerts.AddNewAlert(tc.ErrorLevel, api.LogErr(r, errCode, nil, fmt.Errorf("setting reval flags: %v", err)).Error())
 		if err := inf.Tx.Tx.Rollback(); err != nil && err != sql.ErrTxDone {
 			log.Errorln("rolling back transaction: " + err.Error())
@@ -144,24 +153,28 @@ func CreateUserJob(w http.ResponseWriter, r *http.Request) {
 func GetUserJobs(w http.ResponseWriter, r *http.Request) {
 	alerts := tc.CreateAlerts(tc.WarnLevel, "This endpoint is deprecated, please use the 'userId' or 'createdBy' query parameters of a GET request to /jobs instead")
 
-	inf, userErr, sysErr, errCode := api.NewInfo(r, nil, nil)
-	if userErr != nil || sysErr != nil {
-		userErr = api.LogErr(r, errCode, userErr, sysErr)
+	inf, errs := api.NewInfo(r, nil, nil)
+	if errs.Occurred() {
+		// TODO: I think this should just be using HandleErrs
+		userErr := api.LogErrs(r, errs)
 		alerts.AddNewAlert(tc.ErrorLevel, userErr.Error())
-		api.WriteAlerts(w, r, errCode, alerts)
+		api.WriteAlerts(w, r, errs.Code, alerts)
 		return
 	}
 	defer inf.Close()
 
 	rows, err := inf.Tx.Query(userReadQuery, inf.User.ID)
 	if err != nil {
-		userErr = api.LogErr(r, http.StatusInternalServerError, nil, fmt.Errorf("Fetching user jobs: %v", err))
+		// TODO: I think this should just be using HandleErrs
+		userErr := api.LogErr(r, http.StatusInternalServerError, nil, fmt.Errorf("Fetching user jobs: %v", err))
 		alerts.AddNewAlert(tc.ErrorLevel, userErr.Error())
 		api.WriteAlerts(w, r, http.StatusInternalServerError, alerts)
 		return
 	}
 	defer rows.Close()
 
+	var userErr error
+	var errCode int
 	jobs := []tc.UserInvalidationJob{}
 	for rows.Next() {
 		var j tc.UserInvalidationJob

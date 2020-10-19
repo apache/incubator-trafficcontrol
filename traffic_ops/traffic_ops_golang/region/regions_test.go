@@ -79,9 +79,9 @@ func TestReadRegions(t *testing.T) {
 		api.APIInfoImpl{&reqInfo},
 		tc.Region{},
 	}
-	regions, userErr, sysErr, _, _ := obj.Read(nil, false)
-	if userErr != nil || sysErr != nil {
-		t.Errorf("Read expected: no errors, actual: %v %v", userErr, sysErr)
+	regions, errs, _ := obj.Read(nil, false)
+	if errs.Occurred() {
+		t.Errorf("Read expected: no errors, actual: %s", errs)
 	}
 
 	if len(regions) != 2 {

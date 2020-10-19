@@ -78,19 +78,21 @@ func TestCheckFedDSDeletion(t *testing.T) {
 			mock.ExpectBegin()
 			mock.ExpectQuery("SELECT").WillReturnRows(rows)
 			mock.ExpectCommit()
-			_, usrErr, sysErr := checkFedDSDeletion(db.MustBegin().Tx, 1, tc.inputDSID)
+			errs := checkFedDSDeletion(db.MustBegin().Tx, 1, tc.inputDSID)
 			if tc.expectUsrErr {
-				if usrErr == nil {
+				if errs.UserError == nil {
 					t.Errorf("User error expected: received none")
 				}
-				if usrErr.Error() != tc.expectUsrStr {
-					t.Errorf("Expected error with text %v: received %v", tc.expectUsrStr, usrErr.Error())
+				// TODO: this segfaults if the above error is reached. Should be an else-if
+				if errs.UserError.Error() != tc.expectUsrStr {
+					t.Errorf("Expected error with text %v: received %v", tc.expectUsrStr, errs.UserError.Error())
 				}
 			}
-			if !tc.expectUsrErr && usrErr != nil {
+			//TODO: these print the wrong error on failure
+			if !tc.expectUsrErr && errs.UserError != nil {
 				t.Errorf("User error not expected: received error %v", err)
 			}
-			if sysErr != nil {
+			if errs.SystemError != nil {
 				t.Errorf("System error not expected: received error %v", err)
 			}
 		})

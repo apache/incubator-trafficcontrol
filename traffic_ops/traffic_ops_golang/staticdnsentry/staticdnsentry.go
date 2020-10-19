@@ -29,6 +29,7 @@ import (
 	"github.com/apache/trafficcontrol/lib/go-tc/tovalidate"
 	"github.com/apache/trafficcontrol/lib/go-util"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/api"
+	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/apierrors"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/dbhelpers"
 	validation "github.com/go-ozzo/ozzo-validation"
 	"github.com/go-ozzo/ozzo-validation/is"
@@ -133,13 +134,13 @@ func (staticDNSEntry TOStaticDNSEntry) Validate() error {
 	return util.JoinErrs(tovalidate.ToErrors(errs))
 }
 
-func (en *TOStaticDNSEntry) Read(h http.Header, useIMS bool) ([]interface{}, error, error, int, *time.Time) {
+func (en *TOStaticDNSEntry) Read(h http.Header, useIMS bool) ([]interface{}, apierrors.Errors, *time.Time) {
 	api.DefaultSort(en.APIInfo(), "host")
 	return api.GenericRead(h, en, useIMS)
 }
-func (en *TOStaticDNSEntry) Create() (error, error, int) { return api.GenericCreate(en) }
-func (en *TOStaticDNSEntry) Update() (error, error, int) { return api.GenericUpdate(en) }
-func (en *TOStaticDNSEntry) Delete() (error, error, int) { return api.GenericDelete(en) }
+func (en *TOStaticDNSEntry) Create() apierrors.Errors { return api.GenericCreate(en) }
+func (en *TOStaticDNSEntry) Update() apierrors.Errors { return api.GenericUpdate(en) }
+func (en *TOStaticDNSEntry) Delete() apierrors.Errors { return api.GenericDelete(en) }
 func (v *TOStaticDNSEntry) SelectMaxLastUpdatedQuery(where, orderBy, pagination, tableName string) string {
 	return `SELECT max(t) from (
 		SELECT max(sde.last_updated) as t FROM staticdnsentry as sde

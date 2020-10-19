@@ -25,18 +25,20 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"net/http"
+	"strconv"
+	"time"
+
 	"github.com/apache/trafficcontrol/lib/go-tc"
 	"github.com/apache/trafficcontrol/lib/go-tc/tovalidate"
 	"github.com/apache/trafficcontrol/lib/go-util"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/api"
+	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/apierrors"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/auth"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/dbhelpers"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/tenant"
 	validation "github.com/go-ozzo/ozzo-validation"
 	"github.com/lib/pq"
-	"net/http"
-	"strconv"
-	"time"
 )
 
 // TOTenant provides a local type against which to define methods
@@ -125,16 +127,16 @@ func (ten TOTenant) Validate() error {
 	return util.JoinErrs(tovalidate.ToErrors(errs))
 }
 
-func (tn *TOTenant) Create() (error, error, int) { return api.GenericCreate(tn) }
+func (tn *TOTenant) Create() apierrors.Errors { return api.GenericCreate(tn) }
 
-func (ten *TOTenant) Read(h http.Header, useIMS bool) ([]interface{}, error, error, int, *time.Time) {
+func (ten *TOTenant) Read(h http.Header, useIMS bool) ([]interface{}, apierrors.Errors, *time.Time) {
 	if ten.APIInfo().User.TenantID == auth.TenantIDInvalid {
-		return nil, nil, nil, http.StatusOK, nil
+		return nil, apierrors.New(), nil
 	}
 	api.DefaultSort(ten.APIInfo(), "name")
-	tenants, userErr, sysErr, errCode, maxTime := api.GenericRead(h, ten, useIMS)
-	if userErr != nil || sysErr != nil {
-		return nil, userErr, sysErr, errCode, nil
+	tenants, errs, maxTime := api.GenericRead(h, ten, useIMS)
+	if errs.Occurred() {
+		return nil, errs, nil
 	}
 
 	tenantNames := map[int]*string{}
@@ -151,7 +153,7 @@ func (ten *TOTenant) Read(h http.Header, useIMS bool) ([]interface{}, error, err
 		p := *tenantNames[*t.ParentID]
 		t.ParentName = &p // copy
 	}
-	return tenants, nil, nil, errCode, maxTime
+	return tenants, errs, maxTime
 }
 
 // IsTenantAuthorized implements the Tenantable interface for TOTenant
@@ -198,29 +200,36 @@ func (ten *TOTenant) IsTenantAuthorized(user *auth.CurrentUser) (bool, error) {
 	return tenant.IsResourceAuthorizedToUserTx(*ten.ParentID, user, ten.APIInfo().Tx.Tx)
 }
 
-func (tn *TOTenant) Update() (error, error, int) { return api.GenericUpdate(tn) }
+func (tn *TOTenant) Update() apierrors.Errors { return api.GenericUpdate(tn) }
 
-func (ten *TOTenant) Delete() (error, error, int) {
+func (ten *TOTenant) Delete() apierrors.Errors {
 	result, err := ten.APIInfo().Tx.NamedExec(deleteQuery(), ten)
 	if err != nil {
 		return parseDeleteErr(err, *ten.ID, ten.APIInfo().Tx.Tx) // this is why we can't use api.GenericDelete
 	}
 
+	errs := apierrors.New()
 	if rowsAffected, err := result.RowsAffected(); err != nil {
-		return nil, errors.New("deleting " + ten.GetType() + ": getting rows affected: " + err.Error()), http.StatusInternalServerError
+		errs.SetSystemError("deleting " + ten.GetType() + ": getting rows affected: " + err.Error())
+		errs.Code = http.StatusInternalServerError
 	} else if rowsAffected < 1 {
-		return errors.New("no " + ten.GetType() + " with that id found"), nil, http.StatusNotFound
+		errs.SetUserError("no " + ten.GetType() + " with that id found")
+		errs.Code = http.StatusNotFound
 	} else if rowsAffected > 1 {
-		return nil, fmt.Errorf(ten.GetType()+" delete affected too many rows: %d", rowsAffected), http.StatusInternalServerError
+		errs.SystemError = fmt.Errorf(ten.GetType()+" delete affected too many rows: %d", rowsAffected)
+		errs.Code = http.StatusInternalServerError
 	}
-	return nil, nil, http.StatusOK
+	return errs
 }
 
 // parseDeleteErr takes the tenant delete error, and returns the appropriate user error, system error, and http status code.
-func parseDeleteErr(err error, id int, tx *sql.Tx) (error, error, int) {
+func parseDeleteErr(err error, id int, tx *sql.Tx) apierrors.Errors {
 	pqErr, ok := err.(*pq.Error)
 	if !ok {
-		return nil, errors.New("deleting tenant: " + err.Error()), http.StatusInternalServerError
+		return apierrors.Errors{
+			SystemError: errors.New("deleting tenant: " + err.Error()),
+			Code:        http.StatusInternalServerError,
+		}
 	}
 	// TODO fix this to check for other Postgres errors besides key violations
 	existing := ""
@@ -236,7 +245,11 @@ func parseDeleteErr(err error, id int, tx *sql.Tx) (error, error, int) {
 	default:
 		existing = pqErr.Table
 	}
-	return errors.New("Tenant '" + strconv.Itoa(id) + "' has " + existing + ". Please update these " + existing + " and retry."), nil, http.StatusBadRequest
+
+	return apierrors.Errors{
+		UserError: errors.New("Tenant '" + strconv.Itoa(id) + "' has " + existing + ". Please update these " + existing + " and retry."),
+		Code:      http.StatusBadRequest,
+	}
 }
 
 // selectQuery returns a query on the tenant table that limits to tenants within the realm of the tenantID.  It's intended

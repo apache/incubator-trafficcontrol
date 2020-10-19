@@ -1,4 +1,4 @@
-package crstats
+package apierrors
 
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -19,30 +19,37 @@ package crstats
  * under the License.
  */
 
-import (
-	"database/sql"
-	"errors"
-	"net/http"
+import "fmt"
 
-	"github.com/apache/trafficcontrol/lib/go-tc"
-	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/api"
-)
+func ExampleErrors_String() {
+	fmt.Println(New())
 
-// GetCDNRouting is the handler for getting aggregated routing percentages across CDNs.
-func GetCDNRouting(w http.ResponseWriter, r *http.Request) {
-	inf, errs := api.NewInfo(r, nil, nil)
-	if errs.Occurred() {
-		inf.HandleErrs(w, r, errs)
-		return
-	}
-	defer inf.Close()
-	api.RespWriter(w, r, inf.Tx.Tx)(getCDNRouting(inf.Tx.Tx))
+	// Output: Errors(Code=200, SystemError='<nil>', UserError='<nil>')
 }
 
-func getCDNRouting(tx *sql.Tx) (tc.Routing, error) {
-	routers, err := getCDNRouterFQDNs(tx, nil)
-	if err != nil {
-		return tc.Routing{}, errors.New("getting monitors: " + err.Error())
-	}
-	return getRoutersRouting(tx, routers, nil, nil)
+func ExamlpleNew() {
+	fmt.Println(New())
+	fmt.Println(New().Occurred())
+
+	// Output: Errors(Code=200, SystemError='<nil>', UserError='<nil>')
+	// false
+}
+
+func ExampleErrors_Occurred() {
+	err := New()
+	fmt.Println(err.Occurred())
+
+	err.SetSystemError("test")
+	fmt.Println(err.Occurred())
+
+	err.SetUserError("test")
+	fmt.Println(err.Occurred())
+
+	err.SystemError = nil
+	fmt.Println(err.Occurred())
+
+	// Output: false
+	// true
+	// true
+	// true
 }

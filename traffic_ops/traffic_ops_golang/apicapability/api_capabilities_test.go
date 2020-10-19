@@ -62,10 +62,10 @@ func TestGetAPICapabilities(t *testing.T) {
 	mock.ExpectQuery("SELECT").WillReturnRows(rows)
 	mock.ExpectCommit()
 
-	results, _, userErr, sysErr := getAPICapabilities(db.MustBegin(), map[string]string{})
+	results, errs := getAPICapabilities(db.MustBegin(), map[string]string{})
 
-	if userErr != nil || sysErr != nil {
-		t.Errorf("Read expected: no errors, actual: %v %v", userErr, sysErr)
+	if errs.Occurred() {
+		t.Errorf("Read expected: no errors, actual: %v", errs)
 	}
 
 	if len(results) != 4 {

@@ -24,10 +24,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/apache/trafficcontrol/lib/go-log"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/apache/trafficcontrol/lib/go-log"
 
 	"github.com/apache/trafficcontrol/lib/go-tc"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/api"
@@ -35,9 +36,9 @@ import (
 )
 
 func UpdateStatusHandler(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"id"}, []string{"id"})
-	if userErr != nil || sysErr != nil {
-		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
+	inf, errs := api.NewInfo(r, []string{"id"}, []string{"id"})
+	if errs.Occurred() {
+		inf.HandleErrs(w, r, errs)
 		return
 	}
 	defer inf.Close()
@@ -158,7 +159,7 @@ func checkExistingStatusInfo(serverID int, tx *sql.Tx) (int, time.Time) {
 	status := 0
 	var status_last_updated time.Time
 	q := `SELECT status,
-status_last_updated 
+status_last_updated
 FROM server
 WHERE id = $1`
 	response, err := tx.Query(q, serverID)

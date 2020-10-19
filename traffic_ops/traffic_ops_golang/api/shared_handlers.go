@@ -25,12 +25,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/apache/trafficcontrol/lib/go-rfc"
 	"io/ioutil"
 	"net/http"
 	"reflect"
 	"strconv"
 	"strings"
+
+	"github.com/apache/trafficcontrol/lib/go-rfc"
+	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/apierrors"
 
 	"github.com/apache/trafficcontrol/lib/go-log"
 	"github.com/apache/trafficcontrol/lib/go-tc"
@@ -115,19 +117,22 @@ func decodeAndValidateRequestBody(r *http.Request, v Validator) error {
 	return v.Validate()
 }
 
-func checkIfOptionsDeleter(obj interface{}, params map[string]string) (bool, error, error, int) {
+func checkIfOptionsDeleter(obj interface{}, params map[string]string) (bool, apierrors.Errors) {
+	errs := apierrors.New()
 	optionsDeleter, ok := obj.(OptionsDeleter)
 	if !ok {
-		return false, nil, nil, http.StatusOK
+		return false, errs
 	}
 	options := optionsDeleter.DeleteKeyOptions()
 	for key, _ := range options {
 		if params[key] != "" {
-			return true, nil, nil, http.StatusOK
+			return true, errs
 		}
 	}
 	name := reflect.TypeOf(obj).Elem().Name()[2:]
-	return false, errors.New("Refusing to delete all resources of type " + name), nil, http.StatusBadRequest
+	errs.SetUserError("Refusing to delete all resources of type " + name)
+	errs.Code = http.StatusBadRequest
+	return false, errs
 }
 
 // SetLastModifiedHeader sets the Last-Modified header in case the "useIMS" is set to true in the config,
@@ -150,9 +155,9 @@ func SetLastModifiedHeader(r *http.Request, useIMS bool) bool {
 func ReadHandler(reader Reader) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		useIMS := false
-		inf, userErr, sysErr, errCode := NewInfo(r, nil, nil)
-		if userErr != nil || sysErr != nil {
-			HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
+		inf, errs := NewInfo(r, nil, nil)
+		if errs.Occurred() {
+			HandleErrs(w, r, inf.Tx.Tx, errs)
 			return
 		}
 		defer inf.Close()
@@ -173,9 +178,9 @@ func ReadHandler(reader Reader) http.HandlerFunc {
 		if cfg != nil {
 			useIMS = cfg.UseIMS
 		}
-		results, userErr, sysErr, errCode, maxTime := obj.Read(r.Header, useIMS)
-		if userErr != nil || sysErr != nil {
-			HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
+		results, errs, maxTime := obj.Read(r.Header, useIMS)
+		if errs.Occurred() {
+			HandleErrs(w, r, inf.Tx.Tx, errs)
 			return
 		}
 		if maxTime != nil && SetLastModifiedHeader(r, useIMS) {
@@ -183,7 +188,7 @@ func ReadHandler(reader Reader) http.HandlerFunc {
 			date := maxTime.Format("Mon, 02 Jan 2006 15:04:05 MST")
 			w.Header().Add(rfc.LastModified, date)
 		}
-		w.WriteHeader(errCode)
+		w.WriteHeader(errs.Code)
 		WriteResp(w, r, results)
 	}
 }
@@ -194,19 +199,24 @@ func DeprecatedReadHandler(reader Reader, alternative *string) http.HandlerFunc 
 	return func(w http.ResponseWriter, r *http.Request) {
 		alerts := CreateDeprecationAlerts(alternative)
 
-		inf, userErr, sysErr, errCode := NewInfo(r, nil, nil)
-		if userErr != nil || sysErr != nil {
-			userErr = LogErr(r, http.StatusInternalServerError, userErr, sysErr)
-			alerts.AddAlerts(tc.CreateErrorAlerts(userErr))
-			WriteAlerts(w, r, errCode, alerts)
+		inf, errs := NewInfo(r, nil, nil)
+		if errs.Occurred() {
+			// TODO: I think this should just be using HandleErrs - and
+			// logging the *actual* status code instead of always 500 ISE.
+			errs.UserError = LogErr(r, http.StatusInternalServerError, errs.UserError, errs.SystemError)
+			alerts.AddAlerts(tc.CreateErrorAlerts(errs.UserError))
+			WriteAlerts(w, r, errs.Code, alerts)
 			return
 		}
 
 		interfacePtr := reflect.ValueOf(reader)
 		if interfacePtr.Kind() != reflect.Ptr {
-			userErr = LogErr(r, http.StatusInternalServerError, nil, errors.New(" reflect: can only indirect from a pointer"))
+			// TODO: I think this should just be using HandleErrs
+			userErr := LogErr(r, http.StatusInternalServerError, nil, errors.New(" reflect: can only indirect from a pointer"))
 			alerts.AddAlerts(tc.CreateErrorAlerts(userErr))
-			WriteAlerts(w, r, errCode, alerts)
+			// TODO: I think this erroneously returns 200 OK instead of
+			// 500 Internal Server Error
+			WriteAlerts(w, r, errs.Code, alerts)
 			return
 		}
 
@@ -214,11 +224,12 @@ func DeprecatedReadHandler(reader Reader, alternative *string) http.HandlerFunc 
 		obj := reflect.New(objectType).Interface().(Reader)
 		obj.SetInfo(inf)
 
-		results, userErr, sysErr, errCode, _ := obj.Read(r.Header, false)
-		if userErr != nil || sysErr != nil {
-			userErr = LogErr(r, http.StatusInternalServerError, userErr, sysErr)
+		results, errs, _ := obj.Read(r.Header, false)
+		if errs.Occurred() {
+			// TODO: I think this should just be using HandleErrs
+			userErr := LogErrs(r, errs)
 			alerts.AddAlerts(tc.CreateErrorAlerts(userErr))
-			WriteAlerts(w, r, errCode, alerts)
+			WriteAlerts(w, r, errs.Code, alerts)
 			return
 		}
 		WriteAlertsObj(w, r, http.StatusOK, alerts, results)
@@ -234,9 +245,9 @@ func DeprecatedReadHandler(reader Reader, alternative *string) http.HandlerFunc 
 //   *forming and writing the body over the wire
 func UpdateHandler(updater Updater) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		inf, userErr, sysErr, errCode := NewInfo(r, nil, nil)
-		if userErr != nil || sysErr != nil {
-			HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
+		inf, errs := NewInfo(r, nil, nil)
+		if errs.Occurred() {
+			inf.HandleErrs(w, r, errs)
 			return
 		}
 		defer inf.Close()
@@ -299,9 +310,9 @@ func UpdateHandler(updater Updater) http.HandlerFunc {
 			}
 		}
 
-		userErr, sysErr, errCode = obj.Update()
-		if userErr != nil || sysErr != nil {
-			HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
+		errs = obj.Update()
+		if errs.Occurred() {
+			inf.HandleErrs(w, r, errs)
 			return
 		}
 
@@ -325,9 +336,9 @@ func UpdateHandler(updater Updater) http.HandlerFunc {
 //   *forming and writing the body over the wire
 func DeleteHandler(deleter Deleter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		inf, userErr, sysErr, errCode := NewInfo(r, nil, nil)
-		if userErr != nil || sysErr != nil {
-			HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
+		inf, errs := NewInfo(r, nil, nil)
+		if errs.Occurred() {
+			inf.HandleErrs(w, r, errs)
 			return
 		}
 		defer inf.Close()
@@ -341,9 +352,9 @@ func DeleteHandler(deleter Deleter) http.HandlerFunc {
 		obj := reflect.New(objectType).Interface().(Deleter)
 		obj.SetInfo(inf)
 
-		isOptionsDeleter, userErr, sysErr, errCode := checkIfOptionsDeleter(obj, inf.Params)
-		if userErr != nil || sysErr != nil {
-			HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
+		isOptionsDeleter, errs := checkIfOptionsDeleter(obj, inf.Params)
+		if errs.Occurred() {
+			inf.HandleErrs(w, r, errs)
 			return
 		}
 		var (
@@ -405,12 +416,12 @@ func DeleteHandler(deleter Deleter) http.HandlerFunc {
 		if isOptionsDeleter {
 			obj := reflect.New(objectType).Interface().(OptionsDeleter)
 			obj.SetInfo(inf)
-			userErr, sysErr, errCode = obj.OptionsDelete()
+			errs = obj.OptionsDelete()
 		} else {
-			userErr, sysErr, errCode = obj.Delete()
+			errs = obj.Delete()
 		}
-		if userErr != nil || sysErr != nil {
-			HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
+		if errs.Occurred() {
+			inf.HandleErrs(w, r, errs)
 			return
 		}
 
@@ -431,9 +442,9 @@ func DeleteHandler(deleter Deleter) http.HandlerFunc {
 //   *forming and writing the body over the wire
 func DeprecatedDeleteHandler(deleter Deleter, alternative *string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		inf, userErr, sysErr, errCode := NewInfo(r, nil, nil)
-		if userErr != nil || sysErr != nil {
-			HandleDeprecatedErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr, alternative)
+		inf, errs := NewInfo(r, nil, nil)
+		if errs.Occurred() {
+			HandleDeprecatedErr(w, r, inf.Tx.Tx, errs.Code, errs.UserError, errs.SystemError, alternative)
 			return
 		}
 		defer inf.Close()
@@ -447,9 +458,9 @@ func DeprecatedDeleteHandler(deleter Deleter, alternative *string) http.HandlerF
 		obj := reflect.New(objectType).Interface().(Deleter)
 		obj.SetInfo(inf)
 
-		isOptionsDeleter, userErr, sysErr, errCode := checkIfOptionsDeleter(obj, inf.Params)
-		if userErr != nil || sysErr != nil {
-			HandleDeprecatedErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr, alternative)
+		isOptionsDeleter, errs := checkIfOptionsDeleter(obj, inf.Params)
+		if errs.Occurred() {
+			HandleErrsOptionalDeprecation(w, r, inf.Tx.Tx, errs, true, alternative)
 			return
 		}
 		var (
@@ -511,13 +522,13 @@ func DeprecatedDeleteHandler(deleter Deleter, alternative *string) http.HandlerF
 		if isOptionsDeleter {
 			obj := reflect.New(objectType).Interface().(OptionsDeleter)
 			obj.SetInfo(inf)
-			userErr, sysErr, errCode = obj.OptionsDelete()
+			errs = obj.OptionsDelete()
 		} else {
-			userErr, sysErr, errCode = obj.Delete()
+			errs = obj.Delete()
 		}
 
-		if userErr != nil || sysErr != nil {
-			HandleDeprecatedErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr, alternative)
+		if errs.Occurred() {
+			HandleErrsOptionalDeprecation(w, r, inf.Tx.Tx, errs, true, alternative)
 			return
 		}
 
@@ -541,9 +552,9 @@ func DeprecatedDeleteHandler(deleter Deleter, alternative *string) http.HandlerF
 //   *forming and writing the body over the wire
 func CreateHandler(creator Creator) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		inf, userErr, sysErr, errCode := NewInfo(r, nil, nil)
-		if userErr != nil || sysErr != nil {
-			HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
+		inf, errs := NewInfo(r, nil, nil)
+		if errs.Occurred() {
+			inf.HandleErrs(w, r, errs)
 			return
 		}
 		defer inf.Close()
@@ -591,9 +602,9 @@ func CreateHandler(creator Creator) http.HandlerFunc {
 					}
 				}
 
-				userErr, sysErr, errCode = objElem.Create()
-				if userErr != nil || sysErr != nil {
-					HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
+				errs := objElem.Create()
+				if errs.Occurred() {
+					HandleErrs(w, r, inf.Tx.Tx, errs)
 					return
 				}
 
@@ -643,9 +654,9 @@ func CreateHandler(creator Creator) http.HandlerFunc {
 				}
 			}
 
-			userErr, sysErr, errCode = obj.Create()
-			if userErr != nil || sysErr != nil {
-				HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
+			errs := obj.Create()
+			if errs.Occurred() {
+				HandleErrs(w, r, inf.Tx.Tx, errs)
 				return
 			}
 

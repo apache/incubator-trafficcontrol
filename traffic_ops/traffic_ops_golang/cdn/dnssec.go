@@ -41,9 +41,9 @@ const CDNDNSSECKeyType = "dnssec"
 const DNSSECStatusExisting = "existing"
 
 func CreateDNSSECKeys(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, nil, nil)
-	if userErr != nil || sysErr != nil {
-		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
+	inf, errs := api.NewInfo(r, nil, nil)
+	if errs.Occurred() {
+		inf.HandleErrs(w, r, errs)
 		return
 	}
 	defer inf.Close()
@@ -95,9 +95,9 @@ func CreateDNSSECKeys(w http.ResponseWriter, r *http.Request) {
 const DefaultDSTTL = 60 * time.Second
 
 func GetDNSSECKeys(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"name"}, nil)
-	if userErr != nil || sysErr != nil {
-		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
+	inf, errs := api.NewInfo(r, []string{"name"}, nil)
+	if errs.Occurred() {
+		inf.HandleErrs(w, r, errs)
 		return
 	}
 	defer inf.Close()
@@ -131,9 +131,9 @@ func GetDNSSECKeys(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetDNSSECKeysV11(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"name"}, nil)
-	if userErr != nil || sysErr != nil {
-		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
+	inf, errs := api.NewInfo(r, []string{"name"}, nil)
+	if errs.Occurred() {
+		inf.HandleErrs(w, r, errs)
 		return
 	}
 	defer inf.Close()
@@ -318,9 +318,11 @@ func writeError(w http.ResponseWriter, r *http.Request, tx *sql.Tx, statusCode i
 }
 
 func deleteDNSSECKeys(w http.ResponseWriter, r *http.Request, deprecated bool) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"name"}, nil)
-	if userErr != nil || sysErr != nil {
-		writeError(w, r, inf.Tx.Tx, errCode, userErr, sysErr, deprecated)
+	inf, errs := api.NewInfo(r, []string{"name"}, nil)
+	if errs.Occurred() {
+		// TODO: I think maybe this should just be using the optional
+		// deprecation error handler.
+		writeError(w, r, inf.Tx.Tx, errs.Code, errs.UserError, errs.SystemError, deprecated)
 		return
 	}
 	defer inf.Close()

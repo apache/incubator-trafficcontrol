@@ -19,17 +19,18 @@ package dbdump
  * under the License.
  */
 
-import "errors"
-import "fmt"
-import "net/http"
-import "os"
-import "os/exec"
-import "time"
+import (
+	"errors"
+	"fmt"
+	"net/http"
+	"os"
+	"os/exec"
+	"time"
 
-import "github.com/apache/trafficcontrol/lib/go-log"
-import "github.com/apache/trafficcontrol/lib/go-rfc"
-
-import "github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/api"
+	"github.com/apache/trafficcontrol/lib/go-log"
+	"github.com/apache/trafficcontrol/lib/go-rfc"
+	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/api"
+)
 
 func filename() string {
 	host, err := os.Hostname()
@@ -42,21 +43,21 @@ func filename() string {
 }
 
 func DBDump(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, nil, nil)
-	tx := inf.Tx.Tx
-	if userErr != nil || sysErr != nil {
-		api.HandleErr(w, r, tx, errCode, userErr, sysErr)
+	inf, errs := api.NewInfo(r, nil, nil)
+	if errs.Occurred() {
+		inf.HandleErrs(w, r, errs)
 		return
 	}
 	defer inf.Close()
 
 	conf := inf.Config.DB
 
+	tx := inf.Tx.Tx
 	pgdump, err := exec.LookPath("pg_dump")
 	if err != nil {
-		sysErr = fmt.Errorf("Looking up 'pg_dump' executable: %v", err)
-		userErr = errors.New("'pg_dump' not available")
-		errCode = http.StatusServiceUnavailable
+		sysErr := fmt.Errorf("Looking up 'pg_dump' executable: %v", err)
+		userErr := errors.New("'pg_dump' not available")
+		errCode := http.StatusServiceUnavailable
 		api.HandleErr(w, r, tx, errCode, userErr, sysErr)
 		return
 	}
@@ -81,13 +82,13 @@ func DBDump(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		switch err.(type) {
 		case *exec.ExitError:
-			sysErr = fmt.Errorf("subprocess encountered an error, stderr: %s", err.(*exec.ExitError).Stderr)
+			err = fmt.Errorf("subprocess encountered an error, stderr: %s", err.(*exec.ExitError).Stderr)
 		default:
-			sysErr = fmt.Errorf("subprocess encountered an error: %v", err)
+			err = fmt.Errorf("subprocess encountered an error: %v", err)
 		}
-		userErr = errors.New("Subprocess encountered an error")
-		errCode = http.StatusBadGateway
-		api.HandleErr(w, r, tx, errCode, userErr, sysErr)
+		userErr := errors.New("Subprocess encountered an error")
+		errCode := http.StatusBadGateway
+		api.HandleErr(w, r, tx, errCode, userErr, err)
 		return
 	}
 

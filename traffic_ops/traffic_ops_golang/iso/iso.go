@@ -85,9 +85,9 @@ const (
 //   Content-Type: application/download
 //
 func ISOs(w http.ResponseWriter, req *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(req, nil, nil)
-	if userErr != nil || sysErr != nil {
-		api.HandleErr(w, req, inf.Tx.Tx, errCode, userErr, sysErr)
+	inf, errs := api.NewInfo(req, nil, nil)
+	if errs.Occurred() {
+		inf.HandleErrs(w, req, errs)
 		return
 	}
 	defer inf.Close()

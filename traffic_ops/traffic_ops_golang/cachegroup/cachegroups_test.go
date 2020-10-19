@@ -142,10 +142,10 @@ func TestReadCacheGroups(t *testing.T) {
 		api.APIInfoImpl{&reqInfo},
 		tc.CacheGroupNullable{},
 	}
-	cachegroups, userErr, sysErr, _, _ := obj.Read(nil, false)
+	cachegroups, errs, _ := obj.Read(nil, false)
 
-	if userErr != nil || sysErr != nil {
-		t.Errorf("Read expected: no errors, actual: %v %v", userErr, sysErr)
+	if errs.Occurred() {
+		t.Errorf("Read expected: no errors, actual: %s", errs)
 	}
 
 	if len(cachegroups) != 2 {
@@ -332,14 +332,14 @@ func TestBadTypeParamCacheGroups(t *testing.T) {
 		api.APIInfoImpl{&reqInfo},
 		tc.CacheGroupNullable{},
 	}
-	_, userErr, _, sc, _ := obj.Read(nil, false)
-	if sc != http.StatusBadRequest {
-		t.Errorf("Read expected status code: Bad Request, actual: %v ", sc)
+	_, errs, _ := obj.Read(nil, false)
+	if errs.Code != http.StatusBadRequest {
+		t.Errorf("Read expected status code: Bad Request, actual: %v ", errs.Code)
 	}
-	if userErr == nil {
+	if errs.UserError == nil {
 		t.Fatalf("Read expected: user error with details %v, actual: nil", detail)
 	}
-	if userErr.Error() != detail {
-		t.Fatalf("Read expected: user error with details %v, actual: %v", detail, userErr.Error())
+	if errs.UserError.Error() != detail {
+		t.Fatalf("Read expected: user error with details %v, actual: %v", detail, errs.UserError.Error())
 	}
 }

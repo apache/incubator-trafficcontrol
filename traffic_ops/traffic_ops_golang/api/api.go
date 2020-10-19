@@ -41,6 +41,7 @@ import (
 	"github.com/apache/trafficcontrol/lib/go-log"
 	"github.com/apache/trafficcontrol/lib/go-rfc"
 	"github.com/apache/trafficcontrol/lib/go-tc"
+	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/apierrors"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/auth"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/config"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/tenant"
@@ -167,12 +168,32 @@ func HandleErr(w http.ResponseWriter, r *http.Request, tx *sql.Tx, statusCode in
 	handleSimpleErr(w, r, statusCode, userErr, sysErr)
 }
 
+// HandleErrs handles API errors, rolling back the transaction, writing the
+// status code and user-facing errors back to client, and logging any system
+// error. If there is no user-facing error provided, the text of the HTTP
+// status code is written.
+//
+// The tx may be nil, if there is no transaction. Passing a nil tx is strongly
+// discouraged if a transaction exists, because it will result in copy-paste
+// errors for the common APIInfo use case.
+func HandleErrs(w http.ResponseWriter, r *http.Request, tx *sql.Tx, errs apierrors.Errors) {
+	HandleErr(w, r, tx, errs.Code, errs.UserError, errs.SystemError)
+}
+
 func HandleErrOptionalDeprecation(w http.ResponseWriter, r *http.Request, tx *sql.Tx, statusCode int, userErr error, sysErr error, deprecated bool, alternative *string) {
 	if deprecated {
 		HandleDeprecatedErr(w, r, tx, statusCode, userErr, sysErr, alternative)
 	} else {
 		HandleErr(w, r, tx, statusCode, userErr, sysErr)
 	}
+}
+
+// HandleErrsOptionalDeprecation handles a set of API apierrors.Errors. If 'deprecated'
+// is true, then a deprecation alert will be added to the response, and if
+// alternative is not nil it will be presented to the client as the replacement
+// for the deprecated route.
+func HandleErrsOptionalDeprecation(w http.ResponseWriter, r *http.Request, tx *sql.Tx, errs apierrors.Errors, deprecated bool, alternative *string) {
+	HandleErrOptionalDeprecation(w, r, tx, errs.Code, errs.UserError, errs.SystemError, deprecated, alternative)
 }
 
 // HandleDeprecatedErr handles an API error, adding a deprecation alert, rolling back the transaction, writing the given statusCode and userErr to the user, and logging the sysErr. If userErr is nil, the text of the HTTP statusCode is written.
@@ -214,6 +235,14 @@ func LogErr(r *http.Request, errCode int, userErr error, sysErr error) error {
 	log.Debugln(userErr.Error())
 	*r = *r.WithContext(context.WithValue(r.Context(), tc.StatusKey, errCode))
 	return userErr
+}
+
+// LogErrs handles the logging of errors and setting up possibly nil errors
+// without actually writing anything to a http.ResponseWriter, unlike
+// handleSimpleErr. It returns the userErr which will be initialized to the
+// http.StatusText of errCode if it was passed as nil - otherwise left alone.
+func LogErrs(r *http.Request, errs apierrors.Errors) error {
+	return LogErr(r, errs.Code, errs.UserError, errs.SystemError)
 }
 
 // handleSimpleErr is a helper for HandleErr.
@@ -411,20 +440,27 @@ func StripParamJSON(params map[string]string) map[string]string {
 
 // AllParams takes the request (in which the router has inserted context for path parameters), and an array of parameters required to be integers, and returns the map of combined parameters, and the map of int parameters; or a user or system error and the HTTP error code. The intParams may be nil if no integer parameters are required.
 // This is a helper for the common case; not using this in unusual cases is perfectly acceptable.
-func AllParams(req *http.Request, required []string, ints []string) (map[string]string, map[string]int, error, error, int) {
+func AllParams(req *http.Request, required []string, ints []string) (map[string]string, map[string]int, apierrors.Errors) {
+	errs := apierrors.New()
 	params, err := GetCombinedParams(req)
 	if err != nil {
-		return nil, nil, nil, errors.New("getting combined URI parameters: " + err.Error()), http.StatusInternalServerError
+		errs.Code = http.StatusInternalServerError
+		errs.SystemError = fmt.Errorf("getting combined URI parameters: %v", err)
+		return nil, nil, errs
 	}
 	params = StripParamJSON(params)
 	if err := ParamsHaveRequired(params, required); err != nil {
-		return nil, nil, errors.New("required parameters missing: " + err.Error()), nil, http.StatusBadRequest
+		errs.Code = http.StatusBadRequest
+		errs.UserError = fmt.Errorf("required parameters missing: %v", err)
+		return nil, nil, errs
 	}
 	intParams, err := IntParams(params, ints)
 	if err != nil {
-		return nil, nil, errors.New("getting integer parameters: " + err.Error()), nil, http.StatusBadRequest
+		errs.Code = http.StatusBadRequest
+		errs.UserError = fmt.Errorf("getting integer parameters: %v", err)
+		return nil, nil, errs
 	}
-	return params, intParams, nil, nil, 0
+	return params, intParams, errs
 }
 
 // ParseValidator objects can make use of api.Parse to handle parsing and
@@ -489,35 +525,57 @@ type APIInfo struct {
 //    api.WriteResp(w, r, respObj)
 //  }
 //
-func NewInfo(r *http.Request, requiredParams []string, intParamNames []string) (*APIInfo, error, error, int) {
+func NewInfo(r *http.Request, requiredParams []string, intParamNames []string) (*APIInfo, apierrors.Errors) {
+	inf := &APIInfo{
+		Tx: &sqlx.Tx{},
+	}
+
+	errs := apierrors.Errors{
+		Code: http.StatusInternalServerError,
+	}
+
 	db, err := GetDB(r.Context())
 	if err != nil {
-		return &APIInfo{Tx: &sqlx.Tx{}}, errors.New("getting db: " + err.Error()), nil, http.StatusInternalServerError
+		errs.SystemError = fmt.Errorf("getting db: %v", err)
+		return inf, errs
 	}
+
 	cfg, err := GetConfig(r.Context())
 	if err != nil {
-		return &APIInfo{Tx: &sqlx.Tx{}}, errors.New("getting config: " + err.Error()), nil, http.StatusInternalServerError
+		errs.SystemError = fmt.Errorf("getting config: %v", err)
+		return inf, errs
 	}
+
 	reqID, err := getReqID(r.Context())
 	if err != nil {
-		return &APIInfo{Tx: &sqlx.Tx{}}, errors.New("getting reqID: " + err.Error()), nil, http.StatusInternalServerError
+		errs.SystemError = fmt.Errorf("getting reqID: %v", err)
+		return inf, errs
 	}
 	version := getRequestedAPIVersion(r.URL.Path)
 
 	user, err := auth.GetCurrentUser(r.Context())
 	if err != nil {
-		return &APIInfo{Tx: &sqlx.Tx{}}, errors.New("getting user: " + err.Error()), nil, http.StatusInternalServerError
+		errs.SystemError = fmt.Errorf("getting user: %v", err)
+		return inf, errs
 	}
-	params, intParams, userErr, sysErr, errCode := AllParams(r, requiredParams, intParamNames)
-	if userErr != nil || sysErr != nil {
-		return &APIInfo{Tx: &sqlx.Tx{}}, userErr, sysErr, errCode
+
+	params, intParams, errs := AllParams(r, requiredParams, intParamNames)
+	if errs.Occurred() {
+		return inf, errs
 	}
-	dbCtx, _ := context.WithTimeout(r.Context(), time.Duration(cfg.DBQueryTimeoutSeconds)*time.Second) //only place we could call cancel here is in APIInfo.Close(), which already will rollback the transaction (which is all cancel will do.)
-	tx, err := db.BeginTxx(dbCtx, nil)                                                                 // must be last, MUST not return an error if this succeeds, without closing the tx
+	//only place we could call cancel here is in APIInfo.Close(), which already will rollback the transaction (which is all cancel will do.)
+	// must be last, MUST not return an error if this succeeds, without closing the tx
+	dbCtx, _ := context.WithTimeout(r.Context(), time.Duration(cfg.DBQueryTimeoutSeconds)*time.Second)
+	tx, err := db.BeginTxx(dbCtx, nil)
 	if err != nil {
-		return &APIInfo{Tx: &sqlx.Tx{}}, userErr, errors.New("could not begin transaction: " + err.Error()), http.StatusInternalServerError
+		return inf, apierrors.Errors{
+			Code:        http.StatusInternalServerError,
+			SystemError: fmt.Errorf("could not begin transaction: %v", err),
+			UserError:   nil,
+		}
 	}
-	return &APIInfo{
+
+	inf = &APIInfo{
 		Config:    cfg,
 		ReqID:     reqID,
 		Version:   version,
@@ -525,7 +583,8 @@ func NewInfo(r *http.Request, requiredParams []string, intParamNames []string) (
 		IntParams: intParams,
 		User:      user,
 		Tx:        tx,
-	}, nil, nil, http.StatusOK
+	}
+	return inf, errs
 }
 
 // Close implements the io.Closer interface. It should be called in a defer immediately after NewInfo().
@@ -537,8 +596,18 @@ func (inf *APIInfo) Close() {
 	}
 }
 
+// HandleErrs writes the appropriate response to the client given the provided
+// errors.
+func (inf APIInfo) HandleErrs(w http.ResponseWriter, r *http.Request, e apierrors.Errors) {
+	if inf.Tx == nil {
+		HandleErrs(w, r, nil, e)
+		return
+	}
+	HandleErrs(w, r, inf.Tx.Tx, e)
+}
+
 // SendMail is a convenience method used to call SendMail using an APIInfo structure's configuration.
-func (inf *APIInfo) SendMail(to rfc.EmailAddress, msg []byte) (int, error, error) {
+func (inf *APIInfo) SendMail(to rfc.EmailAddress, msg []byte) apierrors.Errors {
 	return SendMail(to, msg, inf.Config)
 }
 
@@ -559,9 +628,12 @@ func (inf *APIInfo) IsResourceAuthorizedToCurrentUser(resourceTenantID int) (boo
 // SendMail returns (in order) an HTTP status code, a user-friendly error, and an error fit for
 // logging to system error logs. If either the user or system error is non-nil, the operation failed,
 // and the HTTP status code indicates the type of failure.
-func SendMail(to rfc.EmailAddress, msg []byte, cfg *config.Config) (int, error, error) {
+func SendMail(to rfc.EmailAddress, msg []byte, cfg *config.Config) apierrors.Errors {
+	errs := apierrors.New()
 	if !cfg.SMTP.Enabled {
-		return http.StatusInternalServerError, nil, errors.New("SMTP is not enabled; mail cannot be sent")
+		errs.Code = http.StatusInternalServerError
+		errs.SetSystemError("SMTP is not enabled; mail cannot be sent")
+		return errs
 	}
 	var auth smtp.Auth
 	if cfg.SMTP.User != "" {
@@ -569,9 +641,10 @@ func SendMail(to rfc.EmailAddress, msg []byte, cfg *config.Config) (int, error, 
 	}
 	err := smtp.SendMail(cfg.SMTP.Address, auth, cfg.ConfigTO.EmailFrom.Address.Address, []string{to.Address.Address}, msg)
 	if err != nil {
-		return http.StatusInternalServerError, nil, fmt.Errorf("Failed to send email: %v", err)
+		errs.Code = http.StatusInternalServerError
+		errs.SystemError = fmt.Errorf("Failed to send email: %v", err)
 	}
-	return http.StatusOK, nil, nil
+	return errs
 }
 
 // CreateInfluxClient constructs and returns an InfluxDB HTTP client, if enabled and when possible.
@@ -746,53 +819,68 @@ func toCamelCase(str string) string {
 }
 
 // parses pq errors for not null constraint
-func parseNotNullConstraint(err *pq.Error) (error, error, int) {
+func parseNotNullConstraint(err *pq.Error) apierrors.Errors {
+	errs := apierrors.New()
 	pattern := regexp.MustCompile(`null value in column "(.+)" violates not-null constraint`)
 	match := pattern.FindStringSubmatch(err.Message)
 	if match == nil {
-		return nil, nil, http.StatusOK
+		return errs
 	}
-	return fmt.Errorf("%s is a required field", toCamelCase(match[1])), nil, http.StatusBadRequest
+	errs.Code = http.StatusBadRequest
+	errs.UserError = fmt.Errorf("%s is a required field", toCamelCase(match[1]))
+	return errs
 }
 
 // parses pq errors for empty string check constraint
-func parseEmptyConstraint(err *pq.Error) (error, error, int) {
+func parseEmptyConstraint(err *pq.Error) apierrors.Errors {
+	errs := apierrors.New()
 	pattern := regexp.MustCompile(`new row for relation "[^"]*" violates check constraint "(.*)_empty"`)
 	match := pattern.FindStringSubmatch(err.Message)
 	if match == nil {
-		return nil, nil, http.StatusOK
+		return errs
 	}
-	return fmt.Errorf("%s cannot be ", match[1]), nil, http.StatusBadRequest
+	errs.Code = http.StatusBadRequest
+	errs.UserError = fmt.Errorf("%s cannot be ", match[1])
+	return errs
 }
 
 // parses pq errors for violated foreign key constraints
-func parseNotPresentFKConstraint(err *pq.Error) (error, error, int) {
+func parseNotPresentFKConstraint(err *pq.Error) apierrors.Errors {
+	errs := apierrors.New()
 	pattern := regexp.MustCompile(`Key \(.+\)=\(.+\) is not present in table "(.+)"`)
 	match := pattern.FindStringSubmatch(err.Detail)
 	if match == nil {
-		return nil, nil, http.StatusOK
+		return errs
 	}
-	return fmt.Errorf("%s not found", match[1]), nil, http.StatusNotFound
+	errs.UserError = fmt.Errorf("%s not found", match[1])
+	errs.Code = http.StatusNotFound
+	return errs
 }
 
 // parses pq errors for uniqueness constraint violations
-func parseUniqueConstraint(err *pq.Error) (error, error, int) {
+func parseUniqueConstraint(err *pq.Error) apierrors.Errors {
+	errs := apierrors.New()
 	pattern := regexp.MustCompile(`Key \((.+)\)=\((.+)\) already exists`)
 	match := pattern.FindStringSubmatch(err.Detail)
 	if match == nil {
-		return nil, nil, http.StatusOK
+		return errs
 	}
-	return fmt.Errorf("%v %s '%s' already exists.", err.Table, match[1], match[2]), nil, http.StatusBadRequest
+	errs.Code = http.StatusBadRequest
+	errs.UserError = fmt.Errorf("%v %s '%s' already exists", err.Table, match[1], match[2])
+	return errs
 }
 
 // parses pq errors for database enum constraint violations
-func parseEnumConstraint(err *pq.Error) (error, error, int) {
+func parseEnumConstraint(err *pq.Error) apierrors.Errors {
+	errs := apierrors.New()
 	pattern := regexp.MustCompile(`invalid input value for enum (.+): \"(.+)\"`)
 	match := pattern.FindStringSubmatch(err.Message)
 	if match == nil {
-		return nil, nil, http.StatusOK
+		return errs
 	}
-	return fmt.Errorf("invalid enum value %s for field %s.", match[2], match[1]), nil, http.StatusBadRequest
+	errs.Code = http.StatusBadRequest
+	errs.UserError = fmt.Errorf("invalid enum value %s for field %s", match[2], match[1])
+	return errs
 }
 
 // parses pq errors for ON DELETE RESTRICT fk constraint violations
@@ -812,11 +900,12 @@ func parseEnumConstraint(err *pq.Error) (error, error, int) {
 // It may be helpful to look at constraints for api_capability, role_capability,
 // and user_role for examples.
 //
-func parseRestrictFKConstraint(err *pq.Error) (error, error, int) {
+func parseRestrictFKConstraint(err *pq.Error) apierrors.Errors {
+	errs := apierrors.New()
 	pattern := regexp.MustCompile(`update or delete on table "([a-z_]+)" violates foreign key constraint ".+" on table "([a-z_]+)"`)
 	match := pattern.FindStringSubmatch(err.Message)
 	if match == nil {
-		return nil, nil, http.StatusOK
+		return errs
 	}
 
 	// small heuristic for grammar
@@ -825,92 +914,110 @@ func parseRestrictFKConstraint(err *pq.Error) (error, error, int) {
 	case 'a', 'e', 'i', 'o':
 		article = "an"
 	}
-	return fmt.Errorf("cannot delete %s because it is being used by %s %s", match[1], article, match[2]), nil, http.StatusBadRequest
+	errs.Code = http.StatusBadRequest
+	errs.UserError = fmt.Errorf("cannot delete %s because it is being used by %s %s", match[1], article, match[2])
+	return errs
 }
 
 // ParseDBError parses pq errors for database constraint violations, and returns the (userErr, sysErr, httpCode) format expected by the API helpers.
-func ParseDBError(ierr error) (error, error, int) {
-
+func ParseDBError(ierr error) apierrors.Errors {
+	errs := apierrors.New()
 	err, ok := ierr.(*pq.Error)
 	if !ok {
 		log.Errorf("a non-pq error was given")
-		return nil, ierr, http.StatusInternalServerError
+		errs.Code = http.StatusInternalServerError
+		errs.SystemError = ierr
+		return errs
 	}
 
-	if usrErr, sysErr, errCode := parseNotPresentFKConstraint(err); errCode != http.StatusOK {
-		return usrErr, sysErr, errCode
+	if errs = parseNotPresentFKConstraint(err); errs.Occurred() {
+		return errs
 	}
 
-	if usrErr, sysErr, errCode := parseUniqueConstraint(err); errCode != http.StatusOK {
-		return usrErr, sysErr, errCode
+	if errs = parseUniqueConstraint(err); errs.Occurred() {
+		return errs
 	}
 
-	if usrErr, sysErr, errCode := parseRestrictFKConstraint(err); errCode != http.StatusOK {
-		return usrErr, sysErr, errCode
+	if errs = parseRestrictFKConstraint(err); errs.Occurred() {
+		return errs
 	}
 
-	if usrErr, sysErr, errCode := parseNotNullConstraint(err); errCode != http.StatusOK {
-		return usrErr, sysErr, errCode
+	if errs = parseNotNullConstraint(err); errs.Occurred() {
+		return errs
 	}
 
-	if usrErr, sysErr, errCode := parseEmptyConstraint(err); errCode != http.StatusOK {
-		return usrErr, sysErr, errCode
+	if errs = parseEmptyConstraint(err); errs.Occurred() {
+		return errs
 	}
 
-	if usrErr, sysErr, errCode := parseEnumConstraint(err); errCode != http.StatusOK {
-		return usrErr, sysErr, errCode
+	if errs = parseEnumConstraint(err); errs.Occurred() {
+		return errs
 	}
 
-	return nil, err, http.StatusInternalServerError
+	return errs
 }
 
 // GetUserFromReq returns the current user, any user error, any system error, and an error code to be returned if either error was not nil.
 // This also uses the given ResponseWriter to refresh the cookie, if it was valid.
-func GetUserFromReq(w http.ResponseWriter, r *http.Request, secret string) (auth.CurrentUser, error, error, int) {
+func GetUserFromReq(w http.ResponseWriter, r *http.Request, secret string) (auth.CurrentUser, apierrors.Errors) {
+	errs := apierrors.Errors{
+		Code:        http.StatusUnauthorized,
+		SystemError: nil,
+		UserError:   errors.New("Unauthorized, please log in."),
+	}
+	u := auth.CurrentUser{}
 	cookie, err := r.Cookie(tocookie.Name)
 	if err != nil {
-		return auth.CurrentUser{}, errors.New("Unauthorized, please log in."), errors.New("error getting cookie: " + err.Error()), http.StatusUnauthorized
+		errs.SystemError = fmt.Errorf("error getting cookie: %v", err)
+		return u, errs
 	}
 
 	if cookie == nil {
-		return auth.CurrentUser{}, errors.New("Unauthorized, please log in."), nil, http.StatusUnauthorized
+		return u, errs
 	}
 
 	oldCookie, err := tocookie.Parse(secret, cookie.Value)
 	if err != nil {
-		return auth.CurrentUser{}, errors.New("Unauthorized, please log in."), errors.New("error parsing cookie: " + err.Error()), http.StatusUnauthorized
+		errs.SystemError = fmt.Errorf("error parsing cookie: %v", err)
+		return u, errs
 	}
 
 	username := oldCookie.AuthData
 	if username == "" {
-		return auth.CurrentUser{}, errors.New("Unauthorized, please log in."), nil, http.StatusUnauthorized
+		return u, errs
 	}
+
+	errs.Code = http.StatusInternalServerError
+	errs.UserError = nil
 	db := (*sqlx.DB)(nil)
 	val := r.Context().Value(DBContextKey)
 	if val == nil {
-		return auth.CurrentUser{}, nil, errors.New("request context db missing"), http.StatusInternalServerError
+		errs.SetSystemError("request context db missing")
+		return u, errs
 	}
 	switch v := val.(type) {
 	case *sqlx.DB:
 		db = v
 	default:
-		return auth.CurrentUser{}, nil, fmt.Errorf("request context db unknown type %T", val), http.StatusInternalServerError
+		errs.SystemError = fmt.Errorf("request context db unknown type %T", val)
+		return u, errs
 	}
 
 	cfg, err := GetConfig(r.Context())
 	if err != nil {
-		return auth.CurrentUser{}, nil, errors.New("request context config missing"), http.StatusInternalServerError
+		errs.SetSystemError("request context config missing")
+		return u, errs
 	}
 
-	user, userErr, sysErr, code := auth.GetCurrentUserFromDB(db, username, time.Duration(cfg.DBQueryTimeoutSeconds)*time.Second)
-	if userErr != nil || sysErr != nil {
-		return auth.CurrentUser{}, userErr, sysErr, code
+	u, errs = auth.GetCurrentUserFromDB(db, username, time.Duration(cfg.DBQueryTimeoutSeconds)*time.Second)
+	if errs.Occurred() {
+		return u, errs
 	}
 
 	duration := tocookie.DefaultDuration
 	newCookie := tocookie.GetCookie(oldCookie.AuthData, duration, secret)
 	http.SetCookie(w, newCookie)
-	return user, nil, nil, http.StatusOK
+	return u, apierrors.New()
 }
 
 func AddUserToReq(r *http.Request, u auth.CurrentUser) {
@@ -923,14 +1030,17 @@ func AddUserToReq(r *http.Request, u auth.CurrentUser) {
 // SendEmailFromTemplate returns (in order) an HTTP status code, a user-friendly error, and an error fit for
 // logging to system error logs. If either the user or system error is non-nil, the operation failed,
 // and the HTTP status code indicates the type of failure.
-func SendEmailFromTemplate(config config.Config, header string, data interface{}, templateFile string, toEmail string) (int, error, error) {
+func SendEmailFromTemplate(config config.Config, header string, data interface{}, templateFile string, toEmail string) apierrors.Errors {
 	email := rfc.EmailAddress{
 		Address: mail.Address{Name: "", Address: toEmail},
 	}
 
 	msgBodyBuffer, err := parseTemplate(templateFile, data)
 	if err != nil {
-		return http.StatusInternalServerError, err, nil
+		return apierrors.Errors{
+			Code:        http.StatusInternalServerError,
+			SystemError: err,
+		}
 	}
 	msg := append([]byte(header), msgBodyBuffer.Bytes()...)
 

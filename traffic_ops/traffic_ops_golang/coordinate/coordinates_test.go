@@ -90,9 +90,9 @@ func TestReadCoordinates(t *testing.T) {
 		api.APIInfoImpl{&reqInfo},
 		tc.CoordinateNullable{},
 	}
-	coordinates, userErr, sysErr, _, _ := obj.Read(nil, false)
-	if userErr != nil || sysErr != nil {
-		t.Errorf("Read expected: no errors, actual: %v %v", userErr, sysErr)
+	coordinates, errs, _ := obj.Read(nil, false)
+	if errs.Occurred() {
+		t.Errorf("Read expected: no errors, actual: %s", errs)
 	}
 	if len(coordinates) != 2 {
 		t.Errorf("coordinate.Read expected: len(coordinates) == 2, actual: %v", len(coordinates))

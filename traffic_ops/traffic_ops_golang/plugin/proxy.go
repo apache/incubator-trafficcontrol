@@ -92,9 +92,9 @@ func proxyOnReq(d OnRequestData) IsRequestHandled {
 }
 
 func proxyHandle(w http.ResponseWriter, r *http.Request, d OnRequestData, proxyURI *url.URL) IsRequestHandled {
-	_, userErr, sysErr, errCode := api.GetUserFromReq(w, r, d.AppCfg.Secrets[0]) // require login
-	if userErr != nil || sysErr != nil {
-		api.HandleErr(w, r, nil, errCode, userErr, sysErr)
+	_, errs := api.GetUserFromReq(w, r, d.AppCfg.Secrets[0]) // require login
+	if errs.Occurred() {
+		api.HandleErr(w, r, nil, errs.Code, errs.UserError, errs.SystemError)
 		return RequestHandled
 	}
 	rp := httputil.NewSingleHostReverseProxy(proxyURI)

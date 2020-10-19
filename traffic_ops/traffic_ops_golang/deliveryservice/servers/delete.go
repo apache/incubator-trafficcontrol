@@ -43,9 +43,9 @@ func DeleteDeprecated(w http.ResponseWriter, r *http.Request) {
 
 func delete(w http.ResponseWriter, r *http.Request, deprecated bool) {
 	alt := "DELETE deliveryserviceserver/:dsid/:serverid"
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"serverid", "dsid"}, []string{"serverid", "dsid"})
-	if userErr != nil || sysErr != nil {
-		api.HandleErrOptionalDeprecation(w, r, inf.Tx.Tx, errCode, userErr, sysErr, deprecated, &alt)
+	inf, errs := api.NewInfo(r, []string{"serverid", "dsid"}, []string{"serverid", "dsid"})
+	if errs.Occurred() {
+		api.HandleErrsOptionalDeprecation(w, r, inf.Tx.Tx, errs, deprecated, &alt)
 		return
 	}
 	defer inf.Close()
@@ -53,9 +53,9 @@ func delete(w http.ResponseWriter, r *http.Request, deprecated bool) {
 	dsID := inf.IntParams["dsid"]
 	serverID := inf.IntParams["serverid"]
 
-	userErr, sysErr, errCode = tenant.CheckID(inf.Tx.Tx, inf.User, dsID)
-	if userErr != nil || sysErr != nil {
-		api.HandleErrOptionalDeprecation(w, r, inf.Tx.Tx, errCode, userErr, sysErr, deprecated, &alt)
+	errs = tenant.CheckID(inf.Tx.Tx, inf.User, dsID)
+	if errs.Occurred() {
+		api.HandleErrsOptionalDeprecation(w, r, inf.Tx.Tx, errs, deprecated, &alt)
 		return
 	}
 

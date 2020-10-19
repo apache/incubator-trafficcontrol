@@ -50,15 +50,15 @@ JOIN server s ON s.id = h.serverid
 
 // Get handles GET requests to /hwinfo
 func Get(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, nil, nil)
-	tx := inf.Tx
-	if userErr != nil || sysErr != nil {
-		api.HandleErr(w, r, tx.Tx, errCode, userErr, sysErr)
+	inf, errs := api.NewInfo(r, nil, nil)
+	if errs.Occurred() {
+		inf.HandleErrs(w, r, errs)
 		return
 	}
 	defer inf.Close()
 
 	alerts := tc.CreateAlerts(tc.WarnLevel, "This endpoint is deprecated, and will be removed in the future")
+	tx := inf.Tx
 
 	// Mimic Perl behavior
 	if _, ok := inf.Params["limit"]; !ok {

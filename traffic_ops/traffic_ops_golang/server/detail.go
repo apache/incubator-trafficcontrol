@@ -38,9 +38,9 @@ import (
 
 func GetDetailHandler(w http.ResponseWriter, r *http.Request) {
 	alt := "GET servers/details with query parameters hostName"
-	inf, userErr, sysErr, errCode := api.NewInfo(r, nil, nil)
-	if userErr != nil || sysErr != nil {
-		api.HandleDeprecatedErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr, &alt)
+	inf, errs := api.NewInfo(r, nil, nil)
+	if errs.Occurred() {
+		api.HandleErrsOptionalDeprecation(w, r, inf.Tx.Tx, errs, true, &alt)
 		return
 	}
 	defer inf.Close()
@@ -77,9 +77,9 @@ func GetDetailHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetDetailParamHandler(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, nil, nil)
-	if userErr != nil || sysErr != nil {
-		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
+	inf, errs := api.NewInfo(r, nil, nil)
+	if errs.Occurred() {
+		inf.HandleErrs(w, r, errs)
 		return
 	}
 	defer inf.Close()

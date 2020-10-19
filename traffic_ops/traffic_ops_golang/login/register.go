@@ -19,20 +19,21 @@ package login
  * under the License.
  */
 
-import "bytes"
-import "database/sql"
-import "errors"
-import "fmt"
-import "html/template"
-import "net/http"
+import (
+	"bytes"
+	"database/sql"
+	"errors"
+	"fmt"
+	"html/template"
+	"net/http"
 
-import "github.com/apache/trafficcontrol/lib/go-log"
-import "github.com/apache/trafficcontrol/lib/go-rfc"
-import "github.com/apache/trafficcontrol/lib/go-tc"
-
-import "github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/api"
-import "github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/config"
-import "github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/dbhelpers"
+	"github.com/apache/trafficcontrol/lib/go-log"
+	"github.com/apache/trafficcontrol/lib/go-rfc"
+	"github.com/apache/trafficcontrol/lib/go-tc"
+	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/api"
+	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/config"
+	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/dbhelpers"
+)
 
 type registrationEmailFormatter struct {
 	From         rfc.EmailAddress
@@ -150,21 +151,24 @@ func createRegistrationMsg(addr rfc.EmailAddress, t string, tx *sql.Tx, c config
 
 // RegisterUser is the handler for /users/register. It sends registration through Email.
 func RegisterUser(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, nil, nil)
-	var tx = inf.Tx.Tx
-	if userErr != nil || sysErr != nil {
-		api.HandleErr(w, r, tx, errCode, userErr, sysErr)
+	inf, errs := api.NewInfo(r, nil, nil)
+	if errs.Occurred() {
+		inf.HandleErrs(w, r, errs)
 		return
 	}
 	defer inf.Close()
 	defer r.Body.Close()
 
+	var tx = inf.Tx.Tx
 	var req tc.UserRegistrationRequest
-	if userErr = api.Parse(r.Body, tx, &req); userErr != nil {
+	userErr := api.Parse(r.Body, tx, &req)
+	if userErr != nil {
 		api.HandleErr(w, r, tx, http.StatusBadRequest, userErr, nil)
 		return
 	}
 
+	var sysErr error
+	var errCode int
 	if ok, err := inf.IsResourceAuthorizedToCurrentUser(int(req.TenantID)); err != nil {
 		sysErr = fmt.Errorf("Checking tenancy permissions of current user (%+v) on tenant #%d", inf.User, req.TenantID)
 		errCode = http.StatusInternalServerError
@@ -230,8 +234,7 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Errorf("Bare error: %v", err)
-		userErr, sysErr, errCode = api.ParseDBError(err)
-		api.HandleErr(w, r, tx, errCode, userErr, sysErr)
+		inf.HandleErrs(w, r, api.ParseDBError(err))
 		return
 	}
 
@@ -245,8 +248,8 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 
 	log.Debugf("Sending registration email to %s", req.Email)
 
-	if errCode, userErr, sysErr = inf.SendMail(req.Email, msg); userErr != nil || sysErr != nil {
-		api.HandleErr(w, r, tx, errCode, userErr, sysErr)
+	if errs = inf.SendMail(req.Email, msg); errs.Occurred() {
+		inf.HandleErrs(w, r, errs)
 		return
 	}
 

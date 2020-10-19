@@ -30,6 +30,7 @@ import (
 	"github.com/apache/trafficcontrol/lib/go-tc"
 	"github.com/apache/trafficcontrol/lib/go-util"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/api"
+	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/apierrors"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/auth"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/dbhelpers"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/tenant"
@@ -38,9 +39,9 @@ import (
 )
 
 func DSPostHandler(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"id"}, []string{"id"})
-	if userErr != nil || sysErr != nil {
-		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
+	inf, errs := api.NewInfo(r, []string{"id"}, []string{"id"})
+	if errs.Occurred() {
+		inf.HandleErrs(w, r, errs)
 		return
 	}
 	defer inf.Close()
@@ -54,69 +55,96 @@ func DSPostHandler(w http.ResponseWriter, r *http.Request) {
 		"alerts": tc.CreateAlerts(tc.SuccessLevel, "Delivery services successfully assigned to all the servers of cache group "+strconv.Itoa(inf.IntParams["id"])+".").Alerts,
 	}
 
-	resp, userErr, sysErr, errCode := postDSes(inf.Tx.Tx, inf.User, inf.IntParams["id"], req.DeliveryServices)
-	if userErr != nil || sysErr != nil {
-		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
+	resp, errs := postDSes(inf.Tx.Tx, inf.User, inf.IntParams["id"], req.DeliveryServices)
+	if errs.Occurred() {
+		inf.HandleErrs(w, r, errs)
 		return
 	}
 	api.WriteRespVals(w, r, resp, vals)
 }
 
 // postDSes returns the post response, any user error, any system error, and the HTTP status code to be returned in the event of an error.
-func postDSes(tx *sql.Tx, user *auth.CurrentUser, cgID int, dsIDs []int) (tc.CacheGroupPostDSResp, error, error, int) {
-	cdnName, usrErr, sysErr, errCode := getCachegroupCDN(tx, cgID)
-	if sysErr != nil {
-		sysErr = errors.New("getting cachegroup CDN: " + sysErr.Error())
-	}
-	if usrErr != nil || sysErr != nil {
-		return tc.CacheGroupPostDSResp{}, usrErr, sysErr, errCode
+func postDSes(tx *sql.Tx, user *auth.CurrentUser, cgID int, dsIDs []int) (tc.CacheGroupPostDSResp, apierrors.Errors) {
+	var resp tc.CacheGroupPostDSResp
+	cdnName, errs := getCachegroupCDN(tx, cgID)
+	if errs.Occurred() {
+		if errs.SystemError != nil {
+			errs.SetSystemError("getting cachegroup CDN: " + errs.SystemError.Error())
+		}
+		return resp, errs
 	}
 
 	tenantIDs, err := getDSTenants(tx, dsIDs)
 	if err != nil {
-		return tc.CacheGroupPostDSResp{}, nil, errors.New("getting delivery service tenant IDs: " + err.Error()), http.StatusInternalServerError
+		errs.SetSystemError("getting delivery service tenant IDs: " + err.Error())
+		errs.Code = http.StatusInternalServerError
+		return resp, errs
 	}
 	for _, tenantID := range tenantIDs {
 		ok, err := tenant.IsResourceAuthorizedToUserTx(int(tenantID), user, tx)
 		if err != nil {
-			return tc.CacheGroupPostDSResp{}, nil, errors.New("checking tenancy: " + err.Error()), http.StatusInternalServerError
+			errs.SetSystemError("checking tenancy: " + err.Error())
+			errs.Code = http.StatusInternalServerError
+			return resp, errs
 		}
 		if !ok {
-			return tc.CacheGroupPostDSResp{}, fmt.Errorf("not authorized for delivery service tenant %d", tenantID), nil, http.StatusForbidden
+			errs.UserError = fmt.Errorf("not authorized for delivery service tenant %d", tenantID)
+			errs.Code = http.StatusForbidden
+			return resp, errs
 		}
 	}
 
 	cgName, ok, err := dbhelpers.GetCacheGroupNameFromID(tx, cgID)
 	if err != nil {
-		return tc.CacheGroupPostDSResp{}, nil, fmt.Errorf("getting cachegroup name from ID %d: %s", cgID, err.Error()), http.StatusInternalServerError
+		errs.SystemError = fmt.Errorf("getting cachegroup name from ID %d: %s", cgID, err.Error())
+		errs.Code = http.StatusInternalServerError
+		return resp, errs
 	} else if !ok {
-		return tc.CacheGroupPostDSResp{}, fmt.Errorf("cachegroup %d does not exist", cgID), nil, http.StatusNotFound
+		errs.UserError = fmt.Errorf("cachegroup %d does not exist", cgID)
+		errs.Code = http.StatusNotFound
+		return resp, errs
 	}
 
 	topologyDSes, err := dbhelpers.GetDeliveryServicesWithTopologies(tx, dsIDs)
 	if err != nil {
-		return tc.CacheGroupPostDSResp{}, nil, errors.New("getting delivery services with topologies: " + err.Error()), http.StatusInternalServerError
+		errs.SetSystemError("getting delivery services with topologies: " + err.Error())
+		errs.Code = http.StatusInternalServerError
+		return resp, errs
 	}
 	if len(topologyDSes) > 0 {
-		return tc.CacheGroupPostDSResp{}, fmt.Errorf("delivery services %v are already assigned to a topology", topologyDSes), nil, http.StatusBadRequest
+		errs.UserError = fmt.Errorf("delivery services %v are already assigned to a topology", topologyDSes)
+		errs.Code = http.StatusBadRequest
+		return resp, errs
 	}
 
 	if err := verifyDSesCDN(tx, dsIDs, cdnName); err != nil {
-		return tc.CacheGroupPostDSResp{}, nil, errors.New("verifying delivery service CDNs match cachegroup server CDNs: " + err.Error()), http.StatusInternalServerError
+		errs.SetSystemError("verifying delivery service CDNs match cachegroup server CDNs: " + err.Error())
+		errs.Code = http.StatusInternalServerError
+		return resp, errs
 	}
 	cgServers, err := getCachegroupServers(tx, cgID)
 	if err != nil {
-		return tc.CacheGroupPostDSResp{}, nil, errors.New("getting cachegroup server names " + err.Error()), http.StatusInternalServerError
+		errs.SetSystemError("getting cachegroup server names " + err.Error())
+		errs.Code = http.StatusInternalServerError
+		return resp, errs
 	}
 	if err := insertCachegroupDSes(tx, cgID, dsIDs); err != nil {
-		return tc.CacheGroupPostDSResp{}, nil, errors.New("inserting cachegroup delivery services: " + err.Error()), http.StatusInternalServerError
+		errs.SetSystemError("inserting cachegroup delivery services: " + err.Error())
+		errs.Code = http.StatusInternalServerError
+		return resp, errs
 	}
 
 	if err := updateParams(tx, dsIDs); err != nil {
-		return tc.CacheGroupPostDSResp{}, nil, errors.New("updating delivery service parameters: " + err.Error()), http.StatusInternalServerError
+		errs.SetSystemError("updating delivery service parameters: " + err.Error())
+		errs.Code = http.StatusInternalServerError
 	}
 	api.CreateChangeLogRawTx(api.ApiChange, "CACHEGROUP: "+string(cgName)+", ID: "+strconv.Itoa(cgID)+", ACTION: Assign DSes to CacheGroup servers", user, tx)
-	return tc.CacheGroupPostDSResp{ID: util.JSONIntStr(cgID), ServerNames: cgServers, DeliveryServices: dsIDs}, nil, nil, http.StatusOK
+	resp = tc.CacheGroupPostDSResp{
+		ID:               util.JSONIntStr(cgID),
+		ServerNames:      cgServers,
+		DeliveryServices: dsIDs,
+	}
+	return resp, errs
 }
 
 func insertCachegroupDSes(tx *sql.Tx, cgID int, dsIDs []int) error {
@@ -176,7 +204,7 @@ AND cdn.name <> $2::text
 	return nil
 }
 
-func getCachegroupCDN(tx *sql.Tx, cgID int) (string, error, error, int) {
+func getCachegroupCDN(tx *sql.Tx, cgID int) (string, apierrors.Errors) {
 	q := `
 SELECT cdn.name
 FROM cdn
@@ -185,28 +213,35 @@ JOIN type on server.type = type.id
 WHERE server.cachegroup = $1
 AND (type.name LIKE 'EDGE%' OR type.name LIKE 'ORG%')
 `
+	errs := apierrors.New()
 	rows, err := tx.Query(q, cgID)
 	if err != nil {
-		return "", nil, errors.New("selecting cachegroup CDNs: " + err.Error()), http.StatusInternalServerError
+		errs.SetSystemError("selecting cachegroup CDNs: " + err.Error())
+		errs.Code = http.StatusInternalServerError
+		return "", errs
 	}
 	defer rows.Close()
 	cdn := ""
 	for rows.Next() {
 		serverCDN := ""
 		if err := rows.Scan(&serverCDN); err != nil {
-			return "", nil, errors.New("scanning cachegroup CDN: " + err.Error()), http.StatusInternalServerError
+			errs.SetSystemError("scanning cachegroup CDN: " + err.Error())
+			errs.Code = http.StatusInternalServerError
 		}
 		if cdn == "" {
 			cdn = serverCDN
 		}
 		if cdn != serverCDN {
-			return "", nil, errors.New("cachegroup servers have different CDNs '" + cdn + "' and '" + serverCDN + "'"), http.StatusInternalServerError
+			errs.SetSystemError("cachegroup servers have different CDNs '" + cdn + "' and '" + serverCDN + "'")
+			errs.Code = http.StatusInternalServerError
+			return "", errs
 		}
 	}
 	if cdn == "" {
-		return "", fmt.Errorf("no edge or origin servers found on cachegroup %d", cgID), nil, http.StatusBadRequest
+		errs.UserError = fmt.Errorf("no edge or origin servers found on cachegroup %d", cgID)
+		errs.Code = http.StatusBadRequest
 	}
-	return cdn, nil, nil, http.StatusOK
+	return cdn, errs
 }
 
 // updateParams updated the header rewrite, cacheurl, and regex remap params for the given edge caches, on the given delivery services. NOTE it does not update Mid params.

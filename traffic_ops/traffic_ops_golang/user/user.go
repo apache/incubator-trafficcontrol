@@ -21,12 +21,15 @@ package user
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
-	"github.com/apache/trafficcontrol/lib/go-log"
-	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/util/ims"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/apache/trafficcontrol/lib/go-log"
+	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/apierrors"
+	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/util/ims"
 
 	"github.com/apache/trafficcontrol/lib/go-tc"
 	"github.com/apache/trafficcontrol/lib/go-tc/tovalidate"
@@ -36,7 +39,7 @@ import (
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/dbhelpers"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/tenant"
 
-	"github.com/go-ozzo/ozzo-validation"
+	validation "github.com/go-ozzo/ozzo-validation"
 	"github.com/go-ozzo/ozzo-validation/is"
 )
 
@@ -121,23 +124,29 @@ func (user *TOUser) postValidate() error {
 }
 
 // Note: Not using GenericCreate because Scan also needs to scan tenant and rolename
-func (user *TOUser) Create() (error, error, int) {
+func (user *TOUser) Create() apierrors.Errors {
 
 	// PUT and POST validation differs slightly
 	err := user.postValidate()
 	if err != nil {
-		return err, nil, http.StatusBadRequest
+		return apierrors.Errors{
+			Code:      http.StatusBadRequest,
+			UserError: err,
+		}
 	}
 
 	// make sure the user cannot create someone with a higher priv_level than themselves
-	if usrErr, sysErr, code := user.privCheck(); code != http.StatusOK {
-		return usrErr, sysErr, code
+	if errs := user.privCheck(); errs.Occurred() {
+		return errs
 	}
 
 	// Convert password to SCRYPT
 	*user.LocalPassword, err = auth.DerivePassword(*user.LocalPassword)
 	if err != nil {
-		return err, nil, http.StatusBadRequest
+		return apierrors.Errors{
+			Code:      http.StatusBadRequest,
+			UserError: err,
+		}
 	}
 
 	resultRows, err := user.ReqInfo.Tx.NamedQuery(user.InsertQuery(), user)
@@ -151,18 +160,24 @@ func (user *TOUser) Create() (error, error, int) {
 	var tenant string
 	var rolename string
 
+	errs := apierrors.Errors{
+		Code: http.StatusInternalServerError,
+	}
 	rowsAffected := 0
 	for resultRows.Next() {
 		rowsAffected++
 		if err = resultRows.Scan(&id, &lastUpdated, &tenant, &rolename); err != nil {
-			return nil, fmt.Errorf("could not scan after insert: %s\n)", err), http.StatusInternalServerError
+			errs.SystemError = fmt.Errorf("could not scan after insert: %v)", err)
+			return errs
 		}
 	}
 
 	if rowsAffected == 0 {
-		return nil, fmt.Errorf("no user was inserted, nothing was returned"), http.StatusInternalServerError
+		errs.SetSystemError("no user was inserted, nothing was returned")
+		return errs
 	} else if rowsAffected > 1 {
-		return nil, fmt.Errorf("too many rows affected from user insert"), http.StatusInternalServerError
+		errs.SetSystemError("too many rows affected from user insert")
+		return errs
 	}
 
 	user.ID = &id
@@ -171,23 +186,28 @@ func (user *TOUser) Create() (error, error, int) {
 	user.RoleName = &rolename
 	user.LocalPassword = nil
 
-	return nil, nil, http.StatusOK
+	return apierrors.New()
 }
 
 // This is not using GenericRead because of this tenancy check. Maybe we can add tenancy functionality to the generic case?
-func (this *TOUser) Read(h http.Header, useIMS bool) ([]interface{}, error, error, int, *time.Time) {
+func (this *TOUser) Read(h http.Header, useIMS bool) ([]interface{}, apierrors.Errors, *time.Time) {
 	var maxTime time.Time
 	var runSecond bool
 	inf := this.APIInfo()
 	api.DefaultSort(inf, "username")
-	where, orderBy, pagination, queryValues, errs := dbhelpers.BuildWhereAndOrderByAndPagination(inf.Params, this.ParamColumns())
-	if len(errs) > 0 {
-		return nil, util.JoinErrs(errs), nil, http.StatusBadRequest, nil
+	errs := apierrors.New()
+	where, orderBy, pagination, queryValues, dbErrs := dbhelpers.BuildWhereAndOrderByAndPagination(inf.Params, this.ParamColumns())
+	if len(dbErrs) > 0 {
+		errs.UserError = util.JoinErrs(dbErrs)
+		errs.Code = http.StatusBadRequest
+		return nil, errs, nil
 	}
 
 	tenantIDs, err := tenant.GetUserTenantIDListTx(inf.Tx.Tx, inf.User.TenantID)
 	if err != nil {
-		return nil, nil, fmt.Errorf("getting tenant list for user: %v\n", err), http.StatusInternalServerError, nil
+		errs.SystemError = fmt.Errorf("getting tenant list for user: %v", err)
+		errs.Code = http.StatusInternalServerError
+		return nil, errs, nil
 	}
 	where, queryValues = dbhelpers.AddTenancyCheck(where, queryValues, "u.tenant_id", tenantIDs)
 
@@ -195,7 +215,7 @@ func (this *TOUser) Read(h http.Header, useIMS bool) ([]interface{}, error, erro
 		runSecond, maxTime = ims.TryIfModifiedSinceQuery(this.APIInfo().Tx, h, queryValues, selectMaxLastUpdatedQuery(where))
 		if !runSecond {
 			log.Debugln("IMS HIT")
-			return []interface{}{}, nil, nil, http.StatusNotModified, &maxTime
+			return []interface{}{}, apierrors.Errors{Code: http.StatusNotModified}, &maxTime
 		}
 		log.Debugln("IMS MISS")
 	} else {
@@ -204,7 +224,9 @@ func (this *TOUser) Read(h http.Header, useIMS bool) ([]interface{}, error, erro
 	query := this.SelectQuery() + where + orderBy + pagination
 	rows, err := inf.Tx.NamedQuery(query, queryValues)
 	if err != nil {
-		return nil, nil, fmt.Errorf("querying users : %v", err), http.StatusInternalServerError, nil
+		errs.SystemError = fmt.Errorf("querying users : %v", err)
+		errs.Code = http.StatusInternalServerError
+		return nil, errs, nil
 	}
 	defer rows.Close()
 
@@ -217,12 +239,14 @@ func (this *TOUser) Read(h http.Header, useIMS bool) ([]interface{}, error, erro
 	users := []interface{}{}
 	for rows.Next() {
 		if err = rows.StructScan(user); err != nil {
-			return nil, nil, fmt.Errorf("parsing user rows: %v", err), http.StatusInternalServerError, nil
+			errs.SystemError = fmt.Errorf("parsing user rows: %v", err)
+			errs.Code = http.StatusInternalServerError
+			return nil, errs, nil
 		}
 		users = append(users, *user)
 	}
 
-	return users, nil, nil, http.StatusOK, &maxTime
+	return users, errs, &maxTime
 }
 
 func selectMaxLastUpdatedQuery(where string) string {
@@ -234,36 +258,48 @@ func selectMaxLastUpdatedQuery(where string) string {
 	select max(last_updated) as t from last_deleted l where l.table_name='tm_user') as res`
 }
 
-func (user *TOUser) privCheck() (error, error, int) {
+func (user *TOUser) privCheck() apierrors.Errors {
 	requestedPrivLevel, _, err := dbhelpers.GetPrivLevelFromRoleID(user.ReqInfo.Tx.Tx, *user.Role)
 	if err != nil {
-		return nil, err, http.StatusInternalServerError
+		return apierrors.Errors{
+			Code:        http.StatusInternalServerError,
+			SystemError: err,
+		}
 	}
 
 	if user.ReqInfo.User.PrivLevel < requestedPrivLevel {
-		return fmt.Errorf("user cannot update a user with a role more privileged than themselves"), nil, http.StatusForbidden
+		return apierrors.Errors{
+			Code:      http.StatusForbidden,
+			UserError: errors.New("user cannot update a user with a role more privileged than themselves"),
+		}
 	}
 
-	return nil, nil, http.StatusOK
+	return apierrors.New()
 }
 
-func (user *TOUser) Update() (error, error, int) {
+func (user *TOUser) Update() apierrors.Errors {
 
 	// make sure current user cannot update their own role to a new value
 	if user.ReqInfo.User.ID == *user.ID && user.ReqInfo.User.Role != *user.Role {
-		return fmt.Errorf("users cannot update their own role"), nil, http.StatusBadRequest
+		return apierrors.Errors{
+			Code:      http.StatusBadRequest,
+			UserError: fmt.Errorf("users cannot update their own role"),
+		}
 	}
 
 	// make sure the user cannot update someone with a higher priv_level than themselves
-	if usrErr, sysErr, code := user.privCheck(); code != http.StatusOK {
-		return usrErr, sysErr, code
+	errs := user.privCheck()
+	if errs.Occurred() {
+		return errs
 	}
 
 	if user.LocalPassword != nil {
 		var err error
 		*user.LocalPassword, err = auth.DerivePassword(*user.LocalPassword)
 		if err != nil {
-			return nil, err, http.StatusInternalServerError
+			errs.SystemError = err
+			errs.Code = http.StatusInternalServerError
+			return errs
 		}
 	}
 
@@ -281,7 +317,9 @@ func (user *TOUser) Update() (error, error, int) {
 	for resultRows.Next() {
 		rowsAffected++
 		if err := resultRows.Scan(&lastUpdated, &tenant, &rolename); err != nil {
-			return nil, fmt.Errorf("could not scan lastUpdated from insert: %s\n", err), http.StatusInternalServerError
+			errs.SystemError = fmt.Errorf("could not scan lastUpdated from insert: %s", err)
+			errs.Code = http.StatusInternalServerError
+			return errs
 		}
 	}
 
@@ -292,12 +330,15 @@ func (user *TOUser) Update() (error, error, int) {
 
 	if rowsAffected != 1 {
 		if rowsAffected < 1 {
-			return fmt.Errorf("no user found with this id"), nil, http.StatusNotFound
+			errs.SetUserError("no user found with this id")
+			errs.Code = http.StatusNotFound
+		} else {
+			errs.SystemError = fmt.Errorf("this update affected too many rows: %d", rowsAffected)
+			errs.Code = http.StatusInternalServerError
 		}
-		return nil, fmt.Errorf("this update affected too many rows: %d", rowsAffected), http.StatusInternalServerError
 	}
 
-	return nil, nil, http.StatusOK
+	return errs
 }
 
 func (u *TOUser) IsTenantAuthorized(user *auth.CurrentUser) (bool, error) {

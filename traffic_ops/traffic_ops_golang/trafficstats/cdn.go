@@ -43,21 +43,21 @@ SELECT last(value) FROM "%s"."monthly"."%s"
 
 // GetCurrentStats handler for getting current stats for CDNs
 func GetCurrentStats(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, nil, nil)
-	tx := inf.Tx.Tx
-
-	if userErr != nil || sysErr != nil {
-		api.HandleErr(w, r, tx, errCode, userErr, sysErr)
+	inf, errs := api.NewInfo(r, nil, nil)
+	if errs.Occurred() {
+		inf.HandleErrs(w, r, errs)
 		return
 	}
 	defer inf.Close()
 
+	tx := inf.Tx.Tx
+	var sysErr error
 	client, err := inf.CreateInfluxClient()
 	if err != nil {
 		api.HandleErr(w, r, tx, http.StatusInternalServerError, nil, err)
 		return
 	} else if client == nil {
-		sysErr = errors.New("Traffic Stats is not configured and 'current_stats' was requested.")
+		sysErr = errors.New("Traffic Stats is not configured and 'current_stats' was requested")
 		api.HandleErr(w, r, tx, http.StatusInternalServerError, nil, sysErr)
 		return
 	}

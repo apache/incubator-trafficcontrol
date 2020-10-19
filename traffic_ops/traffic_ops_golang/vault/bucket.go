@@ -22,11 +22,12 @@ package vault
 import (
 	"encoding/json"
 	"errors"
+	"net/http"
+
 	"github.com/apache/trafficcontrol/lib/go-tc"
 	"github.com/apache/trafficcontrol/lib/go-util"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/api"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/riaksvc"
-	"net/http"
 )
 
 func GetBucketKeyDeprecated(w http.ResponseWriter, r *http.Request) {
@@ -38,15 +39,15 @@ func GetBucketKey(w http.ResponseWriter, r *http.Request) {
 }
 
 func getBucketKey(w http.ResponseWriter, r *http.Request, a tc.Alerts) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"bucket", "key"}, nil)
-	if userErr != nil || sysErr != nil {
-		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
+	inf, errs := api.NewInfo(r, []string{"bucket", "key"}, nil)
+	if errs.Occurred() {
+		inf.HandleErrs(w, r, errs)
 		return
 	}
 	defer inf.Close()
 
 	if inf.Config.RiakEnabled == false {
-		api.HandleErr(w, r, inf.Tx.Tx, http.StatusInternalServerError, userErr, errors.New("riak.GetBucketKey: Riak is not configured!"))
+		api.HandleErr(w, r, inf.Tx.Tx, http.StatusInternalServerError, nil, errors.New("riak.GetBucketKey: Riak is not configured!"))
 		return
 	}
 

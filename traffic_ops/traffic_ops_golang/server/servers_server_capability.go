@@ -32,6 +32,7 @@ import (
 	"github.com/apache/trafficcontrol/lib/go-tc/tovalidate"
 	"github.com/apache/trafficcontrol/lib/go-util"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/api"
+	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/apierrors"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/dbhelpers"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/tenant"
 
@@ -122,11 +123,11 @@ func (ssc TOServerServerCapability) Validate() error {
 	return util.JoinErrs(tovalidate.ToErrors(errs))
 }
 
-func (ssc *TOServerServerCapability) Update() (error, error, int) {
-	return nil, nil, http.StatusNotImplemented
+func (ssc *TOServerServerCapability) Update() apierrors.Errors {
+	return apierrors.Errors{Code: http.StatusNotImplemented}
 }
 
-func (ssc *TOServerServerCapability) Read(h http.Header, useIMS bool) ([]interface{}, error, error, int, *time.Time) {
+func (ssc *TOServerServerCapability) Read(h http.Header, useIMS bool) ([]interface{}, apierrors.Errors, *time.Time) {
 	api.DefaultSort(ssc.APIInfo(), "serverHostName")
 	return api.GenericRead(h, ssc, useIMS)
 }
@@ -138,32 +139,38 @@ JOIN server s ON sc.server = s.id ` + where + orderBy + pagination +
 	select max(last_updated) as t from last_deleted l where l.table_name='server_server_capability') as res`
 }
 
-func (ssc *TOServerServerCapability) Delete() (error, error, int) {
+func (ssc *TOServerServerCapability) Delete() apierrors.Errors {
 	tenantIDs, err := tenant.GetUserTenantIDListTx(ssc.APIInfo().Tx.Tx, ssc.APIInfo().User.TenantID)
 	if err != nil {
-		return nil, fmt.Errorf("deleting servers_server_capability: %v", err), http.StatusInternalServerError
+		return apierrors.Errors{
+			SystemError: fmt.Errorf("deleting servers_server_capability: %v", err),
+			Code:        http.StatusInternalServerError,
+		}
 	}
 	accessibleTenants := make(map[int]struct{}, len(tenantIDs))
 	for _, id := range tenantIDs {
 		accessibleTenants[id] = struct{}{}
 	}
-	userErr, sysErr, status := checkTopologyBasedDSRequiredCapabilities(ssc, accessibleTenants)
-	if userErr != nil || sysErr != nil {
-		return userErr, sysErr, status
+	errs := checkTopologyBasedDSRequiredCapabilities(ssc, accessibleTenants)
+	if errs.Occurred() {
+		return errs
 	}
 
-	userErr, sysErr, status = checkDSRequiredCapabilities(ssc, accessibleTenants)
-	if userErr != nil || sysErr != nil {
-		return userErr, sysErr, status
+	errs = checkDSRequiredCapabilities(ssc, accessibleTenants)
+	if errs.Occurred() {
+		return errs
 	}
 
 	return api.GenericDelete(ssc)
 }
 
-func checkTopologyBasedDSRequiredCapabilities(ssc *TOServerServerCapability, accessibleTenants map[int]struct{}) (error, error, int) {
+func checkTopologyBasedDSRequiredCapabilities(ssc *TOServerServerCapability, accessibleTenants map[int]struct{}) apierrors.Errors {
+	errs := apierrors.New()
 	dsRows, err := ssc.APIInfo().Tx.Tx.Query(getTopologyBasedDSesReqCapQuery(), ssc.ServerID, ssc.ServerCapability)
 	if err != nil {
-		return nil, fmt.Errorf("querying topology-based DSes with the required capability %s: %v", *ssc.ServerCapability, err), http.StatusInternalServerError
+		errs.SystemError = fmt.Errorf("querying topology-based DSes with the required capability %s: %v", *ssc.ServerCapability, err)
+		errs.Code = http.StatusInternalServerError
+		return errs
 	}
 	defer log.Close(dsRows, "closing dsRows in checkTopologyBasedDSRequiredCapabilities")
 
@@ -176,19 +183,23 @@ func checkTopologyBasedDSRequiredCapabilities(ssc *TOServerServerCapability, acc
 		tenantID := 0
 		reqCaps := []string{}
 		if err := dsRows.Scan(&xmlID, &topology, &tenantID, pq.Array(&reqCaps)); err != nil {
-			return nil, fmt.Errorf("scanning dsRows in checkTopologyBasedDSRequiredCapabilities: %v", err), http.StatusInternalServerError
+			errs.SystemError = fmt.Errorf("scanning dsRows in checkTopologyBasedDSRequiredCapabilities: %v", err)
+			errs.Code = http.StatusInternalServerError
+			return errs
 		}
 		xmlidToTenantID[xmlID] = tenantID
 		xmlidToTopology[xmlID] = topology
 		xmlidToReqCaps[xmlID] = reqCaps
 	}
 	if len(xmlidToTopology) == 0 {
-		return nil, nil, http.StatusOK
+		return errs
 	}
 
 	serverRows, err := ssc.APIInfo().Tx.Tx.Query(getServerCapabilitiesOfCachegoupQuery(), ssc.ServerID, ssc.ServerCapability)
 	if err != nil {
-		return nil, fmt.Errorf("querying server capabilitites of server %d's cachegroup: %v", *ssc.ServerID, err), http.StatusInternalServerError
+		errs.SystemError = fmt.Errorf("querying server capabilitites of server %d's cachegroup: %v", *ssc.ServerID, err)
+		errs.Code = http.StatusInternalServerError
+		return errs
 	}
 	defer log.Close(serverRows, "closing serverRows in checkTopologyBasedDSRequiredCapabilities")
 
@@ -197,7 +208,9 @@ func checkTopologyBasedDSRequiredCapabilities(ssc *TOServerServerCapability, acc
 		serverID := 0
 		capabilities := []string{}
 		if err := serverRows.Scan(&serverID, pq.Array(&capabilities)); err != nil {
-			return nil, fmt.Errorf("scanning serverRows in checkTopologyBasedDSRequiredCapabilities: %v", err), http.StatusInternalServerError
+			errs.SystemError = fmt.Errorf("scanning serverRows in checkTopologyBasedDSRequiredCapabilities: %v", err)
+			errs.Code = http.StatusInternalServerError
+			return errs
 		}
 		serverIDToCapabilities[serverID] = make(map[string]struct{})
 		for _, c := range capabilities {
@@ -226,7 +239,7 @@ func checkTopologyBasedDSRequiredCapabilities(ssc *TOServerServerCapability, acc
 		}
 	}
 	if len(unsatisfiedDSes) == 0 {
-		return nil, nil, http.StatusOK
+		return errs
 	}
 
 	dsStrings := make([]string, 0, len(unsatisfiedDSes))
@@ -235,28 +248,36 @@ func checkTopologyBasedDSRequiredCapabilities(ssc *TOServerServerCapability, acc
 			dsStrings = append(dsStrings, "(xml_id = "+ds+", topology = "+xmlidToTopology[ds]+")")
 		}
 	}
-	return fmt.Errorf("this capability is required by delivery services, but there are no other servers in this server's cachegroup to satisfy them %s", strings.Join(dsStrings, ", ")), nil, http.StatusBadRequest
+	errs.UserError = fmt.Errorf("this capability is required by delivery services, but there are no other servers in this server's cachegroup to satisfy them %s", strings.Join(dsStrings, ", "))
+	errs.Code = http.StatusBadRequest
+	return errs
 }
 
-func checkDSRequiredCapabilities(ssc *TOServerServerCapability, accessibleTenants map[int]struct{}) (error, error, int) {
+func checkDSRequiredCapabilities(ssc *TOServerServerCapability, accessibleTenants map[int]struct{}) apierrors.Errors {
 	// Ensure that the user is not removing a server capability from the server
 	// that is required by the delivery services the server is assigned to (if applicable)
+	errs := apierrors.New()
 	dsIDs := []int64{}
 	if err := ssc.APIInfo().Tx.Tx.QueryRow(checkDSReqCapQuery(), ssc.ServerID, ssc.ServerCapability).Scan(pq.Array(&dsIDs)); err != nil {
-		return nil, fmt.Errorf("checking removing server server capability would still suffice delivery service requried capabilites: %v", err), http.StatusInternalServerError
+		errs.SystemError = fmt.Errorf("checking removing server server capability would still suffice delivery service requried capabilites: %v", err)
+		errs.Code = http.StatusInternalServerError
+		return errs
 	}
 
 	if len(dsIDs) > 0 {
 		return ssc.buildDSReqCapError(dsIDs, accessibleTenants)
 	}
-	return nil, nil, http.StatusOK
+	return errs
 }
 
-func (ssc *TOServerServerCapability) buildDSReqCapError(dsIDs []int64, accessibleTenants map[int]struct{}) (error, error, int) {
+func (ssc *TOServerServerCapability) buildDSReqCapError(dsIDs []int64, accessibleTenants map[int]struct{}) apierrors.Errors {
 
 	dsTenantIDs, err := getDSTenantIDsByIDs(ssc.APIInfo().Tx, dsIDs)
 	if err != nil {
-		return nil, err, http.StatusInternalServerError
+		return apierrors.Errors{
+			SystemError: err,
+			Code:        http.StatusInternalServerError,
+		}
 	}
 
 	authDSIDs := []string{}
@@ -274,28 +295,43 @@ func (ssc *TOServerServerCapability) buildDSReqCapError(dsIDs []int64, accessibl
 	if len(authDSIDs) > 0 {
 		dsStr = fmt.Sprintf("the delivery services %v", strings.Join(authDSIDs, ","))
 	}
-	return fmt.Errorf("cannot remove the capability %v from the server %v as the server is assigned to %v that require it", *ssc.ServerCapability, *ssc.ServerID, dsStr), nil, http.StatusBadRequest
+	return apierrors.Errors{
+		UserError: fmt.Errorf("cannot remove the capability %v from the server %v as the server is assigned to %v that require it", *ssc.ServerCapability, *ssc.ServerID, dsStr),
+		Code:      http.StatusBadRequest,
+	}
 }
 
-func (ssc *TOServerServerCapability) Create() (error, error, int) {
+func (ssc *TOServerServerCapability) Create() apierrors.Errors {
 	tx := ssc.APIInfo().Tx
 
 	// Check existence prior to checking type
 	_, exists, err := dbhelpers.GetServerNameFromID(tx.Tx, *ssc.ServerID)
 	if err != nil {
-		return nil, err, http.StatusInternalServerError
+		return apierrors.Errors{
+			Code:        http.StatusInternalServerError,
+			SystemError: err,
+		}
 	}
 	if !exists {
-		return fmt.Errorf("server %v does not exist", *ssc.ServerID), nil, http.StatusNotFound
+		return apierrors.Errors{
+			Code:      http.StatusNotFound,
+			UserError: fmt.Errorf("server %v does not exist", *ssc.ServerID),
+		}
 	}
 
 	// Ensure type is correct
 	correctType := true
 	if err := tx.Tx.QueryRow(scCheckServerTypeQuery(), ssc.ServerID).Scan(&correctType); err != nil {
-		return nil, fmt.Errorf("checking server type: %v", err), http.StatusInternalServerError
+		return apierrors.Errors{
+			Code:        http.StatusInternalServerError,
+			SystemError: fmt.Errorf("checking server type: %v", err),
+		}
 	}
 	if !correctType {
-		return fmt.Errorf("server %v has an incorrect server type. Server capabilities can only be assigned to EDGE or MID servers", *ssc.ServerID), nil, http.StatusBadRequest
+		return apierrors.Errors{
+			Code:      http.StatusBadRequest,
+			UserError: fmt.Errorf("server %v has an incorrect server type. Server capabilities can only be assigned to EDGE or MID servers", *ssc.ServerID),
+		}
 	}
 
 	resultRows, err := tx.NamedQuery(scInsertQuery(), ssc)
@@ -308,16 +344,25 @@ func (ssc *TOServerServerCapability) Create() (error, error, int) {
 	for resultRows.Next() {
 		rowsAffected++
 		if err := resultRows.StructScan(&ssc); err != nil {
-			return nil, errors.New(ssc.GetType() + " create scanning: " + err.Error()), http.StatusInternalServerError
+			return apierrors.Errors{
+				Code:        http.StatusInternalServerError,
+				SystemError: fmt.Errorf("%s create scanning: %v", ssc.GetType(), err),
+			}
 		}
 	}
+
+	errs := apierrors.Errors{
+		Code: http.StatusInternalServerError,
+	}
 	if rowsAffected == 0 {
-		return nil, errors.New(ssc.GetType() + " create: no " + ssc.GetType() + " was inserted, no rows was returned"), http.StatusInternalServerError
+		errs.SystemError = fmt.Errorf("%s create: no %s was inserted, no rows was returned", ssc.GetType(), ssc.GetType())
+		return errs
 	} else if rowsAffected > 1 {
-		return nil, errors.New("too many rows returned from " + ssc.GetType() + " insert"), http.StatusInternalServerError
+		errs.SystemError = fmt.Errorf("too many rows returned from %s insert", ssc.GetType())
+		return errs
 	}
 
-	return nil, nil, http.StatusOK
+	return apierrors.New()
 }
 
 func scSelectQuery() string {
@@ -360,7 +405,7 @@ SELECT ARRAY(
 	SELECT dsrc.deliveryservice_id
 	FROM deliveryservices_required_capability as dsrc
 	WHERE deliveryservice_id IN (
-		SELECT deliveryservice 
+		SELECT deliveryservice
 		FROM deliveryservice_server
 		WHERE server = $1)
 	AND dsrc.required_capability = $2)`

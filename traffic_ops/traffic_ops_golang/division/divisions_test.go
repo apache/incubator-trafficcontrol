@@ -78,9 +78,9 @@ func TestGetDivisions(t *testing.T) {
 		api.APIInfoImpl{&reqInfo},
 		tc.DivisionNullable{},
 	}
-	vals, userErr, sysErr, _, _ := obj.Read(nil, false)
-	if userErr != nil || sysErr != nil {
-		t.Errorf("Read expected: no errors, actual: %v %v", userErr, sysErr)
+	vals, errs, _ := obj.Read(nil, false)
+	if errs.Occurred() {
+		t.Errorf("Read expected: no errors, actual: %s", errs)
 	}
 	if len(vals) != 2 {
 		t.Errorf("read expected: len(vals) == 1, actual: %v", len(vals))

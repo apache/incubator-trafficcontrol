@@ -20,12 +20,13 @@ package parameter
  */
 
 import (
-	"errors"
-	"github.com/apache/trafficcontrol/lib/go-log"
-	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/util/ims"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/apache/trafficcontrol/lib/go-log"
+	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/apierrors"
+	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/util/ims"
 
 	"github.com/apache/trafficcontrol/lib/go-tc"
 	"github.com/apache/trafficcontrol/lib/go-tc/tovalidate"
@@ -126,27 +127,29 @@ func (param TOParameter) Validate() error {
 	return util.JoinErrs(tovalidate.ToErrors(errs))
 }
 
-func (pa *TOParameter) Create() (error, error, int) {
+func (pa *TOParameter) Create() apierrors.Errors {
 	if pa.Value == nil {
 		pa.Value = util.StrPtr("")
 	}
 	return api.GenericCreate(pa)
 }
 
-func (param *TOParameter) Read(h http.Header, useIMS bool) ([]interface{}, error, error, int, *time.Time) {
+func (param *TOParameter) Read(h http.Header, useIMS bool) ([]interface{}, apierrors.Errors, *time.Time) {
 	var maxTime time.Time
 	var runSecond bool
-	code := http.StatusOK
 	queryParamsToQueryCols := param.ParamColumns()
-	where, orderBy, pagination, queryValues, errs := dbhelpers.BuildWhereAndOrderByAndPagination(param.APIInfo().Params, queryParamsToQueryCols)
-	if len(errs) > 0 {
-		return nil, util.JoinErrs(errs), nil, http.StatusBadRequest, nil
+	errs := apierrors.New()
+	where, orderBy, pagination, queryValues, dbErrs := dbhelpers.BuildWhereAndOrderByAndPagination(param.APIInfo().Params, queryParamsToQueryCols)
+	if len(dbErrs) > 0 {
+		errs.Code = http.StatusBadRequest
+		errs.UserError = util.JoinErrs(dbErrs)
+		return nil, errs, nil
 	}
 	if useIMS {
 		runSecond, maxTime = ims.TryIfModifiedSinceQuery(param.APIInfo().Tx, h, queryValues, param.SelectMaxLastUpdatedQuery(where, orderBy, pagination, "parameter"))
 		if !runSecond {
 			log.Debugln("IMS HIT")
-			return []interface{}{}, nil, nil, http.StatusNotModified, &maxTime
+			return []interface{}{}, apierrors.Errors{Code: http.StatusNotModified}, &maxTime
 		}
 		log.Debugln("IMS MISS")
 	} else {
@@ -155,7 +158,9 @@ func (param *TOParameter) Read(h http.Header, useIMS bool) ([]interface{}, error
 	query := selectQuery() + where + ParametersGroupBy() + orderBy + pagination
 	rows, err := param.ReqInfo.Tx.NamedQuery(query, queryValues)
 	if err != nil {
-		return nil, nil, errors.New("querying " + param.GetType() + ": " + err.Error()), http.StatusInternalServerError, nil
+		errs.SetSystemError("querying " + param.GetType() + ": " + err.Error())
+		errs.Code = http.StatusInternalServerError
+		return nil, errs, nil
 	}
 	defer rows.Close()
 
@@ -163,7 +168,9 @@ func (param *TOParameter) Read(h http.Header, useIMS bool) ([]interface{}, error
 	for rows.Next() {
 		var p tc.ParameterNullable
 		if err = rows.StructScan(&p); err != nil {
-			return nil, nil, errors.New("scanning " + param.GetType() + ": " + err.Error()), http.StatusInternalServerError, nil
+			errs.SetSystemError("scanning " + param.GetType() + ": " + err.Error())
+			errs.Code = http.StatusInternalServerError
+			return nil, errs, nil
 		}
 		if p.Secure != nil && *p.Secure && param.ReqInfo.User.PrivLevel < auth.PrivLevelAdmin {
 			p.Value = &HiddenField
@@ -171,17 +178,17 @@ func (param *TOParameter) Read(h http.Header, useIMS bool) ([]interface{}, error
 		params = append(params, p)
 	}
 
-	return params, nil, nil, code, &maxTime
+	return params, errs, &maxTime
 }
 
-func (pa *TOParameter) Update() (error, error, int) {
+func (pa *TOParameter) Update() apierrors.Errors {
 	if pa.Value == nil {
 		pa.Value = util.StrPtr("")
 	}
 	return api.GenericUpdate(pa)
 }
 
-func (pa *TOParameter) Delete() (error, error, int) { return api.GenericDelete(pa) }
+func (pa *TOParameter) Delete() apierrors.Errors { return api.GenericDelete(pa) }
 
 func insertQuery() string {
 	query := `INSERT INTO parameter (

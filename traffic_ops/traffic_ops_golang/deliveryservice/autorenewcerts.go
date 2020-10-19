@@ -31,6 +31,7 @@ import (
 	"github.com/apache/trafficcontrol/lib/go-tc"
 	"github.com/apache/trafficcontrol/lib/go-util"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/api"
+	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/apierrors"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/auth"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/config"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/riaksvc"
@@ -58,9 +59,9 @@ type ExpirationSummary struct {
 const emailTemplateFile = "/opt/traffic_ops/app/templates/send_mail/autorenewcerts_mail.html"
 
 func RenewCertificates(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, nil, nil)
-	if userErr != nil || sysErr != nil {
-		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
+	inf, errs := api.NewInfo(r, nil, nil)
+	if errs.Occurred() {
+		inf.HandleErrs(w, r, errs)
 		return
 	}
 	defer inf.Close()
@@ -189,16 +190,16 @@ func RunAutorenewal(existingCerts []ExistingCerts, cfg *config.Config, ctx conte
 	}
 
 	if cfg.SMTP.Enabled && cfg.ConfigLetsEncrypt.SendExpEmail {
-		errCode, userErr, sysErr := AlertExpiringCerts(keysFound, *cfg)
-		if userErr != nil || sysErr != nil {
-			log.Errorf("cert autorenewal: sending email: errCode: %d userErr: %v sysErr: %v", errCode, userErr, sysErr)
+		errs := AlertExpiringCerts(keysFound, *cfg)
+		if errs.Occurred() {
+			log.Errorf("cert autorenewal: sending email: %s", errs)
 			return
 		}
 
 	}
 }
 
-func AlertExpiringCerts(certsFound ExpirationSummary, config config.Config) (int, error, error) {
+func AlertExpiringCerts(certsFound ExpirationSummary, config config.Config) apierrors.Errors {
 	header := "From: " + config.ConfigTO.EmailFrom.String() + "\r\n" +
 		"To: " + config.ConfigLetsEncrypt.Email + "\r\n" +
 		"MIME-version: 1.0;\r\n" +

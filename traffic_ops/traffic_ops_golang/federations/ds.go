@@ -29,15 +29,16 @@ import (
 
 	"github.com/apache/trafficcontrol/lib/go-tc"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/api"
+	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/apierrors"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/dbhelpers"
 
 	"github.com/lib/pq"
 )
 
 func PostDSes(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"id"}, []string{"id"})
-	if userErr != nil || sysErr != nil {
-		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
+	inf, errs := api.NewInfo(r, []string{"id"}, []string{"id"})
+	if errs.Occurred() {
+		inf.HandleErrs(w, r, errs)
 		return
 	}
 	defer inf.Close()
@@ -64,8 +65,7 @@ func PostDSes(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if err := deleteDSFeds(inf.Tx.Tx, fedID); err != nil {
-			userErr, sysErr, errCode := api.ParseDBError(err)
-			api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
+			inf.HandleErrs(w, r, api.ParseDBError(err))
 			return
 		}
 	}
@@ -73,8 +73,7 @@ func PostDSes(w http.ResponseWriter, r *http.Request) {
 	if len(post.DSIDs) > 0 {
 		// there might be no DSes, if the user is trying to clear the assignments
 		if err := insertDSFeds(inf.Tx.Tx, fedID, post.DSIDs); err != nil {
-			userErr, sysErr, errCode := api.ParseDBError(err)
-			api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
+			inf.HandleErrs(w, r, api.ParseDBError(err))
 			return
 		}
 	}
@@ -168,28 +167,31 @@ func (v *TOFedDSes) GetKeyFieldsInfo() []api.KeyFieldInfo {
 	}
 }
 
-func (v *TOFedDSes) Read(h http.Header, useIMS bool) ([]interface{}, error, error, int, *time.Time) {
+func (v *TOFedDSes) Read(h http.Header, useIMS bool) ([]interface{}, apierrors.Errors, *time.Time) {
 	api.DefaultSort(v.APIInfo(), "xmlId")
 	return api.GenericRead(h, v, useIMS)
 }
 
-func (v *TOFedDSes) Delete() (error, error, int) {
+func (v *TOFedDSes) Delete() apierrors.Errors {
+	errs := apierrors.New()
 	dsIDStr, ok := v.APIInfo().Params["dsID"]
 	if !ok {
-		return errors.New("dsID must be specified for deletion"), nil, http.StatusBadRequest
+		errs.SetUserError("dsID must be specified for deletion")
+		errs.Code = http.StatusBadRequest
+		return errs
 	}
 	dsID, err := strconv.Atoi(dsIDStr)
 	if err != nil {
-		return errors.New("dsID must be an integer"), nil, http.StatusBadRequest
+		errs.SetUserError("dsID must be an integer")
+		errs.Code = http.StatusBadRequest
+		return errs
 	}
 	v.ID = &dsID
 
 	// Check that we can delete it
-	if respCode, usrErr, sysErr := checkFedDSDeletion(v.APIInfo().Tx.Tx, *v.fedID, dsID); usrErr != nil || sysErr != nil {
-		if usrErr != nil {
-			return usrErr, sysErr, respCode
-		}
-		return usrErr, sysErr, respCode
+	errs = checkFedDSDeletion(v.APIInfo().Tx.Tx, *v.fedID, dsID)
+	if errs.Occurred() {
+		return errs
 	}
 
 	// Actually delete the DS from the Federation
@@ -197,24 +199,30 @@ func (v *TOFedDSes) Delete() (error, error, int) {
 		return api.ParseDBError(err)
 	}
 
-	return nil, nil, http.StatusOK
+	return errs
 }
 
-func checkFedDSDeletion(tx *sql.Tx, fedID, dsID int) (int, error, error) {
-
+func checkFedDSDeletion(tx *sql.Tx, fedID, dsID int) apierrors.Errors {
+	errs := apierrors.New()
 	q := `SELECT ARRAY(SELECT deliveryservice FROM federation_deliveryservice WHERE federation=$1)`
 	dsIDs := []int64{} // pq.Array does not support int slice needs to be int64
 	err := tx.QueryRow(q, fedID).Scan(pq.Array(&dsIDs))
 	if err != nil {
-		return http.StatusInternalServerError, nil, fmt.Errorf("querying federation %v delivery services - %v", fedID, err)
+		errs.Code = http.StatusInternalServerError
+		errs.SystemError = fmt.Errorf("querying federation %v delivery services - %v", fedID, err)
+		return errs
 	}
 
 	if len(dsIDs) == 0 {
-		return http.StatusNotFound, fmt.Errorf("federation %v not found", fedID), nil
+		errs.Code = http.StatusNotFound
+		errs.UserError = fmt.Errorf("federation %v not found", fedID)
+		return errs
 	}
 
 	if len(dsIDs) < 2 {
-		return http.StatusBadRequest, fmt.Errorf("a federation must have at least one delivery service assigned"), nil
+		errs.Code = http.StatusBadRequest
+		errs.UserError = fmt.Errorf("a federation must have at least one delivery service assigned")
+		return errs
 	}
 	found := false
 	dsID64 := int64(dsID) // need in order to compare
@@ -225,9 +233,10 @@ func checkFedDSDeletion(tx *sql.Tx, fedID, dsID int) (int, error, error) {
 		}
 	}
 	if !found {
-		return http.StatusBadRequest, fmt.Errorf("delivery service %v is not associated with federation %v", dsID, fedID), nil
+		errs.Code = http.StatusBadRequest
+		errs.UserError = fmt.Errorf("delivery service %v is not associated with federation %v", dsID, fedID)
 	}
-	return http.StatusOK, nil, nil
+	return errs
 }
 
 func selectQuery() string {

@@ -20,11 +20,13 @@ package cdn
  */
 
 import (
-	"github.com/apache/trafficcontrol/lib/go-tc"
-	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/api"
-	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/dbhelpers"
 	"net/http"
 	"time"
+
+	"github.com/apache/trafficcontrol/lib/go-tc"
+	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/api"
+	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/apierrors"
+	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/dbhelpers"
 )
 
 // TOCDNConf used as a type alias to define functions on to satisfy shared API REST interfaces.
@@ -45,7 +47,7 @@ id
 FROM cdn`
 }
 
-func (v *TOCDNConf) Read(h http.Header, useIMS bool) ([]interface{}, error, error, int, *time.Time) {
+func (v *TOCDNConf) Read(h http.Header, useIMS bool) ([]interface{}, apierrors.Errors, *time.Time) {
 	return api.GenericRead(h, v, useIMS)
 }
 func (v *TOCDNConf) SelectMaxLastUpdatedQuery(where, orderBy, pagination, tableName string) string {

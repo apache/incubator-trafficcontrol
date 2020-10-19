@@ -37,6 +37,7 @@ import (
 	"github.com/apache/trafficcontrol/lib/go-tc"
 	"github.com/apache/trafficcontrol/lib/go-util"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/api"
+	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/apierrors"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/riaksvc"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/tenant"
 )
@@ -48,9 +49,9 @@ const (
 
 // AddSSLKeys adds the given ssl keys to the given delivery service.
 func AddSSLKeys(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, nil, nil)
-	if userErr != nil || sysErr != nil {
-		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
+	inf, errs := api.NewInfo(r, nil, nil)
+	if errs.Occurred() {
+		inf.HandleErrs(w, r, errs)
 		return
 	}
 	defer inf.Close()
@@ -63,8 +64,8 @@ func AddSSLKeys(w http.ResponseWriter, r *http.Request) {
 		api.HandleErr(w, r, inf.Tx.Tx, http.StatusBadRequest, errors.New("parsing request: "+err.Error()), nil)
 		return
 	}
-	if userErr, sysErr, errCode := tenant.Check(inf.User, *req.DeliveryService, inf.Tx.Tx); userErr != nil || sysErr != nil {
-		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
+	if errs := tenant.Check(inf.User, *req.DeliveryService, inf.Tx.Tx); errs.Occurred() {
+		inf.HandleErrs(w, r, errs)
 		return
 	}
 
@@ -143,27 +144,29 @@ func GetSSLKeysByHostName(w http.ResponseWriter, r *http.Request) {
 
 func getXmlIDFromRequest(w http.ResponseWriter, r *http.Request) (*api.APIInfo, string, error) {
 	alerts := tc.CreateAlerts(tc.WarnLevel, hostnameKeyDepMsg)
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"hostname"}, nil)
-	if userErr != nil || sysErr != nil {
-		userErr = api.LogErr(r, errCode, userErr, sysErr)
+	inf, errs := api.NewInfo(r, []string{"hostname"}, nil)
+	if errs.Occurred() {
+		// TODO: I think this should just be using HandleErrs
+		userErr := api.LogErrs(r, errs)
 		alerts.AddNewAlert(tc.ErrorLevel, userErr.Error())
-		api.WriteAlerts(w, r, errCode, alerts)
+		api.WriteAlerts(w, r, errs.Code, alerts)
 		return inf, "", errors.New("getting XML ID from request")
 	}
 
 	if inf.Config.RiakEnabled == false {
-		userErr = api.LogErr(r, http.StatusInternalServerError, nil, errors.New("getting SSL keys from Riak by host name: Riak is not configured"))
+		userErr := api.LogErr(r, http.StatusInternalServerError, nil, errors.New("getting SSL keys from Riak by host name: Riak is not configured"))
 		alerts.AddNewAlert(tc.ErrorLevel, userErr.Error())
 		api.WriteAlerts(w, r, http.StatusInternalServerError, alerts)
 		return inf, "", errors.New("getting XML ID from request")
 	}
 
 	hostName := inf.Params["hostname"]
-	xmlID, userErr, sysErr, errCode := getXmlIdFromHostname(inf, hostName)
-	if userErr != nil || sysErr != nil {
-		userErr = api.LogErr(r, errCode, userErr, sysErr)
+	xmlID, errs := getXmlIdFromHostname(inf, hostName)
+	if errs.Occurred() {
+		// TODO: I think this should just be using HandleErrs
+		userErr := api.LogErrs(r, errs)
 		alerts.AddNewAlert(tc.ErrorLevel, userErr.Error())
-		api.WriteAlerts(w, r, errCode, alerts)
+		api.WriteAlerts(w, r, errs.Code, alerts)
 		return inf, "", errors.New("getting XML ID from request")
 	}
 	return inf, xmlID, nil
@@ -181,7 +184,7 @@ func GetSSLKeysByHostNameV15(w http.ResponseWriter, r *http.Request) {
 	getSSLKeysByXMLIDHelperV15(xmlID, tc.CreateAlerts(tc.WarnLevel, hostnameKeyDepMsg), inf, w, r)
 }
 
-func getXmlIdFromHostname(inf *api.APIInfo, hostName string) (string, error, error, int) {
+func getXmlIdFromHostname(inf *api.APIInfo, hostName string) (string, apierrors.Errors) {
 	domainName := ""
 	hostRegex := ""
 	strArr := strings.Split(hostName, ".")
@@ -194,31 +197,41 @@ func getXmlIdFromHostname(inf *api.APIInfo, hostName string) (string, error, err
 		hostRegex = `.*\.` + strArr[1] + `\..*`
 	}
 
+	errs := apierrors.New()
+
 	// lookup the cdnID
 	cdnID, ok, err := getCDNIDByDomainname(domainName, inf.Tx.Tx)
 	if err != nil {
-		return "", nil, errors.New("getting cdn id by domain name: " + err.Error()), http.StatusInternalServerError
+		errs.SetSystemError("getting cdn id by domain name: " + err.Error())
+		errs.Code = http.StatusInternalServerError
+		return "", errs
 	}
 	if !ok {
-		return "", errors.New("a CDN does not exist for the domain: " + domainName + " parsed from hostname: " + hostName), nil, http.StatusNotFound
+		errs.SetUserError("a CDN does not exist for the domain: " + domainName + " parsed from hostname: " + hostName)
+		errs.Code = http.StatusNotFound
+		return "", errs
 	}
 	// now lookup the deliveryservice xmlID
 	xmlID, ok, err := getXMLID(cdnID, hostRegex, inf.Tx.Tx)
 	if err != nil {
-		return "", nil, errors.New("getting xml id: " + err.Error()), http.StatusInternalServerError
+		errs.SetSystemError("getting xml id: " + err.Error())
+		errs.Code = http.StatusInternalServerError
+		return "", errs
 	}
 	if !ok {
-		return "", errors.New("a delivery service does not exist for a host with hostname of " + hostName), nil, http.StatusNotFound
+		errs.SetUserError("a delivery service does not exist for a host with hostname of " + hostName)
+		errs.Code = http.StatusNotFound
+		return "", errs
 	}
 
-	return xmlID, nil, nil, http.StatusOK
+	return xmlID, errs
 }
 
 // GetSSLKeysByXMLID fetches the deliveryservice ssl keys by the specified xmlID.
 func GetSSLKeysByXMLID(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"xmlid"}, nil)
-	if userErr != nil || sysErr != nil {
-		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
+	inf, errs := api.NewInfo(r, []string{"xmlid"}, nil)
+	if errs.Occurred() {
+		inf.HandleErrs(w, r, errs)
 		return
 	}
 	defer inf.Close()
@@ -233,10 +246,11 @@ func GetSSLKeysByXMLID(w http.ResponseWriter, r *http.Request) {
 func getSSLKeysByXMLIDHelper(xmlID string, alerts tc.Alerts, inf *api.APIInfo, w http.ResponseWriter, r *http.Request) {
 	version := inf.Params["version"]
 	decode := inf.Params["decode"]
-	if userErr, sysErr, errCode := tenant.Check(inf.User, xmlID, inf.Tx.Tx); userErr != nil || sysErr != nil {
-		userErr = api.LogErr(r, errCode, userErr, sysErr)
+	if errs := tenant.Check(inf.User, xmlID, inf.Tx.Tx); errs.Occurred() {
+		// TODO: I think this should just be using HandleErrs
+		userErr := api.LogErrs(r, errs)
 		alerts.AddNewAlert(tc.ErrorLevel, userErr.Error())
-		api.WriteAlerts(w, r, errCode, alerts)
+		api.WriteAlerts(w, r, errs.Code, alerts)
 		return
 	}
 	keyObj, ok, err := riaksvc.GetDeliveryServiceSSLKeysObj(xmlID, version, inf.Tx.Tx, inf.Config.RiakAuthOptions, inf.Config.RiakPort)
@@ -268,9 +282,9 @@ func getSSLKeysByXMLIDHelper(xmlID string, alerts tc.Alerts, inf *api.APIInfo, w
 
 // GetSSLKeysByXMLIDV15 fetches the deliveryservice ssl keys by the specified xmlID. V15 includes expiration date.
 func GetSSLKeysByXMLIDV15(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"xmlid"}, nil)
-	if userErr != nil || sysErr != nil {
-		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
+	inf, errs := api.NewInfo(r, []string{"xmlid"}, nil)
+	if errs.Occurred() {
+		inf.HandleErrs(w, r, errs)
 		return
 	}
 	defer inf.Close()
@@ -285,10 +299,11 @@ func GetSSLKeysByXMLIDV15(w http.ResponseWriter, r *http.Request) {
 func getSSLKeysByXMLIDHelperV15(xmlID string, alerts tc.Alerts, inf *api.APIInfo, w http.ResponseWriter, r *http.Request) {
 	version := inf.Params["version"]
 	decode := inf.Params["decode"]
-	if userErr, sysErr, errCode := tenant.Check(inf.User, xmlID, inf.Tx.Tx); userErr != nil || sysErr != nil {
-		userErr = api.LogErr(r, errCode, userErr, sysErr)
+	if errs := tenant.Check(inf.User, xmlID, inf.Tx.Tx); errs.Occurred() {
+		// TODO: I think this should just be using HandleErrs
+		userErr := api.LogErrs(r, errs)
 		alerts.AddNewAlert(tc.ErrorLevel, userErr.Error())
-		api.WriteAlerts(w, r, errCode, alerts)
+		api.WriteAlerts(w, r, errs.Code, alerts)
 		return
 	}
 	keyObj, ok, err := riaksvc.GetDeliveryServiceSSLKeysObjV15(xmlID, version, inf.Tx.Tx, inf.Config.RiakAuthOptions, inf.Config.RiakPort)
@@ -383,14 +398,14 @@ func DeleteSSLKeysDeprecated(w http.ResponseWriter, r *http.Request) {
 
 func deleteSSLKeys(w http.ResponseWriter, r *http.Request, deprecated bool) {
 	alt := "DELETE /deliveryservices/xmlId/:xmlid/sslkeys"
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"xmlid"}, nil)
-	if userErr != nil || sysErr != nil {
-		api.HandleErrOptionalDeprecation(w, r, inf.Tx.Tx, errCode, userErr, sysErr, deprecated, &alt)
+	inf, errs := api.NewInfo(r, []string{"xmlid"}, nil)
+	if errs.Occurred() {
+		api.HandleErrOptionalDeprecation(w, r, inf.Tx.Tx, errs.Code, errs.UserError, errs.SystemError, deprecated, &alt)
 		return
 	}
 	defer inf.Close()
 	if inf.Config.RiakEnabled == false {
-		api.HandleErrOptionalDeprecation(w, r, inf.Tx.Tx, http.StatusInternalServerError, userErr, errors.New("deliveryservice.DeleteSSLKeys: Riak is not configured"), deprecated, &alt)
+		api.HandleErrOptionalDeprecation(w, r, inf.Tx.Tx, http.StatusInternalServerError, nil, errors.New("deliveryservice.DeleteSSLKeys: Riak is not configured"), deprecated, &alt)
 		return
 	}
 	xmlID := inf.Params["xmlid"]
@@ -402,12 +417,12 @@ func deleteSSLKeys(w http.ResponseWriter, r *http.Request, deprecated bool) {
 		api.HandleErrOptionalDeprecation(w, r, inf.Tx.Tx, http.StatusNotFound, errors.New("no DS with name "+xmlID), nil, deprecated, &alt)
 		return
 	}
-	if userErr, sysErr, errCode := tenant.Check(inf.User, xmlID, inf.Tx.Tx); userErr != nil || sysErr != nil {
-		api.HandleErrOptionalDeprecation(w, r, inf.Tx.Tx, errCode, userErr, sysErr, deprecated, &alt)
+	if errs := tenant.Check(inf.User, xmlID, inf.Tx.Tx); errs.Occurred() {
+		api.HandleErrsOptionalDeprecation(w, r, inf.Tx.Tx, errs, deprecated, &alt)
 		return
 	}
 	if err := riaksvc.DeleteDSSSLKeys(inf.Tx.Tx, inf.Config.RiakAuthOptions, inf.Config.RiakPort, xmlID, inf.Params["version"]); err != nil {
-		api.HandleErrOptionalDeprecation(w, r, inf.Tx.Tx, http.StatusInternalServerError, userErr, errors.New("deliveryservice.DeleteSSLKeys: deleting SSL keys: "+err.Error()), deprecated, &alt)
+		api.HandleErrOptionalDeprecation(w, r, inf.Tx.Tx, http.StatusInternalServerError, nil, errors.New("deliveryservice.DeleteSSLKeys: deleting SSL keys: "+err.Error()), deprecated, &alt)
 		return
 	}
 	api.CreateChangeLogRawTx(api.ApiChange, "DS: "+xmlID+", ID: "+strconv.Itoa(dsID)+", ACTION: Deleted SSL keys", inf.User, inf.Tx.Tx)

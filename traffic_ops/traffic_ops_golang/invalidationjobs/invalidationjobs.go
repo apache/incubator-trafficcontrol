@@ -29,6 +29,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/apierrors"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/util/ims"
 
 	"github.com/lib/pq"
@@ -205,9 +206,10 @@ func selectMaxLastUpdatedQuery(where string) string {
 
 // Used by GET requests to `/jobs`, simply returns a filtered list of
 // content invalidation jobs according to the provided query parameters.
-func (job *InvalidationJob) Read(h http.Header, useIMS bool) ([]interface{}, error, error, int, *time.Time) {
+func (job *InvalidationJob) Read(h http.Header, useIMS bool) ([]interface{}, apierrors.Errors, *time.Time) {
 	var maxTime time.Time
 	var runSecond bool
+	errs := apierrors.New()
 	queryParamsToSQLCols := map[string]dbhelpers.WhereColumnInfo{
 		"id":              dbhelpers.WhereColumnInfo{"job.id", api.IsInt},
 		"keyword":         dbhelpers.WhereColumnInfo{"job.keyword", nil},
@@ -219,14 +221,18 @@ func (job *InvalidationJob) Read(h http.Header, useIMS bool) ([]interface{}, err
 		"dsId":            dbhelpers.WhereColumnInfo{"job.job_deliveryservice", api.IsInt},
 	}
 
-	where, orderBy, pagination, queryValues, errs := dbhelpers.BuildWhereAndOrderByAndPagination(job.APIInfo().Params, queryParamsToSQLCols)
-	if len(errs) > 0 {
-		return nil, util.JoinErrs(errs), nil, http.StatusBadRequest, nil
+	where, orderBy, pagination, queryValues, dbErrs := dbhelpers.BuildWhereAndOrderByAndPagination(job.APIInfo().Params, queryParamsToSQLCols)
+	if len(dbErrs) > 0 {
+		errs.UserError = util.JoinErrs(dbErrs)
+		errs.Code = http.StatusBadRequest
+		return nil, errs, nil
 	}
 
 	accessibleTenants, err := tenant.GetUserTenantIDListTx(job.APIInfo().Tx.Tx, job.APIInfo().User.TenantID)
 	if err != nil {
-		return nil, nil, fmt.Errorf("getting accessible tenants for user - %v", err), http.StatusInternalServerError, nil
+		errs.SystemError = fmt.Errorf("getting accessible tenants for user - %v", err)
+		errs.Code = http.StatusInternalServerError
+		return nil, errs, nil
 	}
 	if len(where) > 0 {
 		where += " AND ds.tenant_id = ANY(:tenants) "
@@ -239,7 +245,7 @@ func (job *InvalidationJob) Read(h http.Header, useIMS bool) ([]interface{}, err
 		runSecond, maxTime = ims.TryIfModifiedSinceQuery(job.APIInfo().Tx, h, queryValues, selectMaxLastUpdatedQuery(where))
 		if !runSecond {
 			log.Debugln("IMS HIT")
-			return []interface{}{}, nil, nil, http.StatusNotModified, &maxTime
+			return []interface{}{}, apierrors.Errors{Code: http.StatusNotFound}, &maxTime
 		}
 		log.Debugln("IMS MISS")
 	} else {
@@ -253,7 +259,9 @@ func (job *InvalidationJob) Read(h http.Header, useIMS bool) ([]interface{}, err
 	returnable := []interface{}{}
 	rows, err := job.APIInfo().Tx.NamedQuery(query, queryValues)
 	if err != nil {
-		return nil, nil, fmt.Errorf("querying: %v", err), http.StatusInternalServerError, nil
+		errs.SystemError = fmt.Errorf("querying: %v", err)
+		errs.Code = http.StatusInternalServerError
+		return nil, errs, nil
 	}
 	defer rows.Close()
 
@@ -267,25 +275,29 @@ func (job *InvalidationJob) Read(h http.Header, useIMS bool) ([]interface{}, err
 			&j.CreatedBy,
 			&j.DeliveryService)
 		if err != nil {
-			return nil, nil, fmt.Errorf("parsing db response: %v", err), http.StatusInternalServerError, nil
+			errs.SystemError = fmt.Errorf("parsing db response: %v", err)
+			errs.Code = http.StatusInternalServerError
+			return nil, errs, nil
 		}
 
 		returnable = append(returnable, j)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, nil, fmt.Errorf("Parsing db responses: %v", err), http.StatusInternalServerError, nil
+		errs.SystemError = fmt.Errorf("Parsing db responses: %v", err)
+		errs.Code = http.StatusInternalServerError
+		return nil, errs, nil
 	}
 
-	return returnable, nil, nil, http.StatusOK, &maxTime
+	return returnable, errs, &maxTime
 }
 
 // Used by POST requests to `/jobs`, creates a new content invalidation job
 // from the provided request body.
 func Create(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, nil, nil)
-	if userErr != nil || sysErr != nil {
-		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
+	inf, errs := api.NewInfo(r, nil, nil)
+	if errs.Occurred() {
+		inf.HandleErrs(w, r, errs)
 		return
 	}
 	defer inf.Close()
@@ -317,6 +329,10 @@ func Create(w http.ResponseWriter, r *http.Request) {
 		w.Write(append(resp, '\n'))
 		return
 	}
+
+	var sysErr error
+	var errCode int
+	var userErr error
 
 	// Validate() would have already checked for deliveryservice existence and
 	// parsed the ttl, so if either of these throws an error now, something
@@ -366,8 +382,7 @@ func Create(w http.ResponseWriter, r *http.Request) {
 		&result.Parameters,
 		&result.StartTime)
 	if err != nil {
-		userErr, sysErr, errCode = api.ParseDBError(err)
-		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
+		inf.HandleErrs(w, r, api.ParseDBError(err))
 		return
 	}
 
@@ -415,9 +430,9 @@ func Create(w http.ResponseWriter, r *http.Request) {
 // Used by PUT requests to `/jobs`, replaces an existing content invalidation job
 // with the provided request body.
 func Update(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, nil, nil)
-	if userErr != nil || sysErr != nil {
-		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
+	inf, errs := api.NewInfo(r, nil, nil)
+	if errs.Occurred() {
+		inf.HandleErrs(w, r, errs)
 		return
 	}
 	defer inf.Close()
@@ -425,6 +440,9 @@ func Update(w http.ResponseWriter, r *http.Request) {
 	var oFQDN string
 	var dsid uint
 	var uid uint
+	var userErr error
+	var sysErr error
+	var errCode int
 	job := tc.InvalidationJob{}
 	row := inf.Tx.Tx.QueryRow(putInfoQuery, inf.Params["id"])
 	err := row.Scan(&job.ID,
@@ -581,13 +599,16 @@ func Update(w http.ResponseWriter, r *http.Request) {
 
 // Used by DELETE requests to `/jobs`, deletes an existing content invalidation job
 func Delete(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"id"}, []string{"id"})
-	if userErr != nil || sysErr != nil {
-		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
+	inf, errs := api.NewInfo(r, []string{"id"}, []string{"id"})
+	if errs.Occurred() {
+		inf.HandleErrs(w, r, errs)
 		return
 	}
 	defer inf.Close()
 
+	var userErr error
+	var sysErr error
+	var errCode int
 	var dsid uint
 	var createdBy uint
 	row := inf.Tx.Tx.QueryRow(`SELECT job_deliveryservice, job_user FROM job WHERE id=$1`, inf.Params["id"])

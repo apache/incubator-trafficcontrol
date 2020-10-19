@@ -34,9 +34,9 @@ import (
 
 // ExportProfileHandler exports a profile per ID
 func ExportProfileHandler(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{IDQueryParam}, []string{IDQueryParam})
-	if userErr != nil || sysErr != nil {
-		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
+	inf, errs := api.NewInfo(r, []string{IDQueryParam}, []string{IDQueryParam})
+	if errs.Occurred() {
+		inf.HandleErrs(w, r, errs)
 		return
 	}
 	defer inf.Close()

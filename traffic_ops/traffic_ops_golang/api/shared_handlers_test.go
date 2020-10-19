@@ -30,6 +30,8 @@ import (
 	"time"
 
 	"github.com/apache/trafficcontrol/lib/go-rfc"
+
+	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/apierrors"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/auth"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/config"
 	"github.com/jmoiron/sqlx"
@@ -40,9 +42,7 @@ import (
 type tester struct {
 	ID          int
 	APIInfoImpl `json:"-"`
-	userErr     error //only for testing
-	sysErr      error //only for testing
-	errCode     int   //only for testing
+	errs        apierrors.Errors //only for testing
 }
 
 var cfg = config.Config{ConfigTrafficOpsGolang: config.ConfigTrafficOpsGolang{DBQueryTimeoutSeconds: 20}, UseIMS: true}
@@ -78,39 +78,41 @@ func (v *tester) Validate() error {
 }
 
 //Creator interface functions
-func (i *tester) Create() (error, error, int) {
-	return i.userErr, i.sysErr, i.errCode
+func (i *tester) Create() apierrors.Errors {
+	return i.errs
 }
 
 //Reader interface functions
-func (i *tester) Read(h http.Header, useIMS bool) ([]interface{}, error, error, int, *time.Time) {
+func (i *tester) Read(h http.Header, useIMS bool) ([]interface{}, apierrors.Errors, *time.Time) {
 	if h.Get(rfc.IfModifiedSince) != "" {
 		if imsDate, ok := rfc.ParseHTTPDate(h.Get(rfc.IfModifiedSince)); !ok {
-			return []interface{}{tester{ID: 1}}, nil, nil, http.StatusOK, nil
+			return []interface{}{tester{ID: 1}}, apierrors.New(), nil
 		} else {
 			if imsDate.UTC().After(time.Now().UTC()) {
-				return []interface{}{}, nil, nil, http.StatusNotModified, &imsDate
+				return []interface{}{}, apierrors.Errors{Code: http.StatusNotModified}, &imsDate
 			}
 		}
 	}
-	return []interface{}{tester{ID: 1}}, nil, nil, http.StatusOK, nil
+	return []interface{}{tester{ID: 1}}, apierrors.New(), nil
 }
 
 //Updater interface functions
-func (i *tester) Update() (error, error, int) {
-	return i.userErr, i.sysErr, i.errCode
+func (i *tester) Update() apierrors.Errors {
+	return i.errs
 }
 
 //Deleter interface functions
-func (i *tester) Delete() (error, error, int) {
-	return i.userErr, i.sysErr, i.errCode
+func (i *tester) Delete() apierrors.Errors {
+	return i.errs
 }
 
 //used for testing purposes only
-func (t *tester) SetError(userErr error, sysErr error, errCode int) {
-	t.userErr = userErr
-	t.sysErr = sysErr
-	t.errCode = errCode
+func (i *tester) SetError(userErr error, sysErr error, errCode int) {
+	i.errs = apierrors.Errors{
+		Code:        errCode,
+		SystemError: sysErr,
+		UserError:   userErr,
+	}
 }
 
 func TestCreateHandler(t *testing.T) {

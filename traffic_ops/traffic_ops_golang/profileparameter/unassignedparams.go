@@ -33,9 +33,9 @@ import (
 // my $rs_data = $self->db->resultset("Parameter")->search( 'me.id' => { 'not in' => \@assigned_params } );
 
 func GetUnassigned(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"id"}, []string{"id"})
-	if userErr != nil || sysErr != nil {
-		api.HandleDeprecatedErr(w, r, nil, errCode, userErr, sysErr, nil)
+	inf, errs := api.NewInfo(r, []string{"id"}, []string{"id"})
+	if errs.Occurred() {
+		api.HandleErrsOptionalDeprecation(w, r, nil, errs, true, nil)
 		return
 	}
 	defer inf.Close()

@@ -22,8 +22,9 @@ package deliveryservice
 import (
 	"database/sql"
 	"fmt"
-	"github.com/apache/trafficcontrol/lib/go-log"
 	"net/http"
+
+	"github.com/apache/trafficcontrol/lib/go-log"
 
 	"github.com/apache/trafficcontrol/lib/go-tc"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/api"
@@ -44,19 +45,19 @@ RETURNING id
 //
 // The only fields which are "safe" to modify are the displayName, infoURL, longDesc, and longDesc1.
 func UpdateSafe(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"id"}, []string{"id"})
+	inf, errs := api.NewInfo(r, []string{"id"}, []string{"id"})
 	tx := inf.Tx.Tx
-	if userErr != nil || sysErr != nil {
-		api.HandleErr(w, r, tx, errCode, userErr, sysErr)
+	if errs.Occurred() {
+		inf.HandleErrs(w, r, errs)
 		return
 	}
 	defer inf.Close()
 
 	dsID := inf.IntParams["id"]
 
-	userErr, sysErr, errCode = tenant.CheckID(tx, inf.User, dsID)
-	if userErr != nil || sysErr != nil {
-		api.HandleErr(w, r, tx, errCode, userErr, sysErr)
+	errs = tenant.CheckID(tx, inf.User, dsID)
+	if errs.Occurred() {
+		inf.HandleErrs(w, r, errs)
 		return
 	}
 
@@ -70,7 +71,7 @@ func UpdateSafe(w http.ResponseWriter, r *http.Request) {
 		api.HandleErr(w, r, tx, http.StatusInternalServerError, nil, fmt.Errorf("Updating Delivery Service (safe): %s", err))
 		return
 	} else if !ok {
-		userErr = fmt.Errorf("No Delivery Service exists by ID '%d'", dsID)
+		userErr := fmt.Errorf("No Delivery Service exists by ID '%d'", dsID)
 		api.HandleErr(w, r, tx, http.StatusNotFound, userErr, nil)
 		return
 	}
@@ -81,13 +82,13 @@ func UpdateSafe(w http.ResponseWriter, r *http.Request) {
 	} else {
 		log.Warnf("Couldn't get config %v", e)
 	}
-	dses, userErr, sysErr, errCode, _ := readGetDeliveryServices(r.Header, inf.Params, inf.Tx, inf.User, useIMS)
-	if userErr != nil || sysErr != nil {
-		api.HandleErr(w, r, tx, errCode, userErr, sysErr)
+	dses, errs, _ := readGetDeliveryServices(r.Header, inf.Params, inf.Tx, inf.User, useIMS)
+	if errs.Occurred() {
+		inf.HandleErrs(w, r, errs)
 		return
 	}
 	if len(dses) != 1 {
-		sysErr = fmt.Errorf("Updating Delivery Service (safe): expected one Delivery Service returned from read, got %v", len(dses))
+		sysErr := fmt.Errorf("Updating Delivery Service (safe): expected one Delivery Service returned from read, got %v", len(dses))
 		api.HandleErr(w, r, tx, http.StatusInternalServerError, nil, sysErr)
 		return
 	}

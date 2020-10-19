@@ -19,62 +19,63 @@ package deliveryservicerequests
  * under the License.
  */
 
-import "encoding/json"
-import "fmt"
-import "net/http"
-import "net/mail"
+import (
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"net/mail"
 
-import "github.com/apache/trafficcontrol/lib/go-rfc"
-import "github.com/apache/trafficcontrol/lib/go-tc"
-
-import "github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/api"
+	"github.com/apache/trafficcontrol/lib/go-rfc"
+	"github.com/apache/trafficcontrol/lib/go-tc"
+	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/api"
+)
 
 const msg = "From: %s\r\nTo:%s\r\nContent-Type: text/html\r\nSubject: Delivery Service Request for %s\r\n\r\n%s"
 
 func Request(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, nil, nil)
-	tx := inf.Tx.Tx
-	if userErr != nil || sysErr != nil {
-		api.HandleErr(w, r, tx, errCode, userErr, sysErr)
+	inf, errs := api.NewInfo(r, nil, nil)
+	if errs.Occurred() {
+		inf.HandleErrs(w, r, errs)
 		return
 	}
 	defer inf.Close()
 
+	tx := inf.Tx.Tx
 	var dsr tc.DeliveryServiceRequestRequest
 	if err := json.NewDecoder(r.Body).Decode(&dsr); err != nil {
-		userErr = fmt.Errorf("Error parsing request: %v", err)
-		errCode = http.StatusBadRequest
+		userErr := fmt.Errorf("Error parsing request: %v", err)
+		errCode := http.StatusBadRequest
 		api.HandleErr(w, r, tx, errCode, userErr, nil)
 		return
 	}
 
 	if err := dsr.Validate(); err != nil {
-		errCode = http.StatusBadRequest
+		errCode := http.StatusBadRequest
 		api.HandleErr(w, r, tx, errCode, err, nil)
 		return
 	}
 
 	addr, err := mail.ParseAddress(dsr.EmailTo)
 	if err != nil {
-		userErr = fmt.Errorf("'%s' is not a valid RFC5322 email address!", dsr.EmailTo)
-		sysErr = fmt.Errorf("Parsing submitted email address: %s", err)
-		errCode = http.StatusBadRequest
+		userErr := fmt.Errorf("'%s' is not a valid RFC5322 email address!", dsr.EmailTo)
+		sysErr := fmt.Errorf("Parsing submitted email address: %s", err)
+		errCode := http.StatusBadRequest
 		api.HandleErr(w, r, tx, errCode, userErr, sysErr)
 		return
 	}
 
 	body, err := dsr.Details.Format()
 	if err != nil {
-		sysErr = fmt.Errorf("Failed to format email body: %v", err)
-		errCode = http.StatusInternalServerError
+		sysErr := fmt.Errorf("Failed to format email body: %v", err)
+		errCode := http.StatusInternalServerError
 		api.HandleErr(w, r, tx, errCode, nil, sysErr)
 		return
 	}
 
 	body = fmt.Sprintf(msg, inf.Config.ConfigTO.EmailFrom, addr, dsr.Details.Customer, body)
-	errCode, userErr, sysErr = inf.SendMail(rfc.EmailAddress{*addr}, []byte(body))
-	if userErr != nil || sysErr != nil {
-		api.HandleErr(w, r, tx, errCode, userErr, sysErr)
+	errs = inf.SendMail(rfc.EmailAddress{*addr}, []byte(body))
+	if errs.Occurred() {
+		inf.HandleErrs(w, r, errs)
 		return
 	}
 

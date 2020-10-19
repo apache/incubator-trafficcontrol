@@ -19,17 +19,18 @@ package capabilities
  * under the License.
  */
 
-import "database/sql"
-import "encoding/json"
-import "errors"
-import "fmt"
-import "net/http"
+import (
+	"database/sql"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"net/http"
 
-import "github.com/apache/trafficcontrol/lib/go-tc"
-import "github.com/apache/trafficcontrol/lib/go-util"
-
-import "github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/api"
-import "github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/dbhelpers"
+	"github.com/apache/trafficcontrol/lib/go-tc"
+	"github.com/apache/trafficcontrol/lib/go-util"
+	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/api"
+	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/dbhelpers"
+)
 
 const readQuery = `
 SELECT description,
@@ -45,10 +46,10 @@ RETURNING description, last_updated, name
 `
 
 func Read(w http.ResponseWriter, r *http.Request) {
-	inf, sysErr, userErr, errCode := api.NewInfo(r, nil, nil)
+	inf, e := api.NewInfo(r, nil, nil)
 	tx := inf.Tx.Tx
-	if userErr != nil || sysErr != nil {
-		api.HandleErr(w, r, tx, errCode, userErr, sysErr)
+	if e.Occurred() {
+		inf.HandleErrs(w, r, e)
 		return
 	}
 	defer inf.Close()
@@ -59,8 +60,8 @@ func Read(w http.ResponseWriter, r *http.Request) {
 
 	where, orderBy, pagination, queryValues, errs := dbhelpers.BuildWhereAndOrderByAndPagination(inf.Params, cols)
 	if len(errs) > 0 {
-		errCode = http.StatusBadRequest
-		userErr = util.JoinErrs(errs)
+		errCode := http.StatusBadRequest
+		userErr := util.JoinErrs(errs)
 		api.HandleErr(w, r, tx, errCode, userErr, nil)
 		return
 	}
@@ -68,8 +69,8 @@ func Read(w http.ResponseWriter, r *http.Request) {
 	query := readQuery + where + orderBy + pagination
 	rows, err := inf.Tx.NamedQuery(query, queryValues)
 	if err != nil && err != sql.ErrNoRows {
-		errCode = http.StatusInternalServerError
-		sysErr = fmt.Errorf("querying capabilities: %v", err)
+		errCode := http.StatusInternalServerError
+		sysErr := fmt.Errorf("querying capabilities: %v", err)
 		api.HandleErr(w, r, tx, errCode, nil, sysErr)
 		return
 	}
@@ -79,8 +80,8 @@ func Read(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		cap := tc.Capability{}
 		if err := rows.Scan(&cap.Description, &cap.LastUpdated, &cap.Name); err != nil {
-			errCode = http.StatusInternalServerError
-			sysErr = fmt.Errorf("Parsing database response: %v", err)
+			errCode := http.StatusInternalServerError
+			sysErr := fmt.Errorf("Parsing database response: %v", err)
 			api.HandleErr(w, r, tx, errCode, nil, sysErr)
 			return
 		}
@@ -92,10 +93,10 @@ func Read(w http.ResponseWriter, r *http.Request) {
 }
 
 func Create(w http.ResponseWriter, r *http.Request) {
-	inf, sysErr, userErr, errCode := api.NewInfo(r, nil, nil)
+	inf, errs := api.NewInfo(r, nil, nil)
 	tx := inf.Tx.Tx
-	if userErr != nil || sysErr != nil {
-		api.HandleErr(w, r, tx, errCode, userErr, sysErr)
+	if errs.Occurred() {
+		inf.HandleErrs(w, r, errs)
 		return
 	}
 	defer inf.Close()
@@ -103,42 +104,42 @@ func Create(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	var cap tc.Capability
 	if err := decoder.Decode(&cap); err != nil {
-		sysErr = fmt.Errorf("Decoding request body: %v", err)
-		errCode = http.StatusInternalServerError
+		sysErr := fmt.Errorf("Decoding request body: %v", err)
+		errCode := http.StatusInternalServerError
 		api.HandleErr(w, r, tx, errCode, nil, sysErr)
 		return
 	}
 
 	if cap.Name == "" {
-		userErr = errors.New("'name' must be defined! (and not empty)")
-		errCode = http.StatusBadRequest
+		userErr := errors.New("'name' must be defined! (and not empty)")
+		errCode := http.StatusBadRequest
 		api.HandleErr(w, r, tx, errCode, userErr, nil)
 		return
 	}
 
 	if cap.Description == "" {
-		userErr = errors.New("'description' must be defined! (and not empty)")
-		errCode = http.StatusBadRequest
+		userErr := errors.New("'description' must be defined! (and not empty)")
+		errCode := http.StatusBadRequest
 		api.HandleErr(w, r, tx, errCode, userErr, nil)
 		return
 	}
 
 	if ok, err := capabilityNameExists(cap.Name, tx); err != nil {
-		sysErr = fmt.Errorf("Checking for capability %s's existence: %v", cap.Name, err)
-		errCode = http.StatusInternalServerError
+		sysErr := fmt.Errorf("Checking for capability %s's existence: %v", cap.Name, err)
+		errCode := http.StatusInternalServerError
 		api.HandleErr(w, r, tx, errCode, nil, sysErr)
 		return
 	} else if ok {
-		userErr = fmt.Errorf("Capability '%s' already exists!", cap.Name)
-		errCode = http.StatusConflict
+		userErr := fmt.Errorf("Capability '%s' already exists!", cap.Name)
+		errCode := http.StatusConflict
 		api.HandleErr(w, r, tx, errCode, userErr, nil)
 		return
 	}
 
 	row := tx.QueryRow(createQuery, cap.Name, cap.Description)
 	if err := row.Scan(&cap.Description, &cap.LastUpdated, &cap.Name); err != nil {
-		sysErr = fmt.Errorf("Inserting capability: %v", err)
-		errCode = http.StatusInternalServerError
+		sysErr := fmt.Errorf("Inserting capability: %v", err)
+		errCode := http.StatusInternalServerError
 		api.HandleErr(w, r, tx, errCode, nil, sysErr)
 		return
 	}

@@ -22,8 +22,9 @@ package profileparameter
 import (
 	"database/sql"
 	"errors"
-	"github.com/apache/trafficcontrol/lib/go-util"
 	"net/http"
+
+	"github.com/apache/trafficcontrol/lib/go-util"
 
 	"github.com/apache/trafficcontrol/lib/go-tc"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/api"
@@ -41,9 +42,9 @@ func GetProfileName(w http.ResponseWriter, r *http.Request) {
 
 func getProfileName(w http.ResponseWriter, r *http.Request, deprecated bool) {
 	deprecation := util.StrPtr(API_PROFILES_NAME_NAME_PARAMETERS)
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"name"}, nil)
-	if userErr != nil || sysErr != nil {
-		api.HandleErrOptionalDeprecation(w, r, inf.Tx.Tx, errCode, userErr, sysErr, deprecated, deprecation)
+	inf, errs := api.NewInfo(r, []string{"name"}, nil)
+	if errs.Occurred() {
+		api.HandleErrsOptionalDeprecation(w, r, inf.Tx.Tx, errs, deprecated, deprecation)
 		return
 	}
 	defer inf.Close()

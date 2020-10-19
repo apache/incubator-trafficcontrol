@@ -20,18 +20,20 @@ package api
  */
 
 import (
-	"github.com/apache/trafficcontrol/lib/go-tc"
-	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/auth"
-	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/dbhelpers"
 	"net/http"
 	"time"
+
+	"github.com/apache/trafficcontrol/lib/go-tc"
+	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/apierrors"
+	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/auth"
+	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/dbhelpers"
 )
 
 type CRUDer interface {
-	Create() (error, error, int)
-	Read(h http.Header, useIMS bool) ([]interface{}, error, error, int, *time.Time)
-	Update() (error, error, int)
-	Delete() (error, error, int)
+	Create() apierrors.Errors
+	Read(h http.Header, useIMS bool) ([]interface{}, apierrors.Errors, *time.Time)
+	Update() apierrors.Errors
+	Delete() apierrors.Errors
 	APIInfoer
 	Identifier
 	Validator
@@ -61,7 +63,7 @@ type Identifier interface {
 
 type Creator interface {
 	// Create returns any user error, any system error, and the HTTP error code to be returned if there was an error.
-	Create() (error, error, int)
+	Create() apierrors.Errors
 	APIInfoer
 	Identifier
 	Validator
@@ -74,13 +76,13 @@ type MultipleCreator interface {
 
 type Reader interface {
 	// Read returns the object to write to the user, any user error, any system error, and the HTTP error code to be returned if there was an error.
-	Read(h http.Header, useIMS bool) ([]interface{}, error, error, int, *time.Time)
+	Read(h http.Header, useIMS bool) ([]interface{}, apierrors.Errors, *time.Time)
 	APIInfoer
 }
 
 type Updater interface {
 	// Update returns any user error, any system error, and the HTTP error code to be returned if there was an error.
-	Update() (error, error, int)
+	Update() apierrors.Errors
 	APIInfoer
 	Identifier
 	Validator
@@ -88,7 +90,7 @@ type Updater interface {
 
 type Deleter interface {
 	// Delete returns any user error, any system error, and the HTTP error code to be returned if there was an error.
-	Delete() (error, error, int)
+	Delete() apierrors.Errors
 	APIInfoer
 	Identifier
 }
@@ -97,7 +99,7 @@ type Deleter interface {
 type OptionsDeleter interface {
 	// OptionsDelete returns any user error, any system error, and the HTTP error code to be returned if there was an
 	// error.
-	OptionsDelete() (error, error, int)
+	OptionsDelete() apierrors.Errors
 	APIInfoer
 	Identifier
 	DeleteKeyOptions() map[string]dbhelpers.WhereColumnInfo

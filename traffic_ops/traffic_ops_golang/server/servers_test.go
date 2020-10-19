@@ -153,13 +153,13 @@ func TestUpdateServer(t *testing.T) {
 		ID:       &testServers[0].Server.ID,
 	}
 
-	userErr, _, errCode := checkTypeChangeSafety(s, db.MustBegin())
-	if errCode != 409 {
-		t.Errorf("Update servers: Expected error code of %v, but got %v", 409, errCode)
+	errs := checkTypeChangeSafety(s, db.MustBegin())
+	if errs.Code != 409 {
+		t.Errorf("Update servers: Expected error code of %v, but got %v", 409, errs.Code)
 	}
 	expectedErr := "server cdn can not be updated when it is currently assigned to delivery services"
-	if userErr == nil {
-		t.Errorf("Update expected error: %v, but got no error with status: %s", expectedErr, http.StatusText(errCode))
+	if errs.UserError == nil {
+		t.Errorf("Update expected error: %v, but got no error with status: %s", expectedErr, http.StatusText(errs.Code))
 	}
 }
 
@@ -259,9 +259,9 @@ func TestGetServersByCachegroup(t *testing.T) {
 
 	version := api.Version{Major: 3, Minor: 0}
 
-	servers, _, userErr, sysErr, errCode, _ := getServers(nil, v, db.MustBegin(), &user, false, version)
-	if userErr != nil || sysErr != nil {
-		t.Errorf("getServers expected: no errors, actual: %v %v with status: %s", userErr, sysErr, http.StatusText(errCode))
+	servers, _, errs, _ := getServers(nil, v, db.MustBegin(), &user, false, version)
+	if errs.Occurred() {
+		t.Errorf("getServers expected: no errors, actual: %s", errs)
 	}
 
 	if len(servers) != 3 {
@@ -364,10 +364,10 @@ func TestGetMidServers(t *testing.T) {
 
 	user := auth.CurrentUser{}
 	version := api.Version{Major: 3, Minor: 0}
-	servers, _, userErr, sysErr, errCode, _ := getServers(nil, v, db.MustBegin(), &user, false, version)
+	servers, _, errs, _ := getServers(nil, v, db.MustBegin(), &user, false, version)
 
-	if userErr != nil || sysErr != nil {
-		t.Errorf("getServers expected: no errors, actual: %v %v with status: %s", userErr, sysErr, http.StatusText(errCode))
+	if errs.Occurred() {
+		t.Errorf("getServers expected: no errors, actual: %s", errs)
 	}
 
 	cols2 := test.ColsFromStructByTag("db", tc.CommonServerProperties{})
@@ -475,10 +475,10 @@ func TestGetMidServers(t *testing.T) {
 
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT").WillReturnRows(rows2)
-	mid, userErr, sysErr, errCode := getMidServers(serverIDs, serverMap, 0, db.MustBegin())
+	mid, errs := getMidServers(serverIDs, serverMap, 0, db.MustBegin())
 
-	if userErr != nil || sysErr != nil {
-		t.Fatalf("getMidServers expected: no errors, actual: %v %v with status: %s", userErr, sysErr, http.StatusText(errCode))
+	if errs.Occurred() {
+		t.Fatalf("getMidServers expected: no errors, actual: %s", errs)
 	}
 	if len(mid) != 1 {
 		t.Fatalf("getMidServers expected: len(mid) == 1, actual: %v", len(mid))

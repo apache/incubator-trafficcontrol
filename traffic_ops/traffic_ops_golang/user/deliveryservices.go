@@ -34,9 +34,9 @@ import (
 
 func GetDSes(w http.ResponseWriter, r *http.Request) {
 	alt := util.StrPtr("GET deliveryservices?accessibleTo={{tenantId}")
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"id"}, []string{"id"})
-	if userErr != nil || sysErr != nil {
-		api.HandleDeprecatedErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr, alt)
+	inf, errs := api.NewInfo(r, []string{"id"}, []string{"id"})
+	if errs.Occurred() {
+		api.HandleErrsOptionalDeprecation(w, r, inf.Tx.Tx, errs, true, alt)
 		return
 	}
 	defer inf.Close()
@@ -57,9 +57,9 @@ func GetDSes(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetAvailableDSes(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"id"}, []string{"id"})
-	if userErr != nil || sysErr != nil {
-		api.HandleDeprecatedErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr, nil)
+	inf, errs := api.NewInfo(r, []string{"id"}, []string{"id"})
+	if errs.Occurred() {
+		api.HandleErrsOptionalDeprecation(w, r, inf.Tx.Tx, errs, true, nil)
 		return
 	}
 	defer inf.Close()

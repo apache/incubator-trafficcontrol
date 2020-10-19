@@ -92,9 +92,9 @@ func TestGetType(t *testing.T) {
 		api.APIInfoImpl{&reqInfo},
 		tc.TypeNullable{},
 	}
-	types, userErr, sysErr, _, _ := obj.Read(nil, false)
-	if userErr != nil || sysErr != nil {
-		t.Errorf("Read expected: no errors, actual: %v %v", userErr, sysErr)
+	types, errs, _ := obj.Read(nil, false)
+	if errs.Occurred() {
+		t.Errorf("Read expected: no errors, actual: %s", errs)
 	}
 
 	if len(types) != 2 {
@@ -147,11 +147,11 @@ func createDummyType(field string) *TOType {
 func TestUpdateInvalidType(t *testing.T) {
 	invalidUpdateType := createDummyType("test")
 
-	err, _, statusCode := invalidUpdateType.Update()
-	if err == nil {
+	errs := invalidUpdateType.Update()
+	if errs.UserError == nil {
 		t.Fatalf("expected update type tp have an error")
 	}
-	if statusCode != http.StatusBadRequest {
+	if errs.Code != http.StatusBadRequest {
 		t.Fatalf("expected update to return a 400 error")
 	}
 }
@@ -159,11 +159,11 @@ func TestUpdateInvalidType(t *testing.T) {
 func TestDeleteInvalidType(t *testing.T) {
 	invalidDeleteType := createDummyType("other")
 
-	err, _, statusCode := invalidDeleteType.Delete()
-	if err == nil {
+	errs := invalidDeleteType.Delete()
+	if errs.UserError == nil {
 		t.Fatalf("expected delete type to have an error")
 	}
-	if statusCode != http.StatusBadRequest {
+	if errs.Code != http.StatusBadRequest {
 		t.Fatalf("expected delete type to return a %v error", http.StatusBadRequest)
 	}
 }
@@ -171,12 +171,12 @@ func TestDeleteInvalidType(t *testing.T) {
 func TestCreateInvalidType(t *testing.T) {
 	invalidCreateType := createDummyType("test")
 
-	err, _, statusCode := invalidCreateType.Create()
-	if err == nil {
-		t.Fatalf("expected create type to have an error")
+	errs := invalidCreateType.Create()
+	if !errs.Occurred() {
+		t.Error("expected create type to have an error")
 	}
-	if statusCode != http.StatusBadRequest {
-		t.Fatalf("expected create type to return a %v error", http.StatusBadRequest)
+	if errs.Code != http.StatusBadRequest {
+		t.Errorf("expected create type to return a %v error", http.StatusBadRequest)
 	}
 }
 

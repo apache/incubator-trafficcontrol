@@ -29,6 +29,7 @@ import (
 	"github.com/apache/trafficcontrol/lib/go-tc/tovalidate"
 	"github.com/apache/trafficcontrol/lib/go-util"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/api"
+	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/apierrors"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/dbhelpers"
 
 	validation "github.com/go-ozzo/ozzo-validation"
@@ -98,8 +99,8 @@ func (division TODivision) Validate() error {
 	return util.JoinErrs(tovalidate.ToErrors(errs))
 }
 
-func (dv *TODivision) Create() (error, error, int) { return api.GenericCreate(dv) }
-func (dv *TODivision) Read(h http.Header, useIMS bool) ([]interface{}, error, error, int, *time.Time) {
+func (dv *TODivision) Create() apierrors.Errors { return api.GenericCreate(dv) }
+func (dv *TODivision) Read(h http.Header, useIMS bool) ([]interface{}, apierrors.Errors, *time.Time) {
 	params := dv.APIInfo().Params
 	// TODO move to router, and do for all endpoints
 	if strings.HasSuffix(params["name"], ".json") {
@@ -108,8 +109,8 @@ func (dv *TODivision) Read(h http.Header, useIMS bool) ([]interface{}, error, er
 	api.DefaultSort(dv.APIInfo(), "name")
 	return api.GenericRead(h, dv, useIMS)
 }
-func (dv *TODivision) Update() (error, error, int) { return api.GenericUpdate(dv) }
-func (dv *TODivision) Delete() (error, error, int) { return api.GenericDelete(dv) }
+func (dv *TODivision) Update() apierrors.Errors { return api.GenericUpdate(dv) }
+func (dv *TODivision) Delete() apierrors.Errors { return api.GenericDelete(dv) }
 
 func insertQuery() string {
 	return `INSERT INTO division (name) VALUES (:name) RETURNING id,last_updated`

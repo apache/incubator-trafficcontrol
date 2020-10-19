@@ -29,6 +29,7 @@ import (
 	"github.com/apache/trafficcontrol/lib/go-tc/tovalidate"
 	"github.com/apache/trafficcontrol/lib/go-util"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/api"
+	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/apierrors"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/dbhelpers"
 
 	validation "github.com/go-ozzo/ozzo-validation"
@@ -99,14 +100,18 @@ func (asn TOASNV11) Validate() error {
 	return util.JoinErrs(tovalidate.ToErrors(errs))
 }
 
-func (as *TOASNV11) Create() (error, error, int) {
+func (as *TOASNV11) Create() apierrors.Errors {
 	err := as.ASNExists(true)
 	if err != nil {
-		return err, nil, http.StatusBadRequest
+		return apierrors.Errors{
+			Code:      http.StatusBadRequest,
+			UserError: err,
+		}
 	}
 	return api.GenericCreate(as)
 }
-func (as *TOASNV11) Read(h http.Header, useIMS bool) ([]interface{}, error, error, int, *time.Time) {
+
+func (as *TOASNV11) Read(h http.Header, useIMS bool) ([]interface{}, apierrors.Errors, *time.Time) {
 	api.DefaultSort(as.APIInfo(), "asn")
 	return api.GenericRead(h, as, useIMS)
 }
@@ -119,15 +124,18 @@ JOIN
 	select max(last_updated) as t from last_deleted l where l.table_name='asn') as res`
 }
 
-func (as *TOASNV11) Update() (error, error, int) {
+func (as *TOASNV11) Update() apierrors.Errors {
 	err := as.ASNExists(false)
 	if err != nil {
-		return err, nil, http.StatusBadRequest
+		return apierrors.Errors{
+			UserError: err,
+			Code:      http.StatusBadRequest,
+		}
 	}
 	return api.GenericUpdate(as)
 }
 
-func (as *TOASNV11) Delete() (error, error, int) { return api.GenericDelete(as) }
+func (as *TOASNV11) Delete() apierrors.Errors { return api.GenericDelete(as) }
 
 func (asn TOASNV11) ASNExists(create bool) error {
 	if asn.APIInfo() == nil || asn.APIInfo().Tx == nil {
@@ -161,18 +169,18 @@ func (asn TOASNV11) ASNExists(create bool) error {
 
 // V11ReadAll implements the asns 1.1 route, which is different from the 1.1 route for a single ASN and from 1.2+ routes, in that it wraps the content in an additional "asns" object.
 func V11ReadAll(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, nil, nil)
-	if userErr != nil || sysErr != nil {
-		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
+	inf, errs := api.NewInfo(r, nil, nil)
+	if errs.Occurred() {
+		inf.HandleErrs(w, r, errs)
 		return
 	}
 	defer inf.Close()
 
 	asn := &TOASNV11{}
 	asn.SetInfo(inf)
-	asns, userErr, sysErr, errCode, _ := api.GenericRead(r.Header, asn, false)
-	if userErr != nil || sysErr != nil {
-		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
+	asns, errs, _ := api.GenericRead(r.Header, asn, false)
+	if errs.Occurred() {
+		inf.HandleErrs(w, r, errs)
 		return
 	}
 	api.WriteResp(w, r, tc.ASNsV11{asns})

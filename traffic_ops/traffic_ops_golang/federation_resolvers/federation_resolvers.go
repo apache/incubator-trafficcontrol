@@ -33,6 +33,7 @@ import (
 	"github.com/apache/trafficcontrol/lib/go-tc"
 	"github.com/apache/trafficcontrol/lib/go-util"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/api"
+	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/apierrors"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/dbhelpers"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/util/ims"
 
@@ -75,24 +76,23 @@ RETURNING federation_resolver.id,
 
 // Create is the handler for POST requests to /federation_resolvers.
 func Create(w http.ResponseWriter, r *http.Request) {
-	inf, sysErr, userErr, errCode := api.NewInfo(r, nil, nil)
-	tx := inf.Tx.Tx
-	if sysErr != nil || userErr != nil {
-		api.HandleErr(w, r, tx, errCode, userErr, sysErr)
+	inf, errs := api.NewInfo(r, nil, nil)
+	if errs.Occurred() {
+		inf.HandleErrs(w, r, errs)
 		return
 	}
 	defer inf.Close()
 
+	tx := inf.Tx.Tx
 	var fr tc.FederationResolver
-	if userErr = api.Parse(r.Body, tx, &fr); userErr != nil {
+	if userErr := api.Parse(r.Body, tx, &fr); userErr != nil {
 		api.HandleErr(w, r, tx, http.StatusBadRequest, userErr, nil)
 		return
 	}
 
 	err := tx.QueryRow(insertFederationResolverQuery, fr.IPAddress, fr.TypeID).Scan(&fr.ID, &fr.IPAddress, &fr.Type, &fr.TypeID)
 	if err != nil {
-		userErr, sysErr, errCode = api.ParseDBError(err)
-		api.HandleErr(w, r, tx, errCode, userErr, sysErr)
+		inf.HandleErrs(w, r, api.ParseDBError(err))
 		return
 	}
 
@@ -112,10 +112,9 @@ func Create(w http.ResponseWriter, r *http.Request) {
 func Read(w http.ResponseWriter, r *http.Request) {
 	var maxTime time.Time
 	var runSecond bool
-	inf, sysErr, userErr, errCode := api.NewInfo(r, nil, nil)
-	tx := inf.Tx.Tx
-	if sysErr != nil || userErr != nil {
-		api.HandleErr(w, r, tx, errCode, userErr, sysErr)
+	inf, errs := api.NewInfo(r, nil, nil)
+	if errs.Occurred() {
+		inf.HandleErrs(w, r, errs)
 		return
 	}
 	defer inf.Close()
@@ -126,10 +125,11 @@ func Read(w http.ResponseWriter, r *http.Request) {
 		"type":      dbhelpers.WhereColumnInfo{"type.name", nil},
 	}
 
-	where, orderBy, pagination, queryValues, errs := dbhelpers.BuildWhereAndOrderByAndPagination(inf.Params, queryParamsToQueryCols)
-	if len(errs) > 0 {
-		sysErr = util.JoinErrs(errs)
-		errCode = http.StatusBadRequest
+	tx := inf.Tx.Tx
+	where, orderBy, pagination, queryValues, dbErrs := dbhelpers.BuildWhereAndOrderByAndPagination(inf.Params, queryParamsToQueryCols)
+	if len(dbErrs) > 0 {
+		sysErr := util.JoinErrs(dbErrs)
+		errCode := http.StatusBadRequest
 		api.HandleErr(w, r, tx, errCode, nil, sysErr)
 		return
 	}
@@ -160,12 +160,12 @@ func Read(w http.ResponseWriter, r *http.Request) {
 
 	rows, err := inf.Tx.NamedQuery(query, queryValues)
 	if err != nil {
-		userErr, sysErr, errCode = api.ParseDBError(err)
-		if sysErr != nil {
-			sysErr = fmt.Errorf("federation_resolver read query: %v", sysErr)
+		errs := api.ParseDBError(err)
+		if errs.SystemError != nil {
+			errs.SystemError = fmt.Errorf("federation_resolver read query: %v", errs.SystemError)
 		}
 
-		api.HandleErr(w, r, tx, errCode, userErr, sysErr)
+		inf.HandleErrs(w, r, errs)
 		return
 	}
 	defer rows.Close()
@@ -174,11 +174,11 @@ func Read(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		var resolver tc.FederationResolver
 		if err := rows.Scan(&resolver.ID, &resolver.IPAddress, &resolver.LastUpdated, &resolver.Type); err != nil {
-			userErr, sysErr, errCode = api.ParseDBError(err)
-			if sysErr != nil {
-				sysErr = fmt.Errorf("federation_resolver scanning: %v", sysErr)
+			errs := api.ParseDBError(err)
+			if errs.SystemError != nil {
+				errs.SystemError = fmt.Errorf("federation_resolver scanning: %v", errs.SystemError)
 			}
-			api.HandleErr(w, r, tx, errCode, userErr, sysErr)
+			inf.HandleErrs(w, r, errs)
 			return
 		}
 
@@ -248,40 +248,36 @@ func SelectMaxLastUpdatedQuery(where string, tableName string) string {
 
 // Delete is the handler for DELETE requests to /federation_resolvers.
 func Delete(w http.ResponseWriter, r *http.Request) {
-	inf, sysErr, userErr, errCode := api.NewInfo(r, []string{"id"}, []string{"id"})
-	tx := inf.Tx.Tx
-	if sysErr != nil || userErr != nil {
-		api.HandleErr(w, r, tx, errCode, userErr, sysErr)
+	inf, errs := api.NewInfo(r, []string{"id"}, []string{"id"})
+	if errs.Occurred() {
+		inf.HandleErrs(w, r, errs)
 		return
 	}
 	defer inf.Close()
 
-	alert, respObj, userErr, sysErr, statusCode := deleteFederationResolver(inf)
-	if userErr != nil || sysErr != nil {
-		api.HandleErr(w, r, tx, statusCode, userErr, sysErr)
+	alert, respObj, errs := deleteFederationResolver(inf)
+	if errs.Occurred() {
+		inf.HandleErrs(w, r, errs)
 		return
 	}
 
 	api.WriteRespAlertObj(w, r, tc.SuccessLevel, alert.Text, respObj)
 }
 
-func deleteFederationResolver(inf *api.APIInfo) (tc.Alert, tc.FederationResolver, error, error, int) {
-	var userErr error
-	var sysErr error
-	var statusCode = http.StatusOK
+func deleteFederationResolver(inf *api.APIInfo) (tc.Alert, tc.FederationResolver, apierrors.Errors) {
 	var alert tc.Alert
 	var result tc.FederationResolver
-
+	errs := apierrors.New()
 	err := inf.Tx.Tx.QueryRow(deleteQuery, inf.IntParams["id"]).Scan(&result.ID, &result.IPAddress, &result.Type)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			userErr = fmt.Errorf("No federation resolver by ID %d", inf.IntParams["id"])
-			statusCode = http.StatusNotFound
+			errs.UserError = fmt.Errorf("No federation resolver by ID %d", inf.IntParams["id"])
+			errs.Code = http.StatusNotFound
 		} else {
-			userErr, sysErr, statusCode = api.ParseDBError(err)
+			errs = api.ParseDBError(err)
 		}
 
-		return alert, result, userErr, sysErr, statusCode
+		return alert, result, errs
 	}
 
 	changeLogMsg := fmt.Sprintf("FEDERATION_RESOLVER: %s, ID: %d, ACTION: Deleted", *result.IPAddress, *result.ID)
@@ -293,22 +289,22 @@ func deleteFederationResolver(inf *api.APIInfo) (tc.Alert, tc.FederationResolver
 		Text:  alertMsg,
 	}
 
-	return alert, result, userErr, sysErr, statusCode
+	return alert, result, errs
 }
 
 // DeleteByID is the handler for DELETE requests to /federation_resolvers/{{ID}}.
 func DeleteByID(w http.ResponseWriter, r *http.Request) {
-	inf, sysErr, userErr, errCode := api.NewInfo(r, []string{"id"}, []string{"id"})
-	tx := inf.Tx.Tx
-	if sysErr != nil || userErr != nil {
-		api.HandleErr(w, r, tx, errCode, userErr, sysErr)
+	inf, errs := api.NewInfo(r, []string{"id"}, []string{"id"})
+	if errs.Occurred() {
+		inf.HandleErrs(w, r, errs)
 		return
 	}
 	defer inf.Close()
 
-	alert, respObj, userErr, sysErr, statusCode := deleteFederationResolver(inf)
-	if userErr != nil || sysErr != nil {
-		api.HandleErr(w, r, tx, statusCode, userErr, sysErr)
+	tx := inf.Tx.Tx
+	alert, respObj, errs := deleteFederationResolver(inf)
+	if errs.Occurred() {
+		inf.HandleErrs(w, r, errs)
 		return
 	}
 
@@ -332,10 +328,13 @@ func DeleteByID(w http.ResponseWriter, r *http.Request) {
 		resp.Response = nil
 	}
 
+	statusCode := http.StatusOK
+	var userErr error
 	respBts, err := json.Marshal(resp)
 	if err != nil {
-		sysErr = fmt.Errorf("marhsaling response: %v", err)
-		errCode = http.StatusInternalServerError
+		sysErr := fmt.Errorf("marhsaling response: %v", err)
+		// TODO: I think this should've returned errCode...
+		// errCode = http.StatusInternalServerError
 		api.HandleErr(w, r, tx, statusCode, userErr, sysErr)
 		return
 	}

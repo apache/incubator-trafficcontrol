@@ -134,9 +134,9 @@ type DeliveryService struct {
 }
 
 func Get(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"cdn"}, nil)
-	if userErr != nil || sysErr != nil {
-		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
+	inf, errs := api.NewInfo(r, []string{"cdn"}, nil)
+	if errs.Occurred() {
+		inf.HandleErrs(w, r, errs)
 		return
 	}
 	defer inf.Close()
@@ -201,25 +201,25 @@ WHERE cdn.name = $1
 `
 
 	interfacesQuery := `
-SELECT 
+SELECT
    i.name, i.max_bandwidth, i.mtu, i.monitor, i.server
 FROM interface i
 WHERE i.server in (
-	SELECT 
-		s.id 
-	FROM "server" s 
-	JOIN cdn c 
-		on c.id = s.cdn_id 
+	SELECT
+		s.id
+	FROM "server" s
+	JOIN cdn c
+		on c.id = s.cdn_id
 	WHERE c.name = $1
 )`
 
 	ipAddressQuery := `
-SELECT 
+SELECT
 	ip.address, ip.gateway, ip.service_address, ip.server, ip.interface
 FROM ip_address ip
-JOIN server s 
+JOIN server s
 	ON s.id = ip.server
-JOIN cdn cdn 
+JOIN cdn cdn
 	ON cdn.id = s.cdn_id
 WHERE ip.server = ANY($1)
 AND ip.interface = ANY($2)

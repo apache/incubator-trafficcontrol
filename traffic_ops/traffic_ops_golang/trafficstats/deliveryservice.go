@@ -116,16 +116,17 @@ func dsConfigFromRequest(r *http.Request, i *api.APIInfo) (tc.TrafficDSStatsConf
 // GetDSStats handler for getting deliveryservice stats
 func GetDSStats(w http.ResponseWriter, r *http.Request) {
 	// Perl didn't require "interval", but it would only return summary data if it was not given
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"metricType", "startDate", "endDate"}, nil)
+	inf, errs := api.NewInfo(r, []string{"metricType", "startDate", "endDate"}, nil)
 	tx := inf.Tx.Tx
-	if userErr != nil || sysErr != nil {
-		api.HandleErr(w, r, tx, errCode, userErr, sysErr)
+	if errs.Occurred() {
+		inf.HandleErrs(w, r, errs)
 		return
 	}
 	defer inf.Close()
 
-	var c tc.TrafficDSStatsConfig
-	if c, errCode, userErr = dsConfigFromRequest(r, inf); userErr != nil {
+	var sysErr error
+	c, errCode, userErr := dsConfigFromRequest(r, inf)
+	if userErr != nil {
 		sysErr = fmt.Errorf("Unable to process deliveryservice_stats request: %v", userErr)
 		api.HandleErr(w, r, tx, errCode, userErr, sysErr)
 		return

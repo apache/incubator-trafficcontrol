@@ -97,14 +97,11 @@ func TestCreateDeliveryServicesRequiredCapability(t *testing.T) {
 	)
 	mock.ExpectQuery("INSERT INTO deliveryservices_required_capability").WillReturnRows(rows)
 
-	userErr, sysErr, errCode := rc.Create()
-	if userErr != nil {
-		t.Fatalf(userErr.Error())
+	errs := rc.Create()
+	if errs.Occurred() {
+		t.Fatal(errs)
 	}
-	if sysErr != nil {
-		t.Fatalf(sysErr.Error())
-	}
-	if got, want := errCode, http.StatusOK; got != want {
+	if got, want := errs.Code, http.StatusOK; got != want {
 		t.Fatalf(fmt.Sprintf("got %d; expected http status code %d", got, want))
 	}
 
@@ -139,19 +136,19 @@ func TestUnauthorizedCreateDeliveryServicesRequiredCapability(t *testing.T) {
 
 	mockTenantID(t, mock, 0)
 
-	userErr, sysErr, errCode := rc.Create()
+	errs := rc.Create()
 
 	expErr := "not authorized on this tenant"
-	if userErr.Error() != expErr {
-		t.Fatalf("got %s; expected %s", userErr, expErr)
+	if errs.UserError == nil || errs.UserError.Error() != expErr {
+		t.Fatalf("got %v; expected %s", errs.UserError, expErr)
 	}
 
-	if sysErr != nil {
-		t.Fatalf(userErr.Error())
+	if errs.SystemError != nil {
+		t.Fatalf(errs.SystemError.Error())
 	}
 
-	if got, want := errCode, http.StatusForbidden; got != want {
-		t.Fatalf(fmt.Sprintf("got %d; expected http status code %d", got, want))
+	if got, want := errs.Code, http.StatusForbidden; got != want {
+		t.Fatalf("got %d; expected http status code %d", got, want)
 	}
 
 	if err := mock.ExpectationsWereMet(); err != nil {
@@ -197,14 +194,11 @@ func TestReadDeliveryServicesRequiredCapability(t *testing.T) {
 	)
 	mock.ExpectQuery("SELECT .* FROM deliveryservices_required_capability").WillReturnRows(rows)
 
-	results, userErr, sysErr, errCode, _ := rc.Read(nil, false)
-	if userErr != nil {
-		t.Fatalf(userErr.Error())
+	results, errs, _ := rc.Read(nil, false)
+	if errs.Occurred() {
+		t.Fatal(errs)
 	}
-	if sysErr != nil {
-		t.Fatalf(sysErr.Error())
-	}
-	if got, want := errCode, http.StatusOK; got != want {
+	if got, want := errs.Code, http.StatusOK; got != want {
 		t.Fatalf(fmt.Sprintf("got %d; expected http status code %d", got, want))
 	}
 	if got, want := len(results), 1; got != want {
@@ -260,14 +254,11 @@ func TestDeleteDeliveryServicesRequiredCapability(t *testing.T) {
 		},
 	}
 
-	userErr, sysErr, errCode := rc.Delete()
-	if userErr != nil {
-		t.Fatalf(userErr.Error())
+	errs := rc.Delete()
+	if errs.Occurred() {
+		t.Fatal(errs)
 	}
-	if sysErr != nil {
-		t.Fatalf(sysErr.Error())
-	}
-	if got, want := errCode, http.StatusOK; got != want {
+	if got, want := errs.Code, http.StatusOK; got != want {
 		t.Fatalf(fmt.Sprintf("got %d; expected http status code %d", got, want))
 	}
 
@@ -302,18 +293,21 @@ func TestUnauthorizedDeleteDeliveryServicesRequiredCapability(t *testing.T) {
 
 	mockTenantID(t, mock, 0)
 
-	userErr, sysErr, errCode := rc.Delete()
+	errs := rc.Delete()
 
+	// TODO: this could segfault before failing
 	expErr := "not authorized on this tenant"
-	if userErr.Error() != expErr {
-		t.Fatalf("got %s; expected %s", userErr, expErr)
+	if errs.UserError.Error() != expErr {
+		t.Fatalf("got %s; expected %s", errs.UserError, expErr)
 	}
 
-	if sysErr != nil {
-		t.Fatalf(userErr.Error())
+	if errs.SystemError != nil {
+		// TODO: I think this should be failing with the system error, and also
+		// it seems like this would segfault.
+		t.Fatalf(errs.UserError.Error())
 	}
 
-	if got, want := errCode, http.StatusForbidden; got != want {
+	if got, want := errs.Code, http.StatusForbidden; got != want {
 		t.Fatalf(fmt.Sprintf("got %d; expected http status code %d", got, want))
 	}
 
@@ -368,15 +362,15 @@ func TestCreateDeliveryServicesRequiredCapabilityInvalidDSType(t *testing.T) {
 	)
 	mock.ExpectQuery("SELECT t.name.*").WillReturnRows(typeRows)
 
-	userErr, sysErr, errCode := rc.Create()
-	if userErr == nil {
+	errs := rc.Create()
+	if errs.UserError == nil {
 		t.Fatal("Expected to get user error with invalid ds type")
 	}
-	if sysErr != nil {
-		t.Fatalf(sysErr.Error())
+	if errs.SystemError != nil {
+		t.Fatal(errs.SystemError.Error())
 	}
-	if got, want := errCode, http.StatusBadRequest; got != want {
-		t.Fatalf(fmt.Sprintf("got %d; expected http status code %d", got, want))
+	if got, want := errs.Code, http.StatusBadRequest; got != want {
+		t.Fatalf("got %d; expected http status code %d", got, want)
 	}
 
 	if err := mock.ExpectationsWereMet(); err != nil {

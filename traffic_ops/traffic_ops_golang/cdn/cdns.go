@@ -29,6 +29,7 @@ import (
 	"github.com/apache/trafficcontrol/lib/go-tc/tovalidate"
 	"github.com/apache/trafficcontrol/lib/go-util"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/api"
+	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/apierrors"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/dbhelpers"
 
 	"github.com/asaskevich/govalidator"
@@ -127,22 +128,22 @@ func (cdn TOCDN) Validate() error {
 	return util.JoinErrs(tovalidate.ToErrors(errs))
 }
 
-func (cdn *TOCDN) Create() (error, error, int) {
+func (cdn *TOCDN) Create() apierrors.Errors {
 	*cdn.DomainName = strings.ToLower(*cdn.DomainName)
 	return api.GenericCreate(cdn)
 }
 
-func (cdn *TOCDN) Read(h http.Header, useIMS bool) ([]interface{}, error, error, int, *time.Time) {
+func (cdn *TOCDN) Read(h http.Header, useIMS bool) ([]interface{}, apierrors.Errors, *time.Time) {
 	api.DefaultSort(cdn.APIInfo(), "name")
 	return api.GenericRead(h, cdn, useIMS)
 }
 
-func (cdn *TOCDN) Update() (error, error, int) {
+func (cdn *TOCDN) Update() apierrors.Errors {
 	*cdn.DomainName = strings.ToLower(*cdn.DomainName)
 	return api.GenericUpdate(cdn)
 }
 
-func (cdn *TOCDN) Delete() (error, error, int) { return api.GenericDelete(cdn) }
+func (cdn *TOCDN) Delete() apierrors.Errors { return api.GenericDelete(cdn) }
 
 func selectQuery() string {
 	query := `SELECT

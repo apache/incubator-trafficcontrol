@@ -30,9 +30,9 @@ import (
 const API_VAULT_PING = "/vault/ping"
 
 func Keys(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, nil, nil)
-	if userErr != nil || sysErr != nil {
-		api.HandleDeprecatedErr(w, r, nil, errCode, userErr, sysErr, util.StrPtr(API_VAULT_PING))
+	inf, errs := api.NewInfo(r, nil, nil)
+	if errs.Occurred() {
+		api.HandleErrsOptionalDeprecation(w, r, nil, errs, true, util.StrPtr(API_VAULT_PING))
 		return
 	}
 	defer inf.Close()

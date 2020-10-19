@@ -31,11 +31,12 @@ import (
 func GetTrimmed(w http.ResponseWriter, r *http.Request) {
 	alerts := tc.CreateAlerts(tc.WarnLevel, "This endpoint is deprecated, please use '/cachegroups' instead")
 
-	inf, userErr, sysErr, errCode := api.NewInfo(r, nil, nil)
-	if userErr != nil || sysErr != nil {
-		userErr = api.LogErr(r, errCode, userErr, sysErr)
-		alerts.AddNewAlert(tc.ErrorLevel, userErr.Error())
-		api.WriteAlerts(w, r, errCode, alerts)
+	inf, errs := api.NewInfo(r, nil, nil)
+	if errs.Occurred() {
+		// TODO: I think this should just be using HandleErrs
+		errs.UserError = api.LogErrs(r, errs)
+		alerts.AddNewAlert(tc.ErrorLevel, errs.UserError.Error())
+		api.WriteAlerts(w, r, errs.Code, alerts)
 		return
 	}
 
@@ -43,7 +44,7 @@ func GetTrimmed(w http.ResponseWriter, r *http.Request) {
 
 	cg, err := getCachegroupsTrimmed(inf.Tx.Tx)
 	if err != nil {
-		userErr = api.LogErr(r, http.StatusInternalServerError, nil, err)
+		userErr := api.LogErr(r, http.StatusInternalServerError, nil, err)
 		alerts.AddNewAlert(tc.ErrorLevel, userErr.Error())
 		api.WriteAlerts(w, r, http.StatusInternalServerError, alerts)
 		return

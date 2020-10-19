@@ -109,19 +109,19 @@ func TestCopyProfileInvalidExistingProfile(t *testing.T) {
 
 			errs := copyProfile(&inf, &c.profile.Response)
 			if c.userErr != "" { // Check if we expect a user error for this test
-				if got, want := errs.userErr.Error(), c.userErr; got != want {
+				if got, want := errs.UserError.Error(), c.userErr; got != want {
 					t.Fatalf("got err=%s; expected err=%s", got, want)
 				}
-			} else if errs.userErr != nil {
-				t.Fatalf(errs.userErr.Error())
+			} else if errs.UserError != nil {
+				t.Fatalf(errs.UserError.Error())
 			}
 
 			if c.sysErr != "" { // Check if we expect a sys error for this test
-				if got, want := errs.sysErr.Error(), c.sysErr; got != want {
+				if got, want := errs.SystemError.Error(), c.sysErr; got != want {
 					t.Fatalf("got err=%s; expected err=%s", got, want)
 				}
-			} else if errs.sysErr != nil {
-				t.Fatalf(errs.sysErr.Error())
+			} else if errs.SystemError != nil {
+				t.Fatalf(errs.SystemError.Error())
 			}
 
 			if err := mock.ExpectationsWereMet(); err != nil {
@@ -163,12 +163,12 @@ func TestCopyNewProfileExists(t *testing.T) {
 	}
 
 	errs := copyProfile(&inf, &profile.Response)
-	if got, want := errs.userErr.Error(), expectedErr; got != want {
+	if got, want := errs.UserError.Error(), expectedErr; got != want {
 		t.Fatalf("got err=%s; expected err=%s", got, want)
 	}
 
-	if errs.sysErr != nil {
-		t.Fatalf(errs.sysErr.Error())
+	if errs.SystemError != nil {
+		t.Fatalf(errs.SystemError.Error())
 	}
 
 	if err := mock.ExpectationsWereMet(); err != nil {

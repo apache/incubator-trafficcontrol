@@ -29,6 +29,7 @@ import (
 	"github.com/apache/trafficcontrol/lib/go-tc/tovalidate"
 	"github.com/apache/trafficcontrol/lib/go-util"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/api"
+	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/apierrors"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/dbhelpers"
 
 	validation "github.com/go-ozzo/ozzo-validation"
@@ -116,7 +117,7 @@ func (pp *TOProfileParameter) Validate() error {
 //generic error message returned
 //The insert sql returns the profile and lastUpdated values of the newly inserted profileparameter and have
 //to be added to the struct
-func (pp *TOProfileParameter) Create() (error, error, int) {
+func (pp *TOProfileParameter) Create() apierrors.Errors {
 	resultRows, err := pp.APIInfo().Tx.NamedQuery(insertQuery(), pp)
 	if err != nil {
 		return api.ParseDBError(err)
@@ -126,22 +127,28 @@ func (pp *TOProfileParameter) Create() (error, error, int) {
 	var profile int
 	var parameter int
 	var lastUpdated tc.TimeNoMod
+	errs := apierrors.Errors{
+		Code: http.StatusInternalServerError,
+	}
 	rowsAffected := 0
 	for resultRows.Next() {
 		rowsAffected++
 		if err := resultRows.Scan(&profile, &parameter, &lastUpdated); err != nil {
-			return nil, errors.New("profileparameter create scanning: " + err.Error()), http.StatusInternalServerError
+			errs.SystemError = errors.New("profileparameter create scanning: " + err.Error())
+			return errs
 		}
 	}
 	if rowsAffected == 0 {
-		return nil, errors.New("profileparameter create returned no rows"), http.StatusInternalServerError
+		errs.SetSystemError("profileparameter create returned no rows")
+		return errs
 	}
 	if rowsAffected > 1 {
-		return nil, errors.New("profileparameter create returned multiple rows"), http.StatusInternalServerError
+		errs.SetSystemError("profileparameter create returned multiple rows")
+		return errs
 	}
 
 	pp.SetKeys(map[string]interface{}{ProfileIDQueryParam: profile, ParameterIDQueryParam: parameter})
-	return nil, nil, http.StatusOK
+	return apierrors.New()
 }
 
 func insertQuery() string {
@@ -152,14 +159,14 @@ parameter) VALUES (
 :parameter_id) RETURNING profile, parameter, last_updated`
 }
 
-func (pp *TOProfileParameter) Update() (error, error, int) {
-	return nil, nil, http.StatusNotImplemented
+func (pp *TOProfileParameter) Update() apierrors.Errors {
+	return apierrors.Errors{Code: http.StatusNotImplemented}
 }
-func (pp *TOProfileParameter) Read(h http.Header, useIMS bool) ([]interface{}, error, error, int, *time.Time) {
+func (pp *TOProfileParameter) Read(h http.Header, useIMS bool) ([]interface{}, apierrors.Errors, *time.Time) {
 	api.DefaultSort(pp.APIInfo(), "parameter")
 	return api.GenericRead(h, pp, useIMS)
 }
-func (pp *TOProfileParameter) Delete() (error, error, int) { return api.GenericDelete(pp) }
+func (pp *TOProfileParameter) Delete() apierrors.Errors { return api.GenericDelete(pp) }
 func (v *TOProfileParameter) SelectMaxLastUpdatedQuery(where, orderBy, pagination, tableName string) string {
 	return `SELECT max(t) from (
 		SELECT max(pp.last_updated) as t FROM profile_parameter pp

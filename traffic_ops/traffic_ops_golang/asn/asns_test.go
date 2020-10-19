@@ -87,9 +87,9 @@ func TestGetASNs(t *testing.T) {
 		api.APIInfoImpl{&reqInfo},
 		tc.ASNNullable{},
 	}
-	asns, userErr, sysErr, _, _ := obj.Read(nil, false)
-	if userErr != nil || sysErr != nil {
-		t.Errorf("Read expected: no errors, actual: %v %v", userErr, sysErr)
+	asns, errs, _ := obj.Read(nil, false)
+	if errs.Occurred() {
+		t.Errorf("Read expected: no errors, actual: %s", errs)
 	}
 
 	if len(asns) != 2 {

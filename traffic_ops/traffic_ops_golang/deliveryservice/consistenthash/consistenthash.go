@@ -23,12 +23,13 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/api"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
 	"time"
+
+	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/api"
 )
 
 // struct for the response object from Traffic Router
@@ -48,9 +49,9 @@ type TRConsistentHashRequest struct {
 // endpoint to test Traffic Router's Pattern-Based Consistent Hashing feature
 // /api/1.5/consistenthash
 func Post(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, nil, nil)
-	if userErr != nil || sysErr != nil {
-		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
+	inf, errs := api.NewInfo(r, nil, nil)
+	if errs.Occurred() {
+		inf.HandleErrs(w, r, errs)
 		return
 	}
 	defer inf.Close()

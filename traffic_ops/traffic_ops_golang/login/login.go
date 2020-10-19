@@ -498,8 +498,8 @@ func ResetPassword(db *sqlx.DB, cfg config.Config) http.HandlerFunc {
 
 		log.Debugf("Sending password reset email to %s", req.Email)
 
-		if errCode, userErr, sysErr = api.SendMail(req.Email, msg, &cfg); userErr != nil || sysErr != nil {
-			api.HandleErr(w, r, nil, errCode, userErr, sysErr)
+		if errs := api.SendMail(req.Email, msg, &cfg); errs.Occurred() {
+			api.HandleErrs(w, r, nil, errs)
 			return
 		}
 

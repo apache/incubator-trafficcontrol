@@ -24,12 +24,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/apache/trafficcontrol/lib/go-rfc"
-	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/util/ims"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/apache/trafficcontrol/lib/go-rfc"
+	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/apierrors"
+	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/util/ims"
 
 	"github.com/apache/trafficcontrol/lib/go-log"
 	"github.com/apache/trafficcontrol/lib/go-tc"
@@ -116,9 +118,9 @@ func ReadDSSHandler(w http.ResponseWriter, r *http.Request) {
 	if cfg != nil {
 		useIMS = cfg.UseIMS
 	}
-	inf, userErr, sysErr, errCode := api.NewInfo(r, nil, []string{"limit", "page"})
-	if userErr != nil || sysErr != nil {
-		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
+	inf, errs := api.NewInfo(r, nil, []string{"limit", "page"})
+	if errs.Occurred() {
+		inf.HandleErrs(w, r, errs)
 		return
 	}
 	defer inf.Close()
@@ -142,11 +144,11 @@ func ReadDSSHandler(w http.ResponseWriter, r *http.Request) {
 	api.WriteRespRaw(w, r, results)
 }
 
-// ReadDSSHandler list all of the Deliveryservice Servers in response to requests to api/1.1/deliveryserviceserver$
+// ReadDSSHandlerV14 list all of the Deliveryservice Servers in response to requests to api/1.4/deliveryserviceserver.
 func ReadDSSHandlerV14(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, nil, []string{"limit", "page"})
-	if userErr != nil || sysErr != nil {
-		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
+	inf, errs := api.NewInfo(r, nil, []string{"limit", "page"})
+	if errs.Occurred() {
+		inf.HandleErrs(w, r, errs)
 		return
 	}
 	defer inf.Close()
@@ -338,9 +340,9 @@ type DSServerIds struct {
 type TODSServerIds DSServerIds
 
 func GetReplaceHandler(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, nil, []string{"limit", "page"})
-	if userErr != nil || sysErr != nil {
-		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
+	inf, errs := api.NewInfo(r, nil, []string{"limit", "page"})
+	if errs.Occurred() {
+		inf.HandleErrs(w, r, errs)
 		return
 	}
 	defer inf.Close()
@@ -375,8 +377,8 @@ func GetReplaceHandler(w http.ResponseWriter, r *http.Request) {
 		api.HandleErr(w, r, inf.Tx.Tx, http.StatusBadRequest, errors.New("no delivery service with that ID exists"), nil)
 		return
 	}
-	if userErr, sysErr, errCode := tenant.Check(inf.User, ds.Name, inf.Tx.Tx); userErr != nil || sysErr != nil {
-		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
+	if errs = tenant.Check(inf.User, ds.Name, inf.Tx.Tx); errs.Occurred() {
+		inf.HandleErrs(w, r, errs)
 		return
 	}
 	serverNamesCdnIdAndTypes, err := dbhelpers.GetServerHostNamesAndTypesFromIDs(inf.Tx.Tx, servers)
@@ -384,15 +386,15 @@ func GetReplaceHandler(w http.ResponseWriter, r *http.Request) {
 		api.HandleErr(w, r, inf.Tx.Tx, http.StatusInternalServerError, err, nil)
 		return
 	}
-	userErr = ValidateDSSAssignments(ds, serverNamesCdnIdAndTypes)
+	userErr := ValidateDSSAssignments(ds, serverNamesCdnIdAndTypes)
 	if userErr != nil {
 		api.HandleErr(w, r, inf.Tx.Tx, http.StatusBadRequest, userErr, nil)
 		return
 	}
 
-	usrErr, sysErr, status := ValidateServerCapabilities(ds.ID, serverNamesCdnIdAndTypes, inf.Tx.Tx)
-	if usrErr != nil || sysErr != nil {
-		api.HandleErr(w, r, inf.Tx.Tx, status, usrErr, sysErr)
+	errs = ValidateServerCapabilities(ds.ID, serverNamesCdnIdAndTypes, inf.Tx.Tx)
+	if errs.Occurred() {
+		inf.HandleErrs(w, r, errs)
 		return
 	}
 
@@ -409,8 +411,7 @@ func GetReplaceHandler(w http.ResponseWriter, r *http.Request) {
 	for _, server := range servers {
 		dtos := map[string]interface{}{"id": dsId, "server": server}
 		if _, err := inf.Tx.NamedExec(insertIdsQuery(), dtos); err != nil {
-			usrErr, sysErr, code := api.ParseDBError(err)
-			api.HandleErr(w, r, inf.Tx.Tx, code, usrErr, sysErr)
+			inf.HandleErrs(w, r, api.ParseDBError(err))
 			return
 		}
 		respServers = append(respServers, server)
@@ -428,17 +429,17 @@ type TODeliveryServiceServers tc.DeliveryServiceServers
 
 // GetCreateHandler assigns an existing Server to and existing Deliveryservice in response to api/1.1/deliveryservices/{xml_id}/servers
 func GetCreateHandler(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"xml_id"}, nil)
-	if userErr != nil || sysErr != nil {
-		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
+	inf, errs := api.NewInfo(r, []string{"xml_id"}, nil)
+	if errs.Occurred() {
+		inf.HandleErrs(w, r, errs)
 		return
 	}
 	defer inf.Close()
 
 	dsName := inf.Params["xml_id"]
 
-	if userErr, sysErr, errCode := tenant.Check(inf.User, dsName, inf.Tx.Tx); userErr != nil || sysErr != nil {
-		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
+	if errs = tenant.Check(inf.User, dsName, inf.Tx.Tx); errs.Occurred() {
+		inf.HandleErrs(w, r, errs)
 		return
 	}
 
@@ -466,23 +467,21 @@ func GetCreateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userErr = ValidateDSSAssignments(ds, serverNamesCdnIdAndTypes)
+	userErr := ValidateDSSAssignments(ds, serverNamesCdnIdAndTypes)
 	if userErr != nil {
 		api.HandleErr(w, r, inf.Tx.Tx, http.StatusBadRequest, userErr, nil)
 		return
 	}
 
-	usrErr, sysErr, status := ValidateServerCapabilities(ds.ID, serverNamesCdnIdAndTypes, inf.Tx.Tx)
-	if usrErr != nil || sysErr != nil {
-		api.HandleErr(w, r, inf.Tx.Tx, status, usrErr, sysErr)
+	errs = ValidateServerCapabilities(ds.ID, serverNamesCdnIdAndTypes, inf.Tx.Tx)
+	if errs.Occurred() {
+		inf.HandleErrs(w, r, errs)
 		return
 	}
 
 	res, err := inf.Tx.Tx.Exec(`INSERT INTO deliveryservice_server (deliveryservice, server) SELECT $1, id FROM server WHERE host_name = ANY($2::text[])`, ds.ID, pq.Array(serverNames))
 	if err != nil {
-
-		usrErr, sysErr, code := api.ParseDBError(err)
-		api.HandleErr(w, r, inf.Tx.Tx, code, usrErr, sysErr)
+		inf.HandleErrs(w, r, api.ParseDBError(err))
 		return
 	}
 
@@ -522,7 +521,7 @@ func ValidateDSSAssignments(ds DSInfo, servers []dbhelpers.ServerHostNameCDNIDAn
 }
 
 // ValidateServerCapabilities checks that the delivery service's requirements are met by each server to be assigned.
-func ValidateServerCapabilities(dsID int, serverNamesAndTypes []dbhelpers.ServerHostNameCDNIDAndType, tx *sql.Tx) (error, error, int) {
+func ValidateServerCapabilities(dsID int, serverNamesAndTypes []dbhelpers.ServerHostNameCDNIDAndType, tx *sql.Tx) apierrors.Errors {
 	nonOriginServerNames := []string{}
 	for _, s := range serverNamesAndTypes {
 		if strings.HasPrefix(s.Type, tc.EdgeTypePrefix) {
@@ -533,23 +532,30 @@ func ValidateServerCapabilities(dsID int, serverNamesAndTypes []dbhelpers.Server
 	var sCaps []string
 	dsCaps, err := dbhelpers.GetDSRequiredCapabilitiesFromID(dsID, tx)
 
+	errs := apierrors.New()
 	if err != nil {
-		return nil, err, http.StatusInternalServerError
+		errs.SystemError = err
+		errs.Code = http.StatusInternalServerError
+		return errs
 	}
 
 	for _, name := range nonOriginServerNames {
 		sCaps, err = dbhelpers.GetServerCapabilitiesFromName(name, tx)
 		if err != nil {
-			return nil, err, http.StatusInternalServerError
+			errs.Code = http.StatusInternalServerError
+			errs.SystemError = err
+			return errs
 		}
 		for _, dsc := range dsCaps {
 			if !util.ContainsStr(sCaps, dsc) {
-				return fmt.Errorf("Caching server cannot be assigned to this delivery service without having the required delivery service capabilities: [%v] for server %s", dsCaps, name), nil, http.StatusBadRequest
+				errs.UserError = fmt.Errorf("Caching server cannot be assigned to this delivery service without having the required delivery service capabilities: [%v] for server %s", dsCaps, name)
+				errs.Code = http.StatusBadRequest
+				return errs
 			}
 		}
 	}
 
-	return nil, nil, 0
+	return errs
 }
 
 func insertIdsQuery() string {
@@ -570,9 +576,9 @@ func GetReadUnassigned(w http.ResponseWriter, r *http.Request) {
 }
 
 func getRead(w http.ResponseWriter, r *http.Request, unassigned bool, alerts tc.Alerts) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"id"}, []string{"id"})
-	if userErr != nil || sysErr != nil {
-		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
+	inf, errs := api.NewInfo(r, []string{"id"}, []string{"id"})
+	if errs.Occurred() {
+		inf.HandleErrs(w, r, errs)
 		return
 	}
 	defer inf.Close()
@@ -749,16 +755,20 @@ type TODSSDeliveryService struct {
 }
 
 // Read shows all of the delivery services associated with the specified server.
-func (dss *TODSSDeliveryService) Read(h http.Header, useIMS bool) ([]interface{}, error, error, int, *time.Time) {
+func (dss *TODSSDeliveryService) Read(h http.Header, useIMS bool) ([]interface{}, apierrors.Errors, *time.Time) {
 	var maxTime time.Time
 	var runSecond bool
 	returnable := []interface{}{}
 	params := dss.APIInfo().Params
 	tx := dss.APIInfo().Tx.Tx
 	user := dss.APIInfo().User
+	errs := apierrors.New()
 
+	// TODO: I think maybe this could utilize IntParams?
 	if err := api.IsInt(params["id"]); err != nil {
-		return nil, err, nil, http.StatusBadRequest, nil
+		errs.UserError = err
+		errs.Code = http.StatusBadRequest
+		return nil, errs, nil
 	}
 
 	if _, ok := params["orderby"]; !ok {
@@ -771,9 +781,11 @@ func (dss *TODSSDeliveryService) Read(h http.Header, useIMS bool) ([]interface{}
 		"xml_id": dbhelpers.WhereColumnInfo{"ds.xml_id", nil},
 		"xmlId":  dbhelpers.WhereColumnInfo{"ds.xml_id", nil},
 	}
-	where, orderBy, pagination, queryValues, errs := dbhelpers.BuildWhereAndOrderByAndPagination(params, queryParamsToSQLCols)
-	if len(errs) > 0 {
-		return nil, nil, errors.New("reading server dses: " + util.JoinErrsStr(errs)), http.StatusInternalServerError, nil
+	where, orderBy, pagination, queryValues, dbErrs := dbhelpers.BuildWhereAndOrderByAndPagination(params, queryParamsToSQLCols)
+	if len(dbErrs) > 0 {
+		errs.SetSystemError("reading server dses: " + util.JoinErrsStr(dbErrs))
+		errs.Code = http.StatusInternalServerError
+		return nil, errs, nil
 	}
 
 	if where != "" {
@@ -786,7 +798,9 @@ func (dss *TODSSDeliveryService) Read(h http.Header, useIMS bool) ([]interface{}
 	tenantIDs, err := tenant.GetUserTenantIDListTx(tx, user.TenantID)
 	if err != nil {
 		log.Errorln("received error querying for user's tenants: " + err.Error())
-		return nil, nil, err, http.StatusInternalServerError, nil
+		errs.SystemError = err
+		errs.Code = http.StatusInternalServerError
+		return nil, errs, nil
 	}
 	where, queryValues = dbhelpers.AddTenancyCheck(where, queryValues, "ds.tenant_id", tenantIDs)
 	query := deliveryservice.GetDSSelectQuery() + where + orderBy + pagination
@@ -796,7 +810,7 @@ func (dss *TODSSDeliveryService) Read(h http.Header, useIMS bool) ([]interface{}
 		runSecond, maxTime = ims.TryIfModifiedSinceQuery(dss.APIInfo().Tx, h, queryValues, selectMaxLastUpdatedQuery(where))
 		if !runSecond {
 			log.Debugln("IMS HIT")
-			return returnable, nil, nil, http.StatusNotModified, &maxTime
+			return returnable, apierrors.Errors{Code: http.StatusNotModified}, &maxTime
 		}
 		log.Debugln("IMS MISS")
 	} else {
@@ -805,18 +819,20 @@ func (dss *TODSSDeliveryService) Read(h http.Header, useIMS bool) ([]interface{}
 	log.Debugln("generated deliveryServices query: " + query)
 	log.Debugf("executing with values: %++v\n", queryValues)
 
-	dses, userErr, sysErr, _ := deliveryservice.GetDeliveryServices(query, queryValues, dss.APIInfo().Tx)
-	if sysErr != nil {
-		sysErr = fmt.Errorf("reading server dses: %v ", sysErr)
-	}
-	if userErr != nil || sysErr != nil {
-		return nil, userErr, sysErr, http.StatusInternalServerError, nil
+	dses, errs := deliveryservice.GetDeliveryServices(query, queryValues, dss.APIInfo().Tx)
+	if errs.Occurred() {
+		if errs.SystemError != nil {
+			errs.SystemError = fmt.Errorf("reading server dses: %v ", errs.SystemError)
+		}
+		// TODO: this maybe shouldn't change the status code
+		errs.Code = http.StatusInternalServerError
+		return nil, errs, nil
 	}
 
 	for _, ds := range dses {
 		returnable = append(returnable, ds)
 	}
-	return returnable, nil, nil, http.StatusOK, &maxTime
+	return returnable, errs, &maxTime
 }
 
 func selectMaxLastUpdatedQuery(where string) string {

@@ -31,6 +31,7 @@ import (
 	"github.com/apache/trafficcontrol/lib/go-tc/tovalidate"
 	"github.com/apache/trafficcontrol/lib/go-util"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/api"
+	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/apierrors"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/dbhelpers"
 
 	validation "github.com/go-ozzo/ozzo-validation"
@@ -119,30 +120,36 @@ func (role TORole) Validate() error {
 	return util.JoinErrs(errsToReturn)
 }
 
-func (role *TORole) Create() (error, error, int) {
+func (role *TORole) Create() apierrors.Errors {
 	if *role.PrivLevel > role.ReqInfo.User.PrivLevel {
-		return errors.New("can not create a role with a higher priv level than your own"), nil, http.StatusBadRequest
+		return apierrors.Errors{
+			Code:      http.StatusBadRequest,
+			UserError: errors.New("can not create a role with a higher priv level than your own"),
+		}
 	}
 
-	userErr, sysErr, errCode := api.GenericCreate(role)
-	if userErr != nil || sysErr != nil {
-		return userErr, sysErr, errCode
+	errs := api.GenericCreate(role)
+	if errs.Occurred() {
+		return errs
 	}
 
 	//after we have role ID we can associate the capabilities:
 	if role.Capabilities != nil && len(*role.Capabilities) > 0 {
-		userErr, sysErr, errCode = role.createRoleCapabilityAssociations(role.ReqInfo.Tx)
-		if userErr != nil || sysErr != nil {
-			return userErr, sysErr, errCode
+		errs = role.createRoleCapabilityAssociations(role.ReqInfo.Tx)
+		if errs.Occurred() {
+			return errs
 		}
 	}
-	return nil, nil, http.StatusOK
+	return apierrors.New()
 }
 
-func (role *TORole) createRoleCapabilityAssociations(tx *sqlx.Tx) (error, error, int) {
+func (role *TORole) createRoleCapabilityAssociations(tx *sqlx.Tx) apierrors.Errors {
 	result, err := tx.Exec(associateCapabilities(), role.ID, pq.Array(role.Capabilities))
 	if err != nil {
-		return nil, errors.New("creating role capabilities: " + err.Error()), http.StatusInternalServerError
+		return apierrors.Errors{
+			Code:        http.StatusInternalServerError,
+			SystemError: fmt.Errorf("creating role capabilities: %v", err),
+		}
 	}
 
 	if rows, err := result.RowsAffected(); err != nil {
@@ -150,31 +157,36 @@ func (role *TORole) createRoleCapabilityAssociations(tx *sqlx.Tx) (error, error,
 	} else if expected := len(*role.Capabilities); int(rows) != expected {
 		log.Errorf("wrong number of role_capability rows created: %d expected: %d", rows, expected)
 	}
-	return nil, nil, http.StatusOK
+	return apierrors.New()
 }
 
-func (role *TORole) deleteRoleCapabilityAssociations(tx *sqlx.Tx) (error, error, int) {
+func (role *TORole) deleteRoleCapabilityAssociations(tx *sqlx.Tx) apierrors.Errors {
 	result, err := tx.Exec(deleteAssociatedCapabilities(), role.ID)
 	if err != nil {
-		return nil, errors.New("deleting role capabilities: " + err.Error()), http.StatusInternalServerError
+		return apierrors.Errors{
+			SystemError: errors.New("deleting role capabilities: " + err.Error()),
+			Code:        http.StatusInternalServerError,
+		}
 	}
 
 	if _, err = result.RowsAffected(); err != nil {
 		log.Errorf("could not check result after inserting role_capability relations: %v", err)
 	}
 	// TODO verify expected row count shouldn't be checked?
-	return nil, nil, http.StatusOK
+	return apierrors.New()
 }
 
-func (role *TORole) Read(h http.Header, useIMS bool) ([]interface{}, error, error, int, *time.Time) {
+func (role *TORole) Read(h http.Header, useIMS bool) ([]interface{}, apierrors.Errors, *time.Time) {
 	version := role.APIInfo().Version
 	api.DefaultSort(role.APIInfo(), "name")
-	vals, userErr, sysErr, errCode, maxTime := api.GenericRead(h, role, useIMS)
-	if errCode == http.StatusNotModified {
-		return []interface{}{}, nil, nil, errCode, maxTime
+	vals, errs, maxTime := api.GenericRead(h, role, useIMS)
+	// TODO: Maybe it doesn't matter, but I think this should first check if an
+	// error has occurred. Or actually maybe this could just be an '||' check?
+	if errs.Code == http.StatusNotModified {
+		return []interface{}{}, errs, maxTime
 	}
-	if userErr != nil || sysErr != nil {
-		return nil, userErr, sysErr, errCode, maxTime
+	if errs.Occurred() {
+		return nil, errs, maxTime
 	}
 
 	returnable := []interface{}{}
@@ -189,40 +201,50 @@ func (role *TORole) Read(h http.Header, useIMS bool) ([]interface{}, error, erro
 			returnable = append(returnable, rl.RoleV11)
 		}
 	}
-	return returnable, nil, nil, http.StatusOK, maxTime
+	return returnable, errs, maxTime
 }
 
-func (role *TORole) Update() (error, error, int) {
+func (role *TORole) Update() apierrors.Errors {
+	errs := apierrors.New()
 	if *role.PrivLevel > role.ReqInfo.User.PrivLevel {
-		return errors.New("can not create a role with a higher priv level than your own"), nil, http.StatusForbidden
+		errs.SetUserError("can not create a role with a higher priv level than your own")
+		errs.Code = http.StatusForbidden
+		return errs
 	}
-	userErr, sysErr, errCode := api.GenericUpdate(role)
-	if userErr != nil || sysErr != nil {
-		return userErr, sysErr, errCode
+	errs = api.GenericUpdate(role)
+	if errs.Occurred() {
+		return errs
 	}
 
 	// TODO cascade delete, to automatically do this in SQL?
 	if role.Capabilities != nil && *role.Capabilities != nil {
-		userErr, sysErr, errCode = role.deleteRoleCapabilityAssociations(role.ReqInfo.Tx)
-		if userErr != nil || sysErr != nil {
-			return userErr, sysErr, errCode
+		errs = role.deleteRoleCapabilityAssociations(role.ReqInfo.Tx)
+		if errs.Occurred() {
+			return errs
 		}
-		return role.createRoleCapabilityAssociations(role.ReqInfo.Tx)
+		errs = role.createRoleCapabilityAssociations(role.ReqInfo.Tx)
+		return errs
 	}
-	return nil, nil, http.StatusOK
+	return errs
 }
 
-func (role *TORole) Delete() (error, error, int) {
+func (role *TORole) Delete() apierrors.Errors {
 	assignedUsers := 0
 	if err := role.ReqInfo.Tx.Get(&assignedUsers, "SELECT COUNT(id) FROM tm_user WHERE role=$1", role.ID); err != nil {
-		return nil, errors.New("role delete counting assigned users: " + err.Error()), http.StatusInternalServerError
+		return apierrors.Errors{
+			SystemError: errors.New("role delete counting assigned users: " + err.Error()),
+			Code:        http.StatusInternalServerError,
+		}
 	} else if assignedUsers != 0 {
-		return fmt.Errorf("can not delete a role with %d assigned users", assignedUsers), nil, http.StatusBadRequest
+		return apierrors.Errors{
+			SystemError: fmt.Errorf("can not delete a role with %d assigned users", assignedUsers),
+			Code:        http.StatusBadRequest,
+		}
 	}
 
-	userErr, sysErr, errCode := api.GenericDelete(role)
-	if userErr != nil || sysErr != nil {
-		return userErr, sysErr, errCode
+	errs := api.GenericDelete(role)
+	if errs.Occurred() {
+		return errs
 	}
 	return role.deleteRoleCapabilityAssociations(role.ReqInfo.Tx)
 }

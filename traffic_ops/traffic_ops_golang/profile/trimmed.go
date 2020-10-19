@@ -30,15 +30,16 @@ import (
 
 func Trimmed(w http.ResponseWriter, r *http.Request) {
 	alt := "GET /profiles"
-	inf, userErr, sysErr, errCode := api.NewInfo(r, nil, nil)
-	if userErr != nil || sysErr != nil {
-		api.HandleDeprecatedErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr, &alt)
+	inf, errs := api.NewInfo(r, nil, nil)
+	if errs.Occurred() {
+		api.HandleErrsOptionalDeprecation(w, r, inf.Tx.Tx, errs, true, &alt)
 		return
 	}
 	defer inf.Close()
 	trimmed, err := getTrimmedProfiles(inf.Tx.Tx)
 	if err != nil {
-		api.HandleDeprecatedErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr, &alt)
+		// TODO: I think this is passing back the wrong code/errors...
+		api.HandleDeprecatedErr(w, r, inf.Tx.Tx, errs.Code, errs.UserError, errs.SystemError, &alt)
 		return
 	}
 	alerts := api.CreateDeprecationAlerts(&alt)

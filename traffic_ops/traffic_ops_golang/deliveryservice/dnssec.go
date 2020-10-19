@@ -30,36 +30,47 @@ import (
 	"time"
 
 	"github.com/apache/trafficcontrol/lib/go-tc"
+	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/apierrors"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/config"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/riaksvc"
 
 	"github.com/miekg/dns"
 )
 
-func PutDNSSecKeys(tx *sql.Tx, cfg *config.Config, xmlID string, cdnName string, exampleURLs []string) (error, error, int) {
+func PutDNSSecKeys(tx *sql.Tx, cfg *config.Config, xmlID string, cdnName string, exampleURLs []string) apierrors.Errors {
+	errs := apierrors.New()
 	keys, ok, err := riaksvc.GetDNSSECKeys(cdnName, tx, cfg.RiakAuthOptions, cfg.RiakPort)
 	if err != nil {
-		return nil, errors.New("getting DNSSec keys from Riak: " + err.Error()), http.StatusInternalServerError
+		errs.SetSystemError("getting DNSSec keys from Riak: " + err.Error())
+		errs.Code = http.StatusInternalServerError
+		return errs
 	} else if !ok {
-		return fmt.Errorf("there are no DNSSec keys for the CDN %s which is required to create keys for the deliveryservice", cdnName), nil, http.StatusBadRequest
+		errs.UserError = fmt.Errorf("there are no DNSSec keys for the CDN %s which is required to create keys for the deliveryservice", cdnName)
+		errs.Code = http.StatusBadRequest
+		return errs
 	}
 	cdnKeys, ok := keys[cdnName]
 	// TODO warn and continue?
 	if !ok {
-		return fmt.Errorf("there are no DNSSec keys for the CDN %s which is required to create keys for the deliveryservice", cdnName), nil, http.StatusBadRequest
+		errs.UserError = fmt.Errorf("there are no DNSSec keys for the CDN %s which is required to create keys for the deliveryservice", cdnName)
+		errs.Code = http.StatusBadRequest
+		return errs
 	}
 	kExp := getKeyExpiration(cdnKeys.KSK, dnssecDefaultKSKExpiration)
 	zExp := getKeyExpiration(cdnKeys.ZSK, dnssecDefaultZSKExpiration)
 	overrideTTL := false
 	dsKeys, err := CreateDNSSECKeys(tx, cfg, xmlID, exampleURLs, cdnKeys, kExp, zExp, dnssecDefaultTTL, overrideTTL)
 	if err != nil {
-		return nil, errors.New("creating DNSSEC keys for delivery service '" + xmlID + "': " + err.Error()), http.StatusInternalServerError
+		errs.SetSystemError("creating DNSSEC keys for delivery service '" + xmlID + "': " + err.Error())
+		errs.Code = http.StatusInternalServerError
+		return errs
 	}
 	keys[xmlID] = dsKeys
 	if err := riaksvc.PutDNSSECKeys(keys, cdnName, tx, cfg.RiakAuthOptions, cfg.RiakPort); err != nil {
-		return nil, errors.New("putting Riak DNSSEC keys: " + err.Error()), http.StatusInternalServerError
+		errs.SetSystemError("putting Riak DNSSEC keys: " + err.Error())
+		errs.Code = http.StatusInternalServerError
 	}
-	return nil, nil, http.StatusOK
+	return errs
 }
 
 // CreateDNSSECKeys creates DNSSEC keys for the given delivery service, updating existing keys if they exist. The overrideTTL parameter determines whether to reuse existing key TTLs if they exist, or to override existing TTLs with the ttl parameter's value.

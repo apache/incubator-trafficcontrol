@@ -24,13 +24,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/apache/trafficcontrol/lib/go-log"
-	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/util/ims"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/apache/trafficcontrol/lib/go-log"
+	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/apierrors"
+	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/util/ims"
 
 	"github.com/jmoiron/sqlx"
 
@@ -66,25 +68,34 @@ func (cgparam *TOCacheGroupParameter) GetType() string {
 	return "cachegroup parameter"
 }
 
-func (cgparam *TOCacheGroupParameter) Read(h http.Header, useIMS bool) ([]interface{}, error, error, int, *time.Time) {
+func (cgparam *TOCacheGroupParameter) Read(h http.Header, useIMS bool) ([]interface{}, apierrors.Errors, *time.Time) {
 	var maxTime time.Time
 	var runSecond bool
 	queryParamsToQueryCols := cgparam.ParamColumns()
 	parameters := cgparam.APIInfo().Params
-	where, orderBy, pagination, queryValues, errs := dbhelpers.BuildWhereAndOrderByAndPagination(parameters, queryParamsToQueryCols)
-	if len(errs) > 0 {
-		return nil, util.JoinErrs(errs), nil, http.StatusBadRequest, nil
+	errs := apierrors.New()
+	where, orderBy, pagination, queryValues, es := dbhelpers.BuildWhereAndOrderByAndPagination(parameters, queryParamsToQueryCols)
+	if len(es) > 0 {
+		errs.UserError = util.JoinErrs(es)
+		errs.Code = http.StatusBadRequest
+		return nil, errs, nil
 	}
 	cgID, err := strconv.Atoi(parameters[CacheGroupIDQueryParam])
 	if err != nil {
-		return nil, errors.New("cache group id must be an integer"), nil, http.StatusBadRequest, nil
+		errs.SetUserError("cache group id must be an integer")
+		errs.Code = http.StatusBadRequest
+		return nil, errs, nil
 	}
 
 	_, ok, err := dbhelpers.GetCacheGroupNameFromID(cgparam.ReqInfo.Tx.Tx, cgID)
 	if err != nil {
-		return nil, nil, err, http.StatusInternalServerError, nil
+		errs.SystemError = err
+		errs.Code = http.StatusInternalServerError
+		return nil, errs, nil
 	} else if !ok {
-		return nil, errors.New("cachegroup does not exist"), nil, http.StatusNotFound, nil
+		errs.SetUserError("cachegroup does not exist")
+		errs.Code = http.StatusNotFound
+		return nil, errs, nil
 	}
 
 	params := []interface{}{}
@@ -92,7 +103,8 @@ func (cgparam *TOCacheGroupParameter) Read(h http.Header, useIMS bool) ([]interf
 		runSecond, maxTime = ims.TryIfModifiedSinceQuery(cgparam.ReqInfo.Tx, h, queryValues, selectMaxLastUpdatedQuery(where))
 		if !runSecond {
 			log.Debugln("IMS HIT")
-			return params, nil, nil, http.StatusNotModified, &maxTime
+			errs.Code = http.StatusNotModified
+			return params, errs, &maxTime
 		}
 		log.Debugln("IMS MISS")
 	} else {
@@ -102,14 +114,18 @@ func (cgparam *TOCacheGroupParameter) Read(h http.Header, useIMS bool) ([]interf
 	query := selectQuery() + where + orderBy + pagination
 	rows, err := cgparam.ReqInfo.Tx.NamedQuery(query, queryValues)
 	if err != nil {
-		return nil, nil, errors.New("querying " + cgparam.GetType() + ": " + err.Error()), http.StatusInternalServerError, nil
+		errs.SetSystemError("querying " + cgparam.GetType() + ": " + err.Error())
+		errs.Code = http.StatusInternalServerError
+		return nil, errs, nil
 	}
 	defer rows.Close()
 
 	for rows.Next() {
 		var p tc.CacheGroupParameterNullable
 		if err = rows.StructScan(&p); err != nil {
-			return nil, nil, errors.New("scanning " + cgparam.GetType() + ": " + err.Error()), http.StatusInternalServerError, nil
+			errs.SetSystemError("scanning " + cgparam.GetType() + ": " + err.Error())
+			errs.Code = http.StatusInternalServerError
+			return nil, errs, nil
 		}
 		if p.Secure != nil && *p.Secure && cgparam.ReqInfo.User.PrivLevel < auth.PrivLevelAdmin {
 			p.Value = &parameter.HiddenField
@@ -117,7 +133,7 @@ func (cgparam *TOCacheGroupParameter) Read(h http.Header, useIMS bool) ([]interf
 		params = append(params, p)
 	}
 
-	return params, nil, nil, http.StatusOK, &maxTime
+	return params, errs, &maxTime
 }
 
 func selectMaxLastUpdatedQuery(where string) string {
@@ -192,19 +208,31 @@ func (cgparam *TOCacheGroupParameter) GetKeys() (map[string]interface{}, bool) {
 }
 
 // Delete implements the api.CRUDer interface.
-func (cgparam *TOCacheGroupParameter) Delete() (error, error, int) {
+func (cgparam *TOCacheGroupParameter) Delete() apierrors.Errors {
 	_, ok, err := dbhelpers.GetCacheGroupNameFromID(cgparam.ReqInfo.Tx.Tx, cgparam.CacheGroupID)
 	if err != nil {
-		return nil, err, http.StatusInternalServerError
+		return apierrors.Errors{
+			SystemError: err,
+			Code:        http.StatusInternalServerError,
+		}
 	} else if !ok {
-		return fmt.Errorf("cachegroup %v does not exist", cgparam.CacheGroupID), nil, http.StatusNotFound
+		return apierrors.Errors{
+			UserError: fmt.Errorf("cachegroup %v does not exist", cgparam.CacheGroupID),
+			Code:      http.StatusNotFound,
+		}
 	}
 
 	_, ok, err = dbhelpers.GetParamNameByID(cgparam.ReqInfo.Tx.Tx, *cgparam.ID)
 	if err != nil {
-		return nil, err, http.StatusInternalServerError
+		return apierrors.Errors{
+			SystemError: err,
+			Code:        http.StatusInternalServerError,
+		}
 	} else if !ok {
-		return fmt.Errorf("parameter %v does not exist", *cgparam.ID), nil, http.StatusNotFound
+		return apierrors.Errors{
+			UserError: fmt.Errorf("parameter %v does not exist", *cgparam.ID),
+			Code:      http.StatusNotFound,
+		}
 	}
 
 	return api.GenericDelete(cgparam)
@@ -212,9 +240,9 @@ func (cgparam *TOCacheGroupParameter) Delete() (error, error, int) {
 
 // ReadAllCacheGroupParameters reads all cachegroup parameter associations.
 func ReadAllCacheGroupParameters(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, nil, nil)
-	if userErr != nil || sysErr != nil {
-		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
+	inf, errs := api.NewInfo(r, nil, nil)
+	if errs.Occurred() {
+		inf.HandleErrs(w, r, errs)
 		return
 	}
 	defer inf.Close()
@@ -267,9 +295,9 @@ func GetAllCacheGroupParameters(tx *sqlx.Tx, parameters map[string]string) (tc.C
 // AddCacheGroupParameters performs a Create for cachegroup parameter associations.
 // AddCacheGroupParameters accepts data as a single association or an array of multiple.
 func AddCacheGroupParameters(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, nil, nil)
-	if userErr != nil || sysErr != nil {
-		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
+	inf, errs := api.NewInfo(r, nil, nil)
+	if errs.Occurred() {
+		inf.HandleErrs(w, r, errs)
 		return
 	}
 	defer inf.Close()
@@ -331,8 +359,7 @@ func AddCacheGroupParameters(w http.ResponseWriter, r *http.Request) {
 	_, err = inf.Tx.Tx.Query(insertQuery() + insQuery)
 
 	if err != nil {
-		userErr, sysErr, code := api.ParseDBError(err)
-		api.HandleErr(w, r, inf.Tx.Tx, code, userErr, sysErr)
+		inf.HandleErrs(w, r, api.ParseDBError(err))
 		return
 	}
 
@@ -340,14 +367,14 @@ func AddCacheGroupParameters(w http.ResponseWriter, r *http.Request) {
 }
 
 func selectAllQuery() string {
-	return `SELECT cgp.cachegroup, cgp.parameter, cgp.last_updated, cg.name 
-				FROM cachegroup_parameter AS cgp 
+	return `SELECT cgp.cachegroup, cgp.parameter, cgp.last_updated, cg.name
+				FROM cachegroup_parameter AS cgp
 				JOIN cachegroup AS cg ON cg.id = cachegroup`
 }
 
 func insertQuery() string {
-	return `INSERT INTO cachegroup_parameter 
-		(cachegroup, 
-		parameter) 
+	return `INSERT INTO cachegroup_parameter
+		(cachegroup,
+		parameter)
 		VALUES `
 }

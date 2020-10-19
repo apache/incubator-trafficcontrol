@@ -89,16 +89,18 @@ func cacheConfigFromRequest(r *http.Request, i *api.APIInfo) (tc.TrafficCacheSta
 // GetCacheStats handler for getting cache stats
 func GetCacheStats(w http.ResponseWriter, r *http.Request) {
 	// Perl didn't require "interval", but it would only return summary data if it was not given
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"metricType", "startDate", "endDate", "cdnName"}, nil)
-	tx := inf.Tx.Tx
-	if userErr != nil || sysErr != nil {
-		api.HandleErr(w, r, tx, errCode, userErr, sysErr)
+	inf, errs := api.NewInfo(r, []string{"metricType", "startDate", "endDate", "cdnName"}, nil)
+	if errs.Occurred() {
+		inf.HandleErrs(w, r, errs)
 		return
 	}
 	defer inf.Close()
 
+	var sysErr error
+	tx := inf.Tx.Tx
 	var c tc.TrafficCacheStatsConfig
-	if c, errCode, userErr = cacheConfigFromRequest(r, inf); userErr != nil {
+	c, errCode, userErr := cacheConfigFromRequest(r, inf)
+	if userErr != nil {
 		sysErr = fmt.Errorf("Unable to process cache_stats request: %v", userErr)
 		api.HandleErr(w, r, tx, errCode, userErr, sysErr)
 		return

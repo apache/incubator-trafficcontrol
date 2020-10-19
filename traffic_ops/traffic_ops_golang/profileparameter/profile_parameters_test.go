@@ -84,9 +84,9 @@ func TestGetProfileParameters(t *testing.T) {
 		api.APIInfoImpl{&reqInfo},
 		tc.ProfileParameterNullable{},
 	}
-	pps, userErr, sysErr, _, _ := obj.Read(nil, false)
-	if userErr != nil || sysErr != nil {
-		t.Errorf("Read expected: no errors, actual: %v %v", userErr, sysErr)
+	pps, errs, _ := obj.Read(nil, false)
+	if errs.Occurred() {
+		t.Errorf("Read expected: no errors, actual: %s", errs)
 	}
 
 	if len(pps) != 2 {

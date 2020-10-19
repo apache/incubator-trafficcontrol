@@ -29,9 +29,9 @@ import (
 
 func GetServersStatusCountsHandler(w http.ResponseWriter, r *http.Request) {
 	alt := "GET /servers"
-	inf, userErr, sysErr, errCode := api.NewInfo(r, nil, nil)
-	if userErr != nil || sysErr != nil {
-		api.HandleDeprecatedErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr, &alt)
+	inf, errs := api.NewInfo(r, nil, nil)
+	if errs.Occurred() {
+		api.HandleErrsOptionalDeprecation(w, r, inf.Tx.Tx, errs, true, &alt)
 		return
 	}
 	defer inf.Close()

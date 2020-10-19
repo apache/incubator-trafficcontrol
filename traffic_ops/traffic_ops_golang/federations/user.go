@@ -29,6 +29,7 @@ import (
 
 	"github.com/apache/trafficcontrol/lib/go-tc"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/api"
+	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/apierrors"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/dbhelpers"
 	"github.com/lib/pq"
 )
@@ -126,27 +127,33 @@ func (v *TOUsers) GetType() string {
 	return fedUserType
 }
 
-func (v *TOUsers) Read(h http.Header, useIMS bool) ([]interface{}, error, error, int, *time.Time) {
+func (v *TOUsers) Read(h http.Header, useIMS bool) ([]interface{}, apierrors.Errors, *time.Time) {
 	fedIDStr := v.APIInfo().Params["id"]
 	fedID, err := strconv.Atoi(fedIDStr)
 	if err != nil {
-		return nil, errors.New("federation id must be an integer"), nil, http.StatusBadRequest, nil
+		errs := apierrors.Errors{Code: http.StatusBadRequest}
+		errs.SetUserError("federation id must be an integer")
+		return nil, errs, nil
 	}
 	_, exists, err := getFedNameByID(v.APIInfo().Tx.Tx, fedID)
 	if err != nil {
-		return nil, nil, fmt.Errorf("getting federation cname from ID %v: %v", fedID, err), http.StatusInternalServerError, nil
+		errs := apierrors.Errors{Code: http.StatusInternalServerError}
+		errs.SystemError = fmt.Errorf("getting federation cname from ID %v: %v", fedID, err)
+		return nil, errs, nil
 	} else if !exists {
-		return nil, fmt.Errorf("federation %v not found", fedID), nil, http.StatusNotFound, nil
+		errs := apierrors.Errors{Code: http.StatusNotFound}
+		errs.UserError = fmt.Errorf("federation %v not found", fedID)
+		return nil, errs, nil
 	}
 	return api.GenericRead(h, v, useIMS)
 }
 
-func (v *TOUsers) Delete() (error, error, int) { return api.GenericDelete(v) }
+func (v *TOUsers) Delete() apierrors.Errors { return api.GenericDelete(v) }
 
 func PostUsers(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"id"}, []string{"id"})
-	if userErr != nil || sysErr != nil {
-		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
+	inf, errs := api.NewInfo(r, []string{"id"}, []string{"id"})
+	if errs.Occurred() {
+		inf.HandleErrs(w, r, errs)
 		return
 	}
 	defer inf.Close()
@@ -169,16 +176,14 @@ func PostUsers(w http.ResponseWriter, r *http.Request) {
 
 	if post.Replace != nil && *post.Replace {
 		if err := deleteFedUsers(inf.Tx.Tx, fedID); err != nil {
-			userErr, sysErr, errCode := api.ParseDBError(err)
-			api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
+			inf.HandleErrs(w, r, api.ParseDBError(err))
 			return
 		}
 	}
 
 	if len(post.IDs) > 0 {
 		if err := insertFedUsers(inf.Tx.Tx, fedID, post.IDs); err != nil {
-			userErr, sysErr, errCode := api.ParseDBError(err)
-			api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
+			inf.HandleErrs(w, r, api.ParseDBError(err))
 			return
 		}
 	}

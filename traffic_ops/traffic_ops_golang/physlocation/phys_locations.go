@@ -28,6 +28,7 @@ import (
 	"github.com/apache/trafficcontrol/lib/go-tc/tovalidate"
 	"github.com/apache/trafficcontrol/lib/go-util"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/api"
+	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/apierrors"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/dbhelpers"
 
 	validation "github.com/go-ozzo/ozzo-validation"
@@ -100,7 +101,7 @@ func (pl *TOPhysLocation) Validate() error {
 	return nil
 }
 
-func (pl *TOPhysLocation) Read(h http.Header, useIMS bool) ([]interface{}, error, error, int, *time.Time) {
+func (pl *TOPhysLocation) Read(h http.Header, useIMS bool) ([]interface{}, apierrors.Errors, *time.Time) {
 	api.DefaultSort(pl.APIInfo(), "name")
 	return api.GenericRead(h, pl, useIMS)
 }
@@ -112,9 +113,9 @@ JOIN region r ON pl.region = r.id ` + where + orderBy + pagination +
 	select max(last_updated) as t from last_deleted l where l.table_name='phys_location') as res`
 }
 
-func (pl *TOPhysLocation) Update() (error, error, int) { return api.GenericUpdate(pl) }
-func (pl *TOPhysLocation) Create() (error, error, int) { return api.GenericCreate(pl) }
-func (pl *TOPhysLocation) Delete() (error, error, int) { return api.GenericDelete(pl) }
+func (pl *TOPhysLocation) Update() apierrors.Errors { return api.GenericUpdate(pl) }
+func (pl *TOPhysLocation) Create() apierrors.Errors { return api.GenericCreate(pl) }
+func (pl *TOPhysLocation) Delete() apierrors.Errors { return api.GenericDelete(pl) }
 
 func selectQuery() string {
 	return `
