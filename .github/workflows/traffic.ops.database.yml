@@ -29,8 +29,19 @@ on:
 
 jobs:
   tests:
-    if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    services:
+      postgres:
+        image: postgres:11
+        env:
+          POSTGRES_USER: traffic_ops
+          POSTGRES_PASSWORD: twelve
+          POSTGRES_DB: traffic_ops
+        ports:
+        - 5432:5432
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+
     steps:
       - name: Checkout
         uses: actions/checkout@master

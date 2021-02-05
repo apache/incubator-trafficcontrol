@@ -1,3 +1,4 @@
+-- syntax:postgresql
 /*
 
     Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,10 +14,23 @@
     limitations under the License.
 */
 
--- +goose Up
--- SQL in section 'Up' is executed when this migration is applied
-ALTER TABLE deliveryservice ADD COLUMN ecs_enabled boolean NOT NULL DEFAULT false;
+-- Revert traffic_ops:deliveryservice-active from pg
 
--- +goose Down
--- SQL section 'Down' is executed when this migration is rolled back
-ALTER TABLE deliveryservice DROP COLUMN ecs_enabled;
+BEGIN;
+
+ALTER TABLE deliveryservice
+ADD COLUMN active_flag boolean DEFAULT FALSE NOT NULL;
+
+UPDATE deliveryservice
+SET active_flag = FALSE
+WHERE active = 'PRIMED' OR active = 'INACTIVE';
+
+UPDATE deliveryservice
+SET active_flag = TRUE
+WHERE active = 'ACTIVE';
+
+ALTER TABLE deliveryservice DROP COLUMN active;
+ALTER TABLE deliveryservice RENAME COLUMN active_flag TO active;
+DROP TYPE ds_active_state;
+
+COMMIT;

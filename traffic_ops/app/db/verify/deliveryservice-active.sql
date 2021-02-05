@@ -1,3 +1,4 @@
+-- syntax:postgresql
 /*
 
     Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,16 +14,10 @@
     limitations under the License.
 */
 
--- +goose Up
--- SQL in section 'Up' is executed when this migration is applied
+-- Verify traffic_ops:deliveryservice-active on pg
 
--- snapshots
-ALTER TABLE snapshot ADD COLUMN monitoring json;
-UPDATE snapshot SET monitoring = '{}';
-ALTER TABLE snapshot ALTER COLUMN monitoring SET NOT NULL;
-ALTER TABLE snapshot RENAME content TO crconfig;
+BEGIN;
 
--- +goose Down
--- SQL section 'Down' is executed when this migration is rolled back
-ALTER TABLE snapshot DROP COLUMN monitoring;
-ALTER TABLE snapshot RENAME crconfig TO content;
+SELECT FROM deliveryservice WHERE active = 'PRIMED';
+
+ROLLBACK;

@@ -1,3 +1,4 @@
+-- syntax:postgresql
 /*
 
     Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,15 +14,22 @@
     limitations under the License.
 */
 
--- +goose Up
--- SQL in section 'Up' is executed when this migration is applied
+-- Deploy traffic_ops:deliveryservice-active to pg
 
-CREATE TABLE IF NOT EXISTS server_capability (
-    name TEXT PRIMARY KEY,
-    last_updated timestamp with time zone DEFAULT now() NOT NULL,
-    CONSTRAINT name_empty CHECK (length(name) > 0)
+BEGIN;
+
+CREATE TYPE ds_active_state AS ENUM (
+	'ACTIVE',
+	'INACTIVE',
+	'PRIMED'
 );
+ALTER TABLE deliveryservice
+ADD COLUMN active_state ds_active_state NOT NULL DEFAULT 'INACTIVE';
 
--- +goose Down
--- SQL section 'Down' is executed when this migration is rolled back
-DROP TABLE IF EXISTS server_capability;
+UPDATE deliveryservice SET active_state = 'ACTIVE' WHERE active IS TRUE;
+UPDATE deliveryservice SET active_state = 'PRIMED' WHERE active IS FALSE;
+
+ALTER TABLE deliveryservice DROP COLUMN active;
+ALTER TABLE deliveryservice RENAME COLUMN active_state TO active;
+
+COMMIT;

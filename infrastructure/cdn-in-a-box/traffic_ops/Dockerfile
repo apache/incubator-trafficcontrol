@@ -95,12 +95,13 @@ RUN if [[ "${RHEL_VERSION%%.*}" -ge 8 ]]; then \
         tar &&              \
     dnf -y clean all && \
     mkdir -p /opt/traffic_ops/app/public && \
-    cpanm Carton
+    cpanm --quiet --notest Carton &&\
+    cpanm --quiet --notest App::Sqitch
 
 ADD traffic_router/core/src/test/resources/geo/GeoLite2-City.mmdb.gz /opt/traffic_ops/app/public/
 
 WORKDIR /opt/traffic_ops/app
-ADD traffic_ops/app/cpanfile traffic_ops/install/bin/install_goose.sh ./
+ADD traffic_ops/app/cpanfile ./
 
 # Start with the existing traffic_ops/app/local directory
 COPY infrastructure/cdn-in-a-box/traffic_ops/perl-cache/centos-${RHEL_VERSION:-8}/local local
@@ -113,7 +114,6 @@ RUN export POSTGRES_HOME=/usr/pgsql-9.6 PERL5LIB=$(pwd)/local/lib/perl5 && \
         carton || exit 1; \
     fi && \
     rm -rf $HOME/.cpan* /tmp/Dockerfile /tmp/local.tar.gz ./cpanfile
-RUN ./install_goose.sh
 
 FROM trafficops-perl-deps
 # Override TRAFFIC_OPS_RPM arg to use a different one using --build-arg TRAFFIC_OPS_RPM=...  Can be local file or http://...
@@ -137,6 +137,8 @@ ADD infrastructure/cdn-in-a-box/enroller/server_template.json \
     infrastructure/cdn-in-a-box/traffic_ops/trafficops-init.sh \
     infrastructure/cdn-in-a-box/variables.env \
     /
+
+RUN ls -lR /opt/traffic_ops/app/db/
 
 COPY infrastructure/cdn-in-a-box/dns/set-dns.sh \
      infrastructure/cdn-in-a-box/dns/insert-self-into-dns.sh \

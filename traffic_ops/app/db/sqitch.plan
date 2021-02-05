@@ -1,0 +1,5 @@
+%syntax-version=1.0.0
+%project=traffic_ops
+%uri=https://github.com/apache/trafficcontrol/
+
+deliveryservice-active 2020-11-23T19:44:48Z ocket8888 <ocket8888@apache.org> # Convert Delivery Service 'Active' property to three-state enum.

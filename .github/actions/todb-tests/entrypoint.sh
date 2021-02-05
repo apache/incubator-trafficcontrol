@@ -16,51 +16,15 @@
 # specific language governing permissions and limitations
 # under the License.
 
-set -e
+set -ex;
 
-cd traffic_ops/app/db/migrations;
+cd traffic_ops/app/db;
+sqitch target add test db:pg://traffic_ops:twelve@postgres/traffic_ops
 
-# Ensure proper order
-SORTED="$(mktemp)";
-SORTEDDASHN="$(mktemp)";
+psql -d postgresql://traffic_ops:twelve@postgres/traffic_ops <./create_tables.sql;
+psql -d postgresql://traffic_ops:twelve@postgres/traffic_ops <./patches.sql;
+psql -d postgresql://traffic_ops:twelve@postgres/traffic_ops <./seeds.sql;
 
-ls | sort > "$SORTED";
-ls | sort -n > "$SORTEDDASHN";
-
-CODE=0;
-
-if [ ! -z "$(diff $SORTED $SORTEDDASHN)" ]; then
-	echo "ERROR: expected sort -n and sort to give the same migration order:" >&2;
-	diff "$SORTED" "$SORTEDDASHN" >&2;
-	CODE=1;
-fi
-
-rm "$SORTED" "$SORTEDDASHN";
-
-# No two migrations may share a timestamp
-ls | cut -d _ -f 1 | uniq -d | while read -r file; do
-	echo "ERROR: more than one file uses timestamp $file - timestamps must be unique" >&2;
-	CODE=1;
-done
-
-# Files must be named like {{timestamp}}_{{migration name}}.sql
-for file in "$(ls)"; do
-	if ! [[ "$file" =~ [0-9]+_[^\.]+\.sql ]]; then
-		echo "ERROR: traffic_ops/app/db/migrations/$file: wrong filename, must match \d+_[^\\.]+\\.sql" >&2;
-		CODE=1;
-	fi
-done
-
-set +e;
-# All new migrations must use 16-digit timestamps.
-VIOLATING_FILES="$(ls | sort | cut -d _ -f 1 | sed -n -e '/2020061622101648/,$p' | tr '[:space:]' '\n' | grep -vE '^[0-9]{16}$')";
-set -e;
-
-if [[ ! -z "$VIOLATING_FILES" ]]; then
-	for file in "$VIOLATING_FILES"; do
-		echo "ERROR: traffic_ops/app/db/migrations/$file(name).sql: wrong filename, all migrations after 2020-06-16 must use 16-digit timestamps in their filenames" >&2;
-	done
-	CODE=1;
-fi
-
-exit "$CODE";
+sqitch deploy test;
+sqitch verify test;
+sqitch revert -y test;
