@@ -17,6 +17,11 @@
     },
     {
       "configFile": "CRConfig.json",
+      "name": "dnssec.rrsig.cache.enabled",
+      "value": "true"
+    },
+    {
+      "configFile": "CRConfig.json",
       "name": "geolocation.polling.url",
       "value": "https://trafficops.infra.ciab.test:443/GeoLite2-City.mmdb.gz"
     },
