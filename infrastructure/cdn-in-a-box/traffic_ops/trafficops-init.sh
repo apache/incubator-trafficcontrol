@@ -71,6 +71,21 @@ delayfor() {
     local d="${f%/*}"
 
     case $d in
+        deliveryservices)
+            local cdns_json
+            cdns_json="$(to-get "api/${TO_API_VERSION}/cdns?name=${CDN_NAME}")"
+            if [[ "$(<<<"$cdns_json" jq '.response[].dnssecEnabled')" == false ]]; then
+              echo "DNSSEC is not enabled for ${CDN_FQDN}"
+              return
+            fi
+            jq_filter='.date = $date | .key = $cdn_name | .name = $domain | .ttl = 60 | .kskExpirationDays = 365 | .zskExpirationDays = 30'
+            generate_dnssec_body="$(jq -n --arg cdn_name "$CDN_NAME" --arg domain "$CDN_FQDN" --arg date "$(date --rfc-3339=seconds | sed 's/ /T/')" "$jq_filter")"
+            until to-post "api/${TO_API_VERSION}/cdns/dnsseckeys/generate" "$generate_dnssec_body"; do
+              echo "Waiting for DNSSEC key generation request to succeed for ${CDN_FQDN}..."
+              sleep 3
+            done
+              echo "Generated DNSSEC keys for ${CDN_FQDN}"
+            ;;
         deliveryservice_servers)
             ds=$( jq -r .xmlId <"$f" )
             waitfor deliveryservices xmlId "$ds"
