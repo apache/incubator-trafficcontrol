@@ -1,5 +1,5 @@
 {
-	"dnssecEnabled": false,
+	"dnssecEnabled": true,
 	"domainName": "mycdn.ciab.test",
 	"name": "$CDN_NAME"
 }

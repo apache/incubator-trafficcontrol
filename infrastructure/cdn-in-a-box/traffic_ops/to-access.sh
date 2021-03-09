@@ -114,7 +114,9 @@ to-post() {
 	fi
 	to-auth && \
 	    curl $CURLAUTH $CURLOPTS -H 'Content-Type: application/json;charset=UTF-8' --cookie "$COOKIEJAR" -X POST $data "$TO_URL/$1"
+	exit_code=$?
 	[[ -n $t ]] && rm -f "$t"
+	return $exit_code;
 }
 
 to-put() {

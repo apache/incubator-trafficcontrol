@@ -109,6 +109,8 @@ While the components may be interacted with by the host using these ports, the t
 
 When the CDN is to be shut down, it is often best to do so using ``sudo docker-compose down -v`` due to the use of shared volumes in the system which might interfere with a proper initialization upon the next run.
 
+.. note:: Although :abbr:`DNSSEC (DNS Security Extensions)` is enabled for the CDN (sending DNS queries directly to Traffic Router), DNSSEC is not enabled for the ``dns`` service.
+
 Readiness Check
 """""""""""""""
 

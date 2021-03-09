@@ -28,6 +28,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/).
 - Added ACME certificate renewals and ACME account registration using external account binding
 - Added functionality to automatically renew ACME certificates.
 - Added an endpoint for statuses on asynchronous jobs and applied it to the ACME renewal endpoint.
+- Enabled DNSSEC for the CDN in a Box CDN (without enabling DNSSEC support for the `dns` service)
 
 ### Fixed
 - [#5558](https://github.com/apache/trafficcontrol/issues/5558) - Fixed `TM UI` and `/api/cache-statuses` to report aggregate `bandwidth_kbps` correctly.
