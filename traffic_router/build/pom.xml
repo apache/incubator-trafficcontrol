@@ -242,9 +242,6 @@
 								<require>apr &gt;= 1.4.8</require>
 								<require>tomcat-native >= 1.2.23</require>
 							</requires>
-							<obsoletes>
-								<obsolete>traffic_router &lt; 3.0.0</obsolete>
-							</obsoletes>
 
 							<pretransScriptlet>
 								 <scriptFile>../core/src/main/scripts/pretrans.sh</scriptFile>
