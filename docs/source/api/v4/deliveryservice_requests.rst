@@ -107,7 +107,7 @@ The response is an array of representations of :term:`Delivery Service Requests`
 		"lastEditedById": 2,
 		"lastUpdated": "2020-02-24 19:11:12+00",
 		"requested": {
-			"active": false,
+			"active": "INACTIVE",
 			"anonymousBlockingEnabled": false,
 			"cacheurl": null,
 			"ccrDnsTtl": null,
@@ -135,7 +135,7 @@ The response is an array of representations of :term:`Delivery Service Requests`
 			"innerHeaderRewrite": null,
 			"ipv6RoutingEnabled": true,
 			"lastHeaderRewrite": null,
-			"lastUpdated": "0001-01-01 00:00:00+00",
+			"lastUpdated": "0001-01-01T00:00:00Z",
 			"logsEnabled": true,
 			"longDesc": "Apachecon North America 2018",
 			"longDesc1": null,
@@ -225,7 +225,7 @@ The request must be a well-formed representation of a :term:`Delivery Service Re
 		"changeType": "update",
 		"status": "draft",
 		"requested": {
-			"active": false,
+			"active": "INACTIVE",
 			"anonymousBlockingEnabled": false,
 			"cacheurl": null,
 			"ccrDnsTtl": null,
@@ -253,7 +253,7 @@ The request must be a well-formed representation of a :term:`Delivery Service Re
 			"innerHeaderRewrite": null,
 			"ipv6RoutingEnabled": true,
 			"lastHeaderRewrite": null,
-			"lastUpdated": "2020-02-13 16:43:54+00",
+			"lastUpdated": "2020-09-25T07:13:08.753352Z",
 			"logsEnabled": true,
 			"longDesc": "Apachecon North America 2018",
 			"longDesc1": null,
@@ -350,7 +350,7 @@ The response will be a representation of the created :term:`Delivery Service Req
 			"lastEditedById": 2,
 			"lastUpdated": "2020-02-24 19:11:12+00",
 			"requested": {
-				"active": false,
+				"active": "INACTIVE",
 				"anonymousBlockingEnabled": false,
 				"cacheurl": null,
 				"ccrDnsTtl": null,
@@ -378,7 +378,7 @@ The response will be a representation of the created :term:`Delivery Service Req
 				"innerHeaderRewrite": null,
 				"ipv6RoutingEnabled": true,
 				"lastHeaderRewrite": null,
-				"lastUpdated": "0001-01-01 00:00:00+00",
+				"lastUpdated": "0001-01-01T00:00:00Z",
 				"logsEnabled": true,
 				"longDesc": "Apachecon North America 2018",
 				"longDesc1": null,
@@ -435,7 +435,7 @@ The response will be a representation of the created :term:`Delivery Service Req
 				"ecsEnabled": false
 			},
 			"original": {
-				"active": true,
+				"active": "ACTIVE",
 				"anonymousBlockingEnabled": false,
 				"cacheurl": null,
 				"ccrDnsTtl": null,
@@ -463,7 +463,7 @@ The response will be a representation of the created :term:`Delivery Service Req
 				"innerHeaderRewrite": null,
 				"ipv6RoutingEnabled": true,
 				"lastHeaderRewrite": null,
-				"lastUpdated": "2020-02-13 16:43:54+00",
+				"lastUpdated": "2020-09-25T07:13:08.753352Z",
 				"logsEnabled": true,
 				"longDesc": "Apachecon North America 2018",
 				"longDesc1": null,
@@ -560,7 +560,7 @@ The request body must be a representation of a :term:`Delivery Service Request` 
 	{
 		"changeType": "update",
 		"requested": {
-			"active": true,
+			"active": "ACTIVE",
 			"cdnId": 2,
 			"ccrDnsTtl": 30,
 			"deepCachingType": "NEVER",
@@ -613,7 +613,7 @@ The response is a full representation of the edited :term:`Delivery Service Requ
 		"lastEditedBy": "admin",
 		"lastUpdated": "2020-09-25T02:38:04.180237Z",
 		"original": {
-			"active": true,
+			"active": "ACTIVE",
 			"anonymousBlockingEnabled": false,
 			"cacheurl": null,
 			"ccrDnsTtl": null,
@@ -638,7 +638,7 @@ The response is a full representation of the edited :term:`Delivery Service Requ
 			"infoUrl": null,
 			"initialDispersion": 1,
 			"ipv6RoutingEnabled": true,
-			"lastUpdated": "2020-09-25 02:09:54+00",
+			"lastUpdated": "2020-09-25T07:13:08.753352Z",
 			"logsEnabled": true,
 			"longDesc": "Apachecon North America 2018",
 			"longDesc1": null,
@@ -700,7 +700,7 @@ The response is a full representation of the edited :term:`Delivery Service Requ
 			"serviceCategory": null
 		},
 		"requested": {
-			"active": true,
+			"active": "ACTIVE",
 			"anonymousBlockingEnabled": false,
 			"cacheurl": null,
 			"ccrDnsTtl": 30,

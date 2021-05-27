@@ -110,7 +110,7 @@ Summary Stats
 :statName:            Stat name summary stat represents
 :statValue:           Summary stat value
 :summaryTime:         Timestamp of summary, in an ISO-like format
-:statDate:            Date stat was taken, in :rfc:`3339` format
+:statDate:            Date stat was taken, in ``YYYY-MM-DD`` format
 
 .. code-block:: http
 	:caption: Response Example
@@ -157,7 +157,7 @@ Summary Stats
 Last Updated Summary Stat
 """""""""""""""""""""""""
 
-:summaryTime: Timestamp of the last updated summary, in :rfc:`3339` format
+:summaryTime: Timestamp of the last updated summary, in an ISO-like format
 
 .. code-block:: http
 	:caption: Response Example
@@ -200,7 +200,7 @@ Request Structure
 :statName:            Stat name summary stat represents
 :statValue:           Summary stat value
 :summaryTime:         Timestamp of summary, in an ISO-like format
-:statDate:            Date stat was taken, in :rfc:`3339` format
+:statDate:            Date stat was taken, in ``YYYY-MM-DD`` format
 
 .. note:: ``statName``, ``statValue`` and ``summaryTime`` are required. If ``cdnName`` and ``deliveryServiceName`` are not given they will default to ``all``.
 

@@ -176,9 +176,9 @@ func (to *Session) AssignDeliveryServiceIDsToServerID(server int, dsIDs []int, r
 
 // GetServerIDDeliveryServices returns all of the Delivery Services assigned to the server identified
 // by the integral, unique identifier 'server'.
-func (to *Session) GetServerIDDeliveryServices(server int, opts RequestOptions) (tc.DeliveryServicesNullableResponse, toclientlib.ReqInf, error) {
+func (to *Session) GetServerIDDeliveryServices(server int, opts RequestOptions) (tc.DeliveryServicesResponseV40, toclientlib.ReqInf, error) {
 	endpoint := fmt.Sprintf(apiServerDeliveryServices, server)
-	var data tc.DeliveryServicesNullableResponse
+	var data tc.DeliveryServicesResponseV40
 	reqInf, err := to.get(endpoint, opts, &data)
 	return data, reqInf, err
 }

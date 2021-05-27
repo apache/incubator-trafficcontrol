@@ -99,7 +99,7 @@ update
 
 Created At
 ----------
-This is the date and time at which the :abbr:`DSR (Delivery Service Request)` was created. In the context of the :ref:`to-api`, it is formatted as an :rfc:`3339` date string.
+This is the date and time at which the :abbr:`DSR (Delivery Service Request)` was created. In the context of the :ref:`to-api`, it is formatted as an :rfc:`3339` date string except where otherwise noted.
 
 ID
 --

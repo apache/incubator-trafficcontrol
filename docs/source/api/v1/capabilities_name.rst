@@ -55,7 +55,7 @@ Request Structure
 Response Structure
 ------------------
 :description: Describes the APIs covered by the capability
-:lastUpdated: Date and time of the last update made to this capability, in ISO format
+:lastUpdated: Date and time of the last update made to this capability, in an ISO-like format
 :name:        Name of the capability
 
 .. code-block:: http
@@ -129,7 +129,7 @@ Request Structure
 Response Structure
 ------------------
 :description: Describes the APIs covered by the capability.
-:lastUpdated: Date and time of the last update made to this capability, in ISO format
+:lastUpdated: Date and time of the last update made to this capability, in an ISO-like format
 :name:        The name of the capability
 
 .. code-block:: http

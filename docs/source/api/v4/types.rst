@@ -54,7 +54,7 @@ Response Structure
 ------------------
 :description: A short description of this type
 :id:          An integral, unique identifier for this type
-:lastUpdated: The date and time at which this type was last updated, in ISO format
+:lastUpdated: The date and time at which this type was last updated, in an ISO-like format
 :name:        The name of this type
 :useInTable:  The name of the Traffic Ops database table that contains objects which are grouped, identified, or described by this type
 
@@ -122,7 +122,7 @@ Response Structure
 
 :description: A short description of this type
 :id:          An integral, unique identifier for this type
-:lastUpdated: The date and time at which this type was last updated, in ISO format
+:lastUpdated: The date and time at which this type was last updated, in an ISO-like format
 :name:        The name of this type
 :useInTable:  The name of the Traffic Ops database table that contains objects which are grouped, identified, or described by this type
 
@@ -156,5 +156,3 @@ Response Structure
 			"useInTable": "server"
 		}]
 	}
-
-

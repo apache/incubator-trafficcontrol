@@ -227,7 +227,7 @@ func enrollDeliveryService(toSession *session, r io.Reader) error {
 	if err != nil {
 		for _, alert := range alerts.Alerts.Alerts {
 			if strings.Contains(alert.Text, "already exists") {
-				log.Infof("Delivery Service '%s' already exists", *s.XMLID)
+				log.Infof("Delivery Service '%s' already exists", s.XMLID)
 				return nil
 			}
 		}
@@ -827,7 +827,7 @@ func enrollFederation(toSession *session, r io.Reader) error {
 				return err
 			}
 			deliveryService := deliveryServices.Response[0]
-			if deliveryService.CDNName == nil || deliveryService.ID == nil || deliveryService.XMLID == nil {
+			if deliveryService.CDNName == nil || deliveryService.ID == nil {
 				err = fmt.Errorf("Delivery Service '%s' as returned from Traffic Ops had null or undefined CDN name and/or ID", xmlID)
 				log.Infoln(err)
 				return err

@@ -75,7 +75,7 @@ const (
 	// apiDeliveryServiceGenerateSSLKeys is the API path on which Traffic Ops will generate new SSL keys.
 	apiDeliveryServiceGenerateSSLKeys = apiDeliveryServices + "/sslkeys/generate"
 
-	// apiDeliveryServiceAddSSLKeys is the API path on which Traffic Ops will add SSL keys
+	// apiDeliveryServiceAddSSLKeys is the API path on which Traffic Ops will add SSL keys.
 	apiDeliveryServiceAddSSLKeys = apiDeliveryServices + "/sslkeys/add"
 
 	// apiDeliveryServiceURISigningKeys is the API path on which Traffic Ops serves information
@@ -134,7 +134,7 @@ func (to *Session) GetDeliveryServices(opts RequestOptions) (tc.DeliveryServices
 func (to *Session) CreateDeliveryService(ds tc.DeliveryServiceV4, opts RequestOptions) (tc.DeliveryServicesResponseV4, toclientlib.ReqInf, error) {
 	var reqInf toclientlib.ReqInf
 	var resp tc.DeliveryServicesResponseV4
-	if ds.TypeID == nil && ds.Type != nil {
+	if ds.TypeID == 0 && ds.Type != nil {
 		typeOpts := NewRequestOptions()
 		typeOpts.QueryParameters.Set("name", ds.Type.String())
 		ty, _, err := to.GetTypes(typeOpts)
@@ -144,10 +144,10 @@ func (to *Session) CreateDeliveryService(ds tc.DeliveryServiceV4, opts RequestOp
 		if len(ty.Response) == 0 {
 			return resp, reqInf, fmt.Errorf("no Type named '%s'", ds.Type)
 		}
-		ds.TypeID = &ty.Response[0].ID
+		ds.TypeID = ty.Response[0].ID
 	}
 
-	if ds.CDNID == nil && ds.CDNName != nil {
+	if ds.CDNID == 0 && ds.CDNName != nil {
 		cdnOpts := NewRequestOptions()
 		cdnOpts.QueryParameters.Set("name", *ds.CDNName)
 		cdns, _, err := to.GetCDNs(cdnOpts)
@@ -158,7 +158,7 @@ func (to *Session) CreateDeliveryService(ds tc.DeliveryServiceV4, opts RequestOp
 		if len(cdns.Response) == 0 {
 			return resp, reqInf, fmt.Errorf("no CDN named '%s'", *ds.CDNName)
 		}
-		ds.CDNID = &cdns.Response[0].ID
+		ds.CDNID = cdns.Response[0].ID
 	}
 
 	if ds.ProfileID == nil && ds.ProfileName != nil {
@@ -174,7 +174,7 @@ func (to *Session) CreateDeliveryService(ds tc.DeliveryServiceV4, opts RequestOp
 		ds.ProfileID = &profiles.Response[0].ID
 	}
 
-	if ds.TenantID == nil && ds.Tenant != nil {
+	if ds.TenantID == 0 && ds.Tenant != nil {
 		tenantOpts := NewRequestOptions()
 		tenantOpts.QueryParameters.Set("name", *ds.Tenant)
 		ten, _, err := to.GetTenants(tenantOpts)
@@ -184,7 +184,7 @@ func (to *Session) CreateDeliveryService(ds tc.DeliveryServiceV4, opts RequestOp
 		if len(ten.Response) == 0 {
 			return resp, reqInf, fmt.Errorf("no Tenant named '%s'", *ds.Tenant)
 		}
-		ds.TenantID = &ten.Response[0].ID
+		ds.TenantID = ten.Response[0].ID
 	}
 
 	reqInf, err := to.post(apiDeliveryServices, RequestOptions{Header: opts.Header}, ds, &resp)
@@ -254,7 +254,7 @@ func (to *Session) GenerateSSLKeysForDS(
 	return response, reqInf, err
 }
 
-// AddSSLKeysForDS adds SSL Keys for the given DS
+// AddSSLKeysForDS adds SSL Keys for the given Delivery Service.
 func (to *Session) AddSSLKeysForDS(request tc.DeliveryServiceAddSSLKeysReq, opts RequestOptions) (tc.SSLKeysAddResponse, toclientlib.ReqInf, error) {
 	var response tc.SSLKeysAddResponse
 	reqInf, err := to.post(apiDeliveryServiceAddSSLKeys, opts, request, &response)
@@ -319,7 +319,7 @@ func (to *Session) GetDeliveryServiceURISigningKeys(dsName string, opts RequestO
 }
 
 // CreateDeliveryServiceURISigningKeys creates new URI-signing keys used by the Delivery Service
-// identified by the XMLID 'dsXMLID'
+// identified by the XMLID 'dsXMLID'.
 func (to *Session) CreateDeliveryServiceURISigningKeys(dsXMLID string, body map[string]tc.URISignerKeyset, opts RequestOptions) (tc.Alerts, toclientlib.ReqInf, error) {
 	var alerts tc.Alerts
 	reqInf, err := to.post(fmt.Sprintf(apiDeliveryServicesURISigningKeys, url.PathEscape(dsXMLID)), opts, body, &alerts)
@@ -327,7 +327,7 @@ func (to *Session) CreateDeliveryServiceURISigningKeys(dsXMLID string, body map[
 }
 
 // DeleteDeliveryServiceURISigningKeys deletes the URI-signing keys used by the Delivery Service
-// identified by the XMLID 'dsXMLID'
+// identified by the XMLID 'dsXMLID'.
 func (to *Session) DeleteDeliveryServiceURISigningKeys(dsXMLID string, opts RequestOptions) (tc.Alerts, toclientlib.ReqInf, error) {
 	var alerts tc.Alerts
 	reqInf, err := to.del(fmt.Sprintf(apiDeliveryServicesURISigningKeys, url.PathEscape(dsXMLID)), opts, &alerts)

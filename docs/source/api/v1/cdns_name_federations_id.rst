@@ -82,7 +82,7 @@ Response Structure
 
 	.. note:: This key will only be present if the description was provided when the federation was created. Refer to the ``POST`` method of the :ref:`to-api-v1-cdns-name-federations` endpoint to see how federations can be created.
 
-:lastUpdated: The date and time at which this federation was last modified, in ISO format
+:lastUpdated: The date and time at which this federation was last modified, in an ISO-like format
 :ttl:         Time to Live (TTL) for the ``cname``, in hours
 
 .. code-block:: http
@@ -172,7 +172,7 @@ Response Structure
 
 	.. note:: This key will only be present if the description was provided when the federation was created
 
-:lastUpdated: The date and time at which this federation was last modified, in ISO format
+:lastUpdated: The date and time at which this federation was last modified, in an ISO-like format
 :ttl:         Time to Live (TTL) for the ``cname``, in hours
 
 

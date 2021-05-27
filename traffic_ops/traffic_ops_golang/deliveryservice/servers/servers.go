@@ -571,7 +571,7 @@ func validateDSSAssignments(tx *sql.Tx, ds DSInfo, serverInfos []tc.ServerInfo, 
 		return userErr, sysErr, status
 	}
 
-	if ds.Active && replace {
+	if ds.Active != tc.DS_INACTIVE && replace {
 		ids := make([]int, 0, len(serverInfos))
 		for _, inf := range serverInfos {
 			ids = append(ids, inf.ID)
@@ -976,14 +976,44 @@ func (dss *TODSSDeliveryService) Read(h http.Header, useIMS bool) ([]interface{}
 
 	dses, userErr, sysErr, _ := deliveryservice.GetDeliveryServices(query, queryValues, dss.APIInfo().Tx)
 	if sysErr != nil {
-		sysErr = fmt.Errorf("reading server dses: %v ", sysErr)
+		sysErr = fmt.Errorf("reading server dses: %w ", sysErr)
 	}
 	if userErr != nil || sysErr != nil {
 		return nil, userErr, sysErr, http.StatusInternalServerError, nil
 	}
 
+	returnable = make([]interface{}, 0, len(dses))
 	for _, ds := range dses {
-		returnable = append(returnable, ds)
+		if dss.APIInfo().Version.Major >= 4 {
+			returnable = append(returnable, ds)
+		} else {
+			dsv3 := ds.DowngradeToV3()
+			if dss.APIInfo().Version.Major == 3 {
+				if dss.APIInfo().Version.Minor >= 1 {
+					returnable = append(returnable, dsv3)
+				} else {
+					returnable = append(returnable, dsv3.DeliveryServiceV30)
+				}
+			} else if dss.APIInfo().Version.Major == 2 {
+				returnable = append(returnable, dsv3.DeliveryServiceNullableV15)
+			} else if dss.APIInfo().Version.Major == 1 {
+				if dss.APIInfo().Version.Minor >= 5 {
+					returnable = append(returnable, dsv3.DeliveryServiceNullableV15)
+				}
+				switch dss.APIInfo().Version.Minor {
+				case 4:
+					returnable = append(returnable, dsv3.DeliveryServiceNullableV14)
+				case 3:
+					returnable = append(returnable, dsv3.DeliveryServiceNullableV13)
+				case 2:
+					returnable = append(returnable, dsv3.DeliveryServiceNullableV12)
+				default:
+					returnable = append(returnable, dsv3.DeliveryServiceNullableV11)
+				}
+			}
+			// TODO: handle invalid versions? Shouldn't happen if called
+			// normally; middleware checks for us.
+		}
 	}
 	return returnable, nil, nil, http.StatusOK, &maxTime
 }
@@ -996,7 +1026,7 @@ func selectMaxLastUpdatedQuery(where string) string {
 }
 
 type DSInfo struct {
-	Active               bool
+	Active               tc.DeliveryServiceActiveState
 	ID                   int
 	Name                 string
 	Type                 tc.DSType

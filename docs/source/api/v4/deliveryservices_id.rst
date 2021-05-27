@@ -29,8 +29,12 @@ Allows users to edit an existing :term:`Delivery Service`.
 
 Request Structure
 -----------------
-:active:                   A boolean that defines :ref:`ds-active`.
-:anonymousBlockingEnabled: A boolean that defines :ref:`ds-anonymous-blocking`
+:active: A string that defines :ref:`ds-active`.
+
+	.. versionchanged:: 4.0
+		Prior to API version 4.0, this was a boolean field.
+
+:anonymousBlockingEnabled:  A boolean that defines :ref:`ds-anonymous-blocking`
 :ccrDnsTtl:                 The :ref:`ds-dns-ttl` - named "ccrDnsTtl" for legacy reasons
 :cdnId:                     The integral, unique identifier of the :ref:`ds-cdn` to which the :term:`Delivery Service` belongs
 

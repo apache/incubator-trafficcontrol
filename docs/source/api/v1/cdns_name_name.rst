@@ -45,7 +45,7 @@ Response Structure
 :dnssecEnabled: ``true`` if DNSSEC is enabled on this CDN, otherwise ``false``
 :domainName:    Top Level Domain name within which this CDN operates
 :id:            The integral, unique identifier for the CDN
-:lastUpdated:   Date and time when the CDN was last modified in ISO format
+:lastUpdated:   Date and time when the CDN was last modified in an ISO-like format
 :name:          The name of the CDN
 
 .. code-block:: http
@@ -120,4 +120,3 @@ Response Structure
 			"level": "success"
 		}
 	]}
-

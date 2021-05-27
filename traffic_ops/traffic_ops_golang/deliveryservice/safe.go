@@ -80,7 +80,7 @@ func UpdateSafe(w http.ResponseWriter, r *http.Request) {
 	} else {
 		log.Warnf("Couldn't get config %v", e)
 	}
-	dses, userErr, sysErr, errCode, _ := readGetDeliveryServices(r.Header, inf.Params, inf.Tx, inf.User, useIMS)
+	dses, userErr, sysErr, errCode, _ := readGetDeliveryServices(r.Header, inf, useIMS)
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, tx, errCode, userErr, sysErr)
 		return
@@ -107,7 +107,7 @@ func UpdateSafe(w http.ResponseWriter, r *http.Request) {
 		api.WriteRespAlertObj(w, r, tc.SuccessLevel, alertMsg, []tc.DeliveryServiceNullableV30{ds.DowngradeToV3()})
 	}
 
-	api.CreateChangeLogRawTx(api.ApiChange, fmt.Sprintf("DS: %s, ID: %d, ACTION: Updated safe fields", *ds.XMLID, *ds.ID), inf.User, tx)
+	api.CreateChangeLogRawTx(api.ApiChange, fmt.Sprintf("DS: %s, ID: %d, ACTION: Updated safe fields", ds.XMLID, *ds.ID), inf.User, tx)
 }
 
 // updateDSSafe updates the given delivery service in the database. Returns whether the DS existed, and any error.

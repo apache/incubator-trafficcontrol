@@ -458,7 +458,7 @@ func getDeliveryServices(tx *sql.Tx) ([]DeliveryService, error) {
 	query := `
 	SELECT ds.xml_id, ds.global_max_tps, ds.global_max_mbps
 	FROM deliveryservice ds
-	WHERE ds.active = true
+	WHERE ds.active = 'ACTIVE'
 	`
 	rows, err := tx.Query(query)
 	if err != nil {

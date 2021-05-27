@@ -57,7 +57,7 @@ Response Structure
 :fullName:         The user's full name, e.g. "John Quincy Adams"
 :gid:              A deprecated field only kept for legacy compatibility reasons that used to contain the UNIX group ID of the user - now it is always ``null``
 :id:               An integral, unique identifier for this user
-:lastUpdated:      The date and time at which the user was last modified, in ISO format
+:lastUpdated:      The date and time at which the user was last modified, in an ISO-like format
 :newUser:          A meta field with no apparent purpose that is usually ``null`` unless explicitly set during creation or modification of a user via some API endpoint
 :phoneNumber:      The user's phone number
 :postalCode:       The postal code of the area in which the user resides
@@ -190,7 +190,7 @@ Response Structure
 :fullName:         The user's full name, e.g. "John Quincy Adams"
 :gid:              A deprecated field only kept for legacy compatibility reasons that used to contain the UNIX group ID of the user - now it is always ``null``
 :id:               An integral, unique identifier for this user
-:lastUpdated:      The date and time at which the user was last modified, in ISO format
+:lastUpdated:      The date and time at which the user was last modified, in an ISO-like format
 :newUser:          A meta field with no apparent purpose that is usually ``null`` unless explicitly set during creation or modification of a user via some API endpoint
 :phoneNumber:      The user's phone number
 :postalCode:       The postal code of the area in which the user resides

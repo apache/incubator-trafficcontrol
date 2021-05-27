@@ -65,24 +65,24 @@ func (to *Session) CreateDeliveryServiceRequest(dsr tc.DeliveryServiceRequestV4,
 		ds = dsr.Requested
 	}
 
-	if ds.TypeID == nil && ds.Type.String() != "" {
+	if ds.TypeID == 0 && ds.Type.String() != "" {
 		typeOpts := NewRequestOptions()
 		typeOpts.QueryParameters.Set("name", ds.Type.String())
 		ty, reqInf, err := to.GetTypes(typeOpts)
 		if err != nil || len(ty.Response) == 0 {
 			return resp, reqInf, errors.New("no type named " + ds.Type.String())
 		}
-		ds.TypeID = &ty.Response[0].ID
+		ds.TypeID = ty.Response[0].ID
 	}
 
-	if ds.CDNID == nil && ds.CDNName != nil {
+	if ds.CDNID == 0 && ds.CDNName != nil {
 		cdnOpts := NewRequestOptions()
 		cdnOpts.QueryParameters.Set("name", *ds.CDNName)
 		cdns, reqInf, err := to.GetCDNs(cdnOpts)
 		if err != nil || len(cdns.Response) == 0 {
 			return resp, reqInf, fmt.Errorf("no CDN named '%s'", *ds.CDNName)
 		}
-		ds.CDNID = &cdns.Response[0].ID
+		ds.CDNID = cdns.Response[0].ID
 	}
 
 	if ds.ProfileID == nil && ds.ProfileName != nil {
@@ -95,14 +95,14 @@ func (to *Session) CreateDeliveryServiceRequest(dsr tc.DeliveryServiceRequestV4,
 		ds.ProfileID = &profiles.Response[0].ID
 	}
 
-	if ds.TenantID == nil && ds.Tenant != nil {
+	if ds.TenantID == 0 && ds.Tenant != nil {
 		tenantOpts := NewRequestOptions()
 		tenantOpts.QueryParameters.Set("name", *ds.Tenant)
 		ten, reqInf, err := to.GetTenants(tenantOpts)
 		if err != nil || len(ten.Response) == 0 {
 			return resp, reqInf, fmt.Errorf("no Tenant named '%s'", *ds.Tenant)
 		}
-		ds.TenantID = &ten.Response[0].ID
+		ds.TenantID = ten.Response[0].ID
 	}
 
 	reqInf, err := to.post(apiDSRequests, opts, dsr, &resp)

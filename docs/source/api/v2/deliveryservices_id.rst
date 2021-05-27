@@ -29,7 +29,7 @@ Allows users to edit an existing :term:`Delivery Service`.
 
 Request Structure
 -----------------
-:active:                   A boolean that defines :ref:`ds-active`.
+:active:                   A boolean that defines :ref:`ds-active`. ``true`` means that the Delivery Service is ACTIVE, while ``false`` means that it is either PRIMED or INACTIVE (API versions earlier than 4 are incapable of distinguishing between the two).
 :anonymousBlockingEnabled: A boolean that defines :ref:`ds-anonymous-blocking`
 :cacheurl:                 A :ref:`ds-cacheurl`
 

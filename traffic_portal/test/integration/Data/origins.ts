@@ -77,7 +77,7 @@ export const origins = {
 			method: "post",
 			data: [
 				{
-					active: true,
+					active: "ACTIVE",
 					cdnId: 2,
 					displayName: "ds1",
 					dscp: 0,
@@ -107,7 +107,7 @@ export const origins = {
 					]
 				},
 				{
-					active: true,
+					active: "ACTIVE",
 					cdnId: 2,
 					displayName: "ds2",
 					dscp: 0,
@@ -137,7 +137,7 @@ export const origins = {
 					]
 				},
 				{
-					active: true,
+					active: "ACTIVE",
 					cdnId: 2,
 					displayName: "ds3",
 					dscp: 0,
@@ -167,7 +167,7 @@ export const origins = {
 					]
 				},
 				{
-					active: true,
+					active: "ACTIVE",
 					cdnId: 2,
 					displayName: "ds4",
 					dscp: 0,

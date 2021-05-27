@@ -55,7 +55,7 @@ Request Structure
 Response Structure
 ------------------
 :id:          An integral, unique identifier for this Division
-:lastUpdated: The date and time at which this Division was last modified, in ISO format
+:lastUpdated: The date and time at which this Division was last modified, in an ISO-like format
 :name:        The Division name
 
 .. code-block:: http
@@ -115,7 +115,7 @@ Request Structure
 Response Structure
 ------------------
 :id:          An integral, unique identifier for this Division
-:lastUpdated: The date and time at which this Division was last modified, in ISO format
+:lastUpdated: The date and time at which this Division was last modified, in an ISO-like format
 :name:        The Division name
 
 .. code-block:: http

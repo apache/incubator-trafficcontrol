@@ -70,7 +70,7 @@ Response Structure
 :comments:    Any and all human-readable comments
 :email:       The email address of the physical location's ``poc``
 :id:          An integral, unique identifier for the physical location
-:lastUpdated: The date and time at which the physical location was last updated, in ISO format
+:lastUpdated: The date and time at which the physical location was last updated, in an ISO-like format
 :name:        The name of the physical location
 :phone:       A phone number where the the physical location's ``poc`` might be reached
 :poc:         The name of a "point of contact" for the physical location
@@ -171,7 +171,7 @@ Response Structure
 :comments:    Any and all human-readable comments
 :email:       The email address of the physical location's ``poc``
 :id:          An integral, unique identifier for the physical location
-:lastUpdated: The date and time at which the physical location was last updated, in ISO format
+:lastUpdated: The date and time at which the physical location was last updated, in an ISO-like format
 :name:        The name of the physical location
 :phone:       A phone number where the the physical location's ``poc`` might be reached
 :poc:         The name of a "point of contact" for the physical location

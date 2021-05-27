@@ -614,7 +614,7 @@ export const servers = {
 			method: "post",
 			data: [
 				{
-					active: true,
+					active: "ACTIVE",
 					cdnId: 0,
 					displayName: "servertestds1",
 					dscp: 0,
@@ -650,7 +650,7 @@ export const servers = {
 					]
 				},
 				{
-					active: true,
+					active: "ACTIVE",
 					cdnId: 0,
 					displayName: "servertestdsop1",
 					dscp: 0,

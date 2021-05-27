@@ -370,7 +370,7 @@ Use the `Quick Search` to search across all table columns or the column filter t
 :Cache Group:       [Visible by default] The :ref:`Name of the Cache Group <cache-group-name>` to which this server belongs
 :CDN:               [Visible by default] The name of the CDN to which the server belongs
 :Domain:            [Visible by default] The domain part of the server's :abbr:`FQDN (Fully Qualified Domain Name)`
-:Hash ID:			The identifier of the server used in Traffic Router's consistent hashing algorithm.
+:Hash ID:           The identifier of the server used in Traffic Router's consistent hashing algorithm.
 :Host:              [Visible by default] The (short) hostname of the server
 :HTTPS Port:        The port on which the server listens for incoming HTTPS connections/requests
 :ID:                An integral, unique identifier for this server

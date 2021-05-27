@@ -61,8 +61,12 @@ Request Structure
 
 Response Structure
 ------------------
-:active:                   A boolean that defines :ref:`ds-active`.
-:anonymousBlockingEnabled: A boolean that defines :ref:`ds-anonymous-blocking`
+:active: A string that defines :ref:`ds-active`.
+
+	.. versionchanged:: 4.0
+		Prior to API version 4.0, this was a boolean field.
+
+:anonymousBlockingEnabled:  A boolean that defines :ref:`ds-anonymous-blocking`
 :ccrDnsTtl:                 The :ref:`ds-dns-ttl` - named "ccrDnsTtl" for legacy reasons
 :cdnId:                     The integral, unique identifier of the :ref:`ds-cdn` to which the :term:`Delivery Service` belongs
 :cdnName:                   Name of the :ref:`ds-cdn` to which the :term:`Delivery Service` belongs
@@ -95,11 +99,15 @@ Response Structure
 :ipv6RoutingEnabled:        A boolean that defines the :ref:`ds-ipv6-routing` setting on this :term:`Delivery Service`
 :lastHeaderRewrite:         A set of :ref:`ds-last-header-rw-rules`
 :lastUpdated:               The date and time at which this :term:`Delivery Service` was last updated, in :rfc:`3339` format
-:logsEnabled:               A boolean that defines the :ref:`ds-logs-enabled` setting on this :term:`Delivery Service`
-:longDesc:                  The :ref:`ds-longdesc` of this :term:`Delivery Service`
-:longDesc1:                 The :ref:`ds-longdesc2` of this :term:`Delivery Service`
-:longDesc2:                 The :ref:`ds-longdesc3` of this :term:`Delivery Service`
-:matchList:                 The :term:`Delivery Service`'s :ref:`ds-matchlist`
+
+	.. versionchanged:: 4.0
+		In API versions earlier than 4.0, this string is in a legacy format - ``YYYY-MM-DD hh:mm:ss+ZZ`` (no sub-second precision) - instead of :rfc:`3339` format.
+
+:logsEnabled: A boolean that defines the :ref:`ds-logs-enabled` setting on this :term:`Delivery Service`
+:longDesc:    The :ref:`ds-longdesc` of this :term:`Delivery Service`
+:longDesc1:   The :ref:`ds-longdesc2` of this :term:`Delivery Service`
+:longDesc2:   The :ref:`ds-longdesc3` of this :term:`Delivery Service`
+:matchList:   The :term:`Delivery Service`'s :ref:`ds-matchlist`
 
 	:pattern:   A regular expression - the use of this pattern is dependent on the ``type`` field (backslashes are escaped)
 	:setNumber: An integer that provides explicit ordering of :ref:`ds-matchlist` items - this is used as a priority ranking by Traffic Router, and is not guaranteed to correspond to the ordering of items in the array.

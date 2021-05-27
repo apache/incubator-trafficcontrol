@@ -223,14 +223,14 @@ func AddFederationResolversForCurrentUserTest(t *testing.T) {
 
 	mappings := tc.DeliveryServiceFederationResolverMappingRequest{
 		tc.DeliveryServiceFederationResolverMapping{
-			DeliveryService: *ds.XMLID,
+			DeliveryService: ds.XMLID,
 			Mappings: tc.ResolverMapping{
 				Resolve4: []string{"0.0.0.0"},
 				Resolve6: []string{"::1"},
 			},
 		},
 		tc.DeliveryServiceFederationResolverMapping{
-			DeliveryService: *ds1.XMLID,
+			DeliveryService: ds1.XMLID,
 			Mappings: tc.ResolverMapping{
 				Resolve4: []string{"1.2.3.4/28"},
 				Resolve6: []string{"1234::/110"},

@@ -326,7 +326,7 @@ Response Structure
 	:tm_user:    The username of the currently logged-in user
 	:tm_version: The full version number of the Traffic Ops server, including release number, git commit hash, and supported Enterprise Linux version
 
-:topologies:	An array of :term:`Topologies` where each key is the name of that Topology.
+:topologies: An array of :term:`Topologies` where each key is the name of that Topology.
 
 	:nodes: An array of the names of the :term:`Edge-Tier` :term:`Cache Groups` in this :term:`Topology`. :term:`Mid-Tier` Cache Groups in the topology are not included.
 

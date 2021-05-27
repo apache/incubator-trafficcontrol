@@ -72,7 +72,7 @@ WHERE deliveryservice IN (
 	FROM deliveryservice_server
 	INNER JOIN deliveryservice ON deliveryservice.id = deliveryservice_server.deliveryservice
 	WHERE deliveryservice_server.server=$1
-	AND deliveryservice.active IS TRUE
+	AND deliveryservice.active = 'ACTIVE'
 )
 AND NOT (deliveryservice_server.deliveryservice = ANY($2::BIGINT[]))
 AND (status.name = '` + string(tc.CacheStatusOnline) + `' OR status.name = '` + string(tc.CacheStatusReported) + `')

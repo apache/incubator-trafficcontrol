@@ -56,12 +56,8 @@ func AssignTestDeliveryService(t *testing.T) {
 		t.Fatalf("Server '%s' had nil ID", *server.HostName)
 	}
 
-	if testData.DeliveryServices[0].XMLID == nil {
-		t.Fatal("Found Delivery Service in testing data with null or undefined XMLID")
-	}
-
 	opts.QueryParameters.Del("hostName")
-	opts.QueryParameters.Set("xmlId", *testData.DeliveryServices[0].XMLID)
+	opts.QueryParameters.Set("xmlId", testData.DeliveryServices[0].XMLID)
 	rd, _, err := TOSession.GetDeliveryServices(opts)
 	if err != nil {
 		t.Fatalf("Failed to fetch DS information: %v - alerts: %+v", err, rd.Alerts)
@@ -138,12 +134,9 @@ func AssignIncorrectTestDeliveryService(t *testing.T) {
 	if len(testData.DeliveryServices) < 1 {
 		t.Fatal("Need at least one Delivery Service to test assignment of servers to Delivery Services")
 	}
-	if testData.DeliveryServices[0].XMLID == nil {
-		t.Fatal("Delivery Service selected for testing had null or undefined XMLID")
-	}
 
 	opts = client.NewRequestOptions()
-	opts.QueryParameters.Set("xmlId", *testData.DeliveryServices[0].XMLID)
+	opts.QueryParameters.Set("xmlId", testData.DeliveryServices[0].XMLID)
 	rd, _, err := TOSession.GetDeliveryServices(opts)
 	if err != nil {
 		t.Fatalf("Failed to fetch DS information: %v - alerts: %+v", err, rd.Alerts)

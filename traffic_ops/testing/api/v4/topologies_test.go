@@ -353,15 +353,15 @@ func UpdateValidateTopologyORGServerCacheGroup(t *testing.T) {
 		t.Fatalf("Expected exactly one Delivery Service to exist with XMLID 'ds-top', found: %d", len(resp.Response))
 	}
 	remoteDS := resp.Response[0]
-	if remoteDS.XMLID == nil || remoteDS.Topology == nil || remoteDS.ID == nil {
-		t.Fatal("Traffic Ops returned a representation of a Delivery Service that had null or undefined Topology and/or XMLID and/or ID")
+	if remoteDS.Topology == nil || remoteDS.ID == nil {
+		t.Fatal("Traffic Ops returned a representation of a Delivery Service that had null or undefined Topology and/or ID")
 	}
 
 	//Assign ORG server to DS
 	assignServer := []string{"denver-mso-org-01"}
-	assignResponse, _, err := TOSession.AssignServersToDeliveryService(assignServer, *remoteDS.XMLID, toclient.RequestOptions{})
+	assignResponse, _, err := TOSession.AssignServersToDeliveryService(assignServer, remoteDS.XMLID, toclient.RequestOptions{})
 	if err != nil {
-		t.Errorf("Unexpected error assigning server 'denver-mso-org-01' to Delivery Service '%s': %v - alerts: %+v", *remoteDS.XMLID, err, assignResponse.Alerts)
+		t.Errorf("Unexpected error assigning server 'denver-mso-org-01' to Delivery Service '%s': %v - alerts: %+v", remoteDS.XMLID, err, assignResponse.Alerts)
 	}
 
 	//Get Topology node to update and remove ORG server nodes

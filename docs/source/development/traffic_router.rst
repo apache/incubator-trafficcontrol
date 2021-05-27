@@ -115,9 +115,9 @@ To install the Traffic Router Developer environment:
   * copy :file:`core/src/main/conf/traffic_ops.properties` to :file:`core/src/test/conf/` and then edit the credentials as appropriate for the Traffic Ops instance you will be using.
   * Default configuration values now reside in :file:`core/src/main/webapp/WEB-INF/applicationContext.xml`
 
-  	.. note:: These values may be overridden by creating and/or modifying the property files listed in :file:`core/src/main/resources/applicationProperties.xml`
+	.. note:: These values may be overridden by creating and/or modifying the property files listed in :file:`core/src/main/resources/applicationProperties.xml`
 
-  	.. note:: Pre-existing properties files are still honored by Traffic Router. For example :file:`traffic_monitor.properties` may contain the :abbr:`FQDN (Fully Qualified Domain Name)` and port of the Traffic Monitor instance(s), separated by semicolons as necessary (do not include scheme e.g. ``http://``)
+	.. note:: Pre-existing properties files are still honored by Traffic Router. For example :file:`traffic_monitor.properties` may contain the :abbr:`FQDN (Fully Qualified Domain Name)` and port of the Traffic Monitor instance(s), separated by semicolons as necessary (do not include scheme e.g. ``http://``)
 
 
 #. Import the existing git repository as projects into your IDE (Eclipse):

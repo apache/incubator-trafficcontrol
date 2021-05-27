@@ -593,11 +593,11 @@ func GetTestServersQueryParameters(t *testing.T) {
 		topology   = "mso-topology"
 	)
 	for _, ds = range dses.Response {
-		if ds.XMLID == nil || ds.ID == nil {
-			t.Error("Traffic Ops returned a representation of a Delivery Service that had a null or undefined XMLID and/or ID")
+		if ds.ID == nil {
+			t.Error("Traffic Ops returned a representation of a Delivery Service that had a null or undefined ID")
 			continue
 		}
-		if *ds.XMLID != topDSXmlID {
+		if ds.XMLID != topDSXmlID {
 			continue
 		}
 		if ds.Topology == nil || ds.FirstHeaderRewrite == nil || ds.InnerHeaderRewrite == nil || ds.LastHeaderRewrite == nil {

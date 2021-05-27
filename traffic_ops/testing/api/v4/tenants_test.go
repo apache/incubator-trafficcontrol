@@ -286,13 +286,6 @@ func DeleteTestTenants(t *testing.T) {
 	}
 }
 
-func ExtractXMLID(ds *tc.DeliveryServiceV4) string {
-	if ds.XMLID != nil {
-		return *ds.XMLID
-	}
-	return "nil"
-}
-
 func UpdateTestTenantsActive(t *testing.T) {
 	originalTenants, _, err := TOSession.GetTenants(client.RequestOptions{})
 	if err != nil {
@@ -340,7 +333,7 @@ func UpdateTestTenantsActive(t *testing.T) {
 		t.Errorf("Unexpected error fetching Delivery Services filtered by XMLID 'ds3': %v - alerts: %+v", err, resp.Alerts)
 	}
 	for _, ds := range resp.Response {
-		t.Errorf("tenant3user got delivery service %s with tenant3 but tenant3 parent tenant2 is inactive, expected: no ds", ExtractXMLID(&ds))
+		t.Errorf("tenant3user got delivery service %s with tenant3 but tenant3 parent tenant2 is inactive, expected: no ds", ds.XMLID)
 	}
 
 	setTenantActive(t, "tenant1", true)
@@ -353,7 +346,7 @@ func UpdateTestTenantsActive(t *testing.T) {
 		t.Errorf("Unexpected error fetching Delivery Services filtered by XMLID 'ds3': %v - alerts: %+v", err, resp.Alerts)
 	}
 	for _, ds := range resp.Response {
-		t.Errorf("tenant3user got delivery service %s with tenant3 but tenant3 is inactive, expected: no ds", ExtractXMLID(&ds))
+		t.Errorf("tenant3user got delivery service %s with tenant3 but tenant3 is inactive, expected: no ds", ds.XMLID)
 	}
 
 	setTenantActive(t, "tenant1", true)
@@ -378,7 +371,7 @@ func UpdateTestTenantsActive(t *testing.T) {
 		t.Errorf("Unexpected error fetching Delivery Services filtered by XMLID 'ds2': %v - alerts: %+v", err, resp.Alerts)
 	}
 	for _, ds := range resp.Response {
-		t.Errorf("tenant3user got delivery service %s with tenant2, expected: no ds", ExtractXMLID(&ds))
+		t.Errorf("tenant3user got delivery service %s with tenant2, expected: no ds", ds.XMLID)
 	}
 
 	// 1. ds1 has tenant1.
@@ -391,7 +384,7 @@ func UpdateTestTenantsActive(t *testing.T) {
 		t.Errorf("Unexpected error fetching Delivery Services filtered by XMLID 'ds1': %v - alerts: %+v", err, resp.Alerts)
 	}
 	for _, ds := range resp.Response {
-		t.Errorf("tenant4user got delivery service %s with tenant1, expected: no ds", ExtractXMLID(&ds))
+		t.Errorf("tenant4user got delivery service %s with tenant1, expected: no ds", ds.XMLID)
 	}
 
 	setTenantActive(t, "tenant3", false)
@@ -401,7 +394,7 @@ func UpdateTestTenantsActive(t *testing.T) {
 		t.Errorf("Unexpected error fetching Delivery Services filtered by XMLID 'ds3': %v - alerts: %+v", err, resp.Alerts)
 	}
 	for _, ds := range resp.Response {
-		t.Errorf("tenant3user was inactive, but got delivery service %s with tenant3, expected: no ds", ExtractXMLID(&ds))
+		t.Errorf("tenant3user was inactive, but got delivery service %s with tenant3, expected: no ds", ds.XMLID)
 	}
 
 	for _, tn := range originalTenants.Response {

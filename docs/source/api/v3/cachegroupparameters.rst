@@ -156,7 +156,7 @@ Response Structure
 :parameterId:  An integer that is the :ref:`parameter-id` of the :term:`Parameter` which has been assigned
 
 .. code-block:: http
- 	:caption: Response Example
+	:caption: Response Example
 
 	HTTP/1.1 200 OK
 	Access-Control-Allow-Credentials: true
@@ -184,4 +184,3 @@ Response Structure
 			"parameterId": 124
 		}
 	]}
-

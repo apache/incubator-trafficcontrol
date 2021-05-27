@@ -56,10 +56,10 @@ func getCDNIDAndDSID(t *testing.T) (int64, int) {
 		t.Fatalf("deliveryservice with xmlId '%s' not found!", xmlID)
 	}
 	ds := dses.Response[0]
-	if ds.CDNID == nil || ds.ID == nil {
-		t.Fatalf("Traffic Ops returned a representation of a Delivery Service that had null or undefined CDN ID and/or ID")
+	if ds.ID == nil {
+		t.Fatalf("Traffic Ops returned a representation of a Delivery Service that had null or undefined ID")
 	}
-	return int64(*ds.CDNID), *ds.ID
+	return int64(ds.CDNID), *ds.ID
 }
 
 func InvalidCDNIDIsRejected(t *testing.T, topologyName string) {

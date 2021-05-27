@@ -79,6 +79,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/).
 - The format of the `/servers/{{host name}}/update_status` Traffic Ops API endpoint has been changed to use a top-level `response` property, in keeping with (most of) the rest of the API.
 - The API v4 Traffic Ops Go client has been overhauled compared to its predecessors to have a consistent call signature that allows passing query string parameters and HTTP headers to any client method.
 - Updated BouncyCastle libraries in Traffic Router to v1.68.
+- Delivery Service 'Active' properties are now a trinary "ACTIVE"/"PRIMED"/"INACTIVE" field rather than a strict boolean (as of Traffic Ops APIv4).
 
 ### Deprecated
 - The Riak Traffic Vault backend is now deprecated and its support may be removed in a future release. It is highly recommended to use the new PostgreSQL backend instead.

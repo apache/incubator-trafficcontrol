@@ -36,7 +36,7 @@ Response Structure
 :name: The :ref:`profile-name` of the :term:`Profile`
 
 .. code-block:: http
- 	:caption: Response Example
+	:caption: Response Example
 
 	HTTP/1.1 200 OK
 	Access-Control-Allow-Credentials: true

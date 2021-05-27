@@ -141,7 +141,7 @@ The response is a full representation of the modified :term:`DSR`.
 		"lastEditedBy": "admin",
 		"lastUpdated": "2020-09-25T07:13:28.753352Z",
 		"original": {
-			"active": true,
+			"active": "ACTIVE",
 			"anonymousBlockingEnabled": false,
 			"cacheurl": null,
 			"ccrDnsTtl": null,
@@ -166,7 +166,7 @@ The response is a full representation of the modified :term:`DSR`.
 			"infoUrl": null,
 			"initialDispersion": 1,
 			"ipv6RoutingEnabled": true,
-			"lastUpdated": "2020-09-25 02:09:54+00",
+			"lastUpdated": "2020-09-25T07:13:08Z",
 			"logsEnabled": true,
 			"longDesc": "Apachecon North America 2018",
 			"longDesc1": null,
@@ -228,7 +228,7 @@ The response is a full representation of the modified :term:`DSR`.
 			"serviceCategory": null
 		},
 		"requested": {
-			"active": true,
+			"active": "ACTIVE",
 			"anonymousBlockingEnabled": false,
 			"cacheurl": null,
 			"ccrDnsTtl": 30,

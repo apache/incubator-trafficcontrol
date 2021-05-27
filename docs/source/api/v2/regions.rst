@@ -68,7 +68,7 @@ Response Structure
 :divisionName: The name of the division which contains this region
 :divisionId:   The integral, unique identifier of the division which contains this region
 :id:           An integral, unique identifier for this region
-:lastUpdated:  The date and time at which this region was last updated, in ISO format
+:lastUpdated:  The date and time at which this region was last updated, in an ISO-like format
 :name:         The region name
 
 .. code-block:: http
@@ -134,7 +134,7 @@ Response Structure
 :divisionName: The name of the division which contains this region
 :divisionId:   The integral, unique identifier of the division which contains this region
 :id:           An integral, unique identifier for this region
-:lastUpdated:  The date and time at which this region was last updated, in ISO format
+:lastUpdated:  The date and time at which this region was last updated, in an ISO-like format
 :name:         The region name
 
 .. code-block:: http

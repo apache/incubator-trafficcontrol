@@ -483,9 +483,9 @@ RETURNING
 `
 
 const originServerQuery = `
-JOIN deliveryservice_server dsorg 
-ON dsorg.server = s.id 
-WHERE t.name = '` + tc.OriginTypeName + `' 
+JOIN deliveryservice_server dsorg
+ON dsorg.server = s.id
+WHERE t.name = '` + tc.OriginTypeName + `'
 AND dsorg.deliveryservice=:dsId
 `
 const deleteServerQuery = `DELETE FROM server WHERE id=$1`
@@ -1274,8 +1274,8 @@ func getMidServers(edgeIDs []int, servers map[int]tc.ServerV40, dsID int, cdnID 
 		capabilities.array_agg
 		@>
 		(
-		SELECT ARRAY_AGG(drc.required_capability) 
-		FROM deliveryservices_required_capability drc 
+		SELECT ARRAY_AGG(drc.required_capability)
+		FROM deliveryservices_required_capability drc
 		WHERE drc.deliveryservice_id=:ds_id)
 		)`
 	} else {
@@ -2023,7 +2023,7 @@ WHERE "deliveryservice" IN (
 	INNER JOIN deliveryservice
 	ON deliveryservice_server.deliveryservice = deliveryservice.id
 	WHERE deliveryservice_server."server" = $1
-	AND deliveryservice.active
+	AND deliveryservice.active = 'ACTIVE'
 )
 GROUP BY "deliveryservice"
 HAVING COUNT("server") = 1;

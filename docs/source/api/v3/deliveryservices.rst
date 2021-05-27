@@ -71,7 +71,7 @@ Request Structure
 
 Response Structure
 ------------------
-:active:                   A boolean that defines :ref:`ds-active`.
+:active:                   A boolean that defines :ref:`ds-active`. ``true`` means that the Delivery Service is ACTIVE, while ``false`` means that it is either PRIMED or INACTIVE (API versions earlier than 4 are incapable of distinguishing between the two).
 :anonymousBlockingEnabled: A boolean that defines :ref:`ds-anonymous-blocking`
 :cacheurl:                 A :ref:`ds-cacheurl`
 
@@ -109,7 +109,7 @@ Response Structure
 :innerHeaderRewrite:        A set of :ref:`ds-inner-header-rw-rules`
 :ipv6RoutingEnabled:        A boolean that defines the :ref:`ds-ipv6-routing` setting on this :term:`Delivery Service`
 :lastHeaderRewrite:         A set of :ref:`ds-last-header-rw-rules`
-:lastUpdated:               The date and time at which this :term:`Delivery Service` was last updated, in :rfc:`3339` format
+:lastUpdated:               The date and time at which this :term:`Delivery Service` was last updated, in an ISO-like format
 :logsEnabled:               A boolean that defines the :ref:`ds-logs-enabled` setting on this :term:`Delivery Service`
 :longDesc:                  The :ref:`ds-longdesc` of this :term:`Delivery Service`
 :longDesc1:                 The :ref:`ds-longdesc2` of this :term:`Delivery Service`
@@ -266,7 +266,7 @@ Allows users to create :term:`Delivery Service`.
 
 Request Structure
 -----------------
-:active:                   A boolean that defines :ref:`ds-active`.
+:active:                   A boolean that defines :ref:`ds-active`. ``true`` means that the Delivery Service is ACTIVE, while ``false`` means that it is either PRIMED or INACTIVE (API versions earlier than 4 are incapable of distinguishing between the two).
 :anonymousBlockingEnabled: A boolean that defines :ref:`ds-anonymous-blocking`
 :cacheurl:                 A :ref:`ds-cacheurl`
 
@@ -381,7 +381,7 @@ Request Structure
 
 Response Structure
 ------------------
-:active:                   A boolean that defines :ref:`ds-active`.
+:active:                   A boolean that defines :ref:`ds-active`. ``true`` means that the Delivery Service is ACTIVE, while ``false`` means that it is either PRIMED or INACTIVE (API versions earlier than 4 are incapable of distinguishing between the two).
 :anonymousBlockingEnabled: A boolean that defines :ref:`ds-anonymous-blocking`
 :cacheurl:                 A :ref:`ds-cacheurl`
 
@@ -394,37 +394,37 @@ Response Structure
 :checkPath:                 A :ref:`ds-check-path`
 :consistentHashRegex:       A :ref:`ds-consistent-hashing-regex`
 :consistentHashQueryParams: An array of :ref:`ds-consistent-hashing-qparams`
-:deepCachingType:     		The :ref:`ds-deep-caching` setting for this :term:`Delivery Service`
-:displayName:       		The :ref:`ds-display-name`
-:dnsBypassCname:    		A :ref:`ds-dns-bypass-cname`
-:dnsBypassIp:       		A :ref:`ds-dns-bypass-ip`
-:dnsBypassIp6:      		A :ref:`ds-dns-bypass-ipv6`
-:dnsBypassTtl:      		The :ref:`ds-dns-bypass-ttl`
-:dscp:              		A :ref:`ds-dscp` to be used within the :term:`Delivery Service`
-:ecsEnabled:        		A boolean that defines the :ref:`ds-ecs` setting on this :term:`Delivery Service`
-:edgeHeaderRewrite: 		A set of :ref:`ds-edge-header-rw-rules`
-:exampleURLs:       		An array of :ref:`ds-example-urls`
+:deepCachingType:           The :ref:`ds-deep-caching` setting for this :term:`Delivery Service`
+:displayName:               The :ref:`ds-display-name`
+:dnsBypassCname:            A :ref:`ds-dns-bypass-cname`
+:dnsBypassIp:               A :ref:`ds-dns-bypass-ip`
+:dnsBypassIp6:              A :ref:`ds-dns-bypass-ipv6`
+:dnsBypassTtl:              The :ref:`ds-dns-bypass-ttl`
+:dscp:                      A :ref:`ds-dscp` to be used within the :term:`Delivery Service`
+:ecsEnabled:                A boolean that defines the :ref:`ds-ecs` setting on this :term:`Delivery Service`
+:edgeHeaderRewrite:         A set of :ref:`ds-edge-header-rw-rules`
+:exampleURLs:               An array of :ref:`ds-example-urls`
 :firstHeaderRewrite:        A set of :ref:`ds-first-header-rw-rules`
-:fqPacingRate:      		The :ref:`ds-fqpr`
-:geoLimit:            		An integer that defines the :ref:`ds-geo-limit`
-:geoLimitCountries:  		A string containing a comma-separated list defining the :ref:`ds-geo-limit-countries`
-:geoLimitRedirectUrl: 		A :ref:`ds-geo-limit-redirect-url`
-:geoProvider:         		The :ref:`ds-geo-provider`
-:globalMaxMbps:       		The :ref:`ds-global-max-mbps`
-:globalMaxTps:        		The :ref:`ds-global-max-tps`
-:httpBypassFqdn:      		A :ref:`ds-http-bypass-fqdn`
-:id:                  		An integral, unique identifier for this :term:`Delivery Service`
-:infoUrl:             		An :ref:`ds-info-url`
-:initialDispersion:   		The :ref:`ds-initial-dispersion`
+:fqPacingRate:              The :ref:`ds-fqpr`
+:geoLimit:                  An integer that defines the :ref:`ds-geo-limit`
+:geoLimitCountries:         A string containing a comma-separated list defining the :ref:`ds-geo-limit-countries`
+:geoLimitRedirectUrl:       A :ref:`ds-geo-limit-redirect-url`
+:geoProvider:               The :ref:`ds-geo-provider`
+:globalMaxMbps:             The :ref:`ds-global-max-mbps`
+:globalMaxTps:              The :ref:`ds-global-max-tps`
+:httpBypassFqdn:            A :ref:`ds-http-bypass-fqdn`
+:id:                        An integral, unique identifier for this :term:`Delivery Service`
+:infoUrl:                   An :ref:`ds-info-url`
+:initialDispersion:         The :ref:`ds-initial-dispersion`
 :innerHeaderRewrite:        A set of :ref:`ds-inner-header-rw-rules`
-:ipv6RoutingEnabled:  		A boolean that defines the :ref:`ds-ipv6-routing` setting on this :term:`Delivery Service`
+:ipv6RoutingEnabled:        A boolean that defines the :ref:`ds-ipv6-routing` setting on this :term:`Delivery Service`
 :lastHeaderRewrite:         A set of :ref:`ds-last-header-rw-rules`
-:lastUpdated:        		The date and time at which this :term:`Delivery Service` was last updated, in :rfc:`3339` format
-:logsEnabled:         		A boolean that defines the :ref:`ds-logs-enabled` setting on this :term:`Delivery Service`
-:longDesc:            		The :ref:`ds-longdesc` of this :term:`Delivery Service`
-:longDesc1:           		The :ref:`ds-longdesc2` of this :term:`Delivery Service`
-:longDesc2:           		The :ref:`ds-longdesc3` of this :term:`Delivery Service`
-:matchList:          		The :term:`Delivery Service`'s :ref:`ds-matchlist`
+:lastUpdated:               The date and time at which this :term:`Delivery Service` was last updated, in an ISO-like format
+:logsEnabled:               A boolean that defines the :ref:`ds-logs-enabled` setting on this :term:`Delivery Service`
+:longDesc:                  The :ref:`ds-longdesc` of this :term:`Delivery Service`
+:longDesc1:                 The :ref:`ds-longdesc2` of this :term:`Delivery Service`
+:longDesc2:                 The :ref:`ds-longdesc3` of this :term:`Delivery Service`
+:matchList:                 The :term:`Delivery Service`'s :ref:`ds-matchlist`
 
 	:pattern:   A regular expression - the use of this pattern is dependent on the ``type`` field (backslashes are escaped)
 	:setNumber: An integer that provides explicit ordering of :ref:`ds-matchlist` items - this is used as a priority ranking by Traffic Router, and is not guaranteed to correspond to the ordering of items in the array.
@@ -452,7 +452,7 @@ Response Structure
 :signed:                ``true`` if  and only if ``signingAlgorithm`` is not ``null``, ``false`` otherwise
 :signingAlgorithm:      Either a :ref:`ds-signing-algorithm` or ``null`` to indicate URL/URI signing is not implemented on this :term:`Delivery Service`
 :rangeSliceBlockSize:   An integer that defines the byte block size for the ATS Slice Plugin. It can only and must be set if ``rangeRequestHandling`` is set to 3.
-:sslKeyVersion: 	    This integer indicates the :ref:`ds-ssl-key-version`
+:sslKeyVersion:         This integer indicates the :ref:`ds-ssl-key-version`
 :tenantId:              The integral, unique identifier of the :ref:`ds-tenant` who owns this :term:`Delivery Service`
 :topology:              The unique name of the :term:`Topology` that this :term:`Delivery Service` is assigned to
 :trRequestHeaders:      If defined, this defines the :ref:`ds-tr-req-headers` used by Traffic Router for this :term:`Delivery Service`

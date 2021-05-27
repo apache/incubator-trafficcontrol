@@ -798,12 +798,12 @@ func (dsr DeliveryServiceRequestV40) Downgrade() DeliveryServiceRequestNullable 
 	if dsr.XMLID != "" {
 		downgraded.XMLID = new(string)
 		*downgraded.XMLID = dsr.XMLID
-	} else if dsr.Original != nil && dsr.Original.XMLID != nil {
+	} else if dsr.Original != nil {
 		downgraded.XMLID = new(string)
-		*downgraded.XMLID = *dsr.Original.XMLID
-	} else if dsr.Requested.XMLID != nil {
+		*downgraded.XMLID = dsr.Original.XMLID
+	} else {
 		downgraded.XMLID = new(string)
-		*downgraded.XMLID = *dsr.Requested.XMLID
+		*downgraded.XMLID = dsr.Requested.XMLID
 	}
 	return downgraded
 }
@@ -870,13 +870,13 @@ func (dsr *DeliveryServiceRequestV40) SetXMLID() {
 		return
 	}
 
-	if dsr.ChangeType == DSRChangeTypeDelete && dsr.Original != nil && dsr.Original.XMLID != nil {
-		dsr.XMLID = *dsr.Original.XMLID
+	if dsr.ChangeType == DSRChangeTypeDelete && dsr.Original != nil {
+		dsr.XMLID = dsr.Original.XMLID
 		return
 	}
 
-	if dsr.Requested != nil && dsr.Requested.XMLID != nil {
-		dsr.XMLID = *dsr.Requested.XMLID
+	if dsr.Requested != nil {
+		dsr.XMLID = dsr.Requested.XMLID
 	}
 }
 

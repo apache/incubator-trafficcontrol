@@ -7,7 +7,7 @@
     "orgServerFqdn": "http://origin.infra.ciab.test",
     "cdnName": "$CDN_NAME",
     "type": "DNS",
-    "active": true,
+    "active": "ACTIVE",
     "dscp": 0,
     "geoLimit": 0,
     "geoProvider": 0,

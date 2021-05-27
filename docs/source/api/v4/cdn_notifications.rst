@@ -54,11 +54,11 @@ Request Structure
 
 Response Structure
 ------------------
-:id:			The integral, unique identifier of the notification
-:cdn:			The name of the CDN to which the notification belongs to
-:lastUpdated:	The time and date this server entry was last updated in an ISO-like format
-:notification:	The content of the notification
-:user:			The user responsible for creating the notification
+:id:           The integral, unique identifier of the notification
+:cdn:          The name of the CDN to which the notification belongs to
+:lastUpdated:  The time and date this server entry was last updated in an ISO-like format
+:notification: The content of the notification
+:user:         The user responsible for creating the notification
 
 .. code-block:: http
 	:caption: Response Example
@@ -98,8 +98,8 @@ Creates a notification for a specific CDN.
 
 Request Structure
 -----------------
-:cdn:			The name of the CDN to which the notification shall belong
-:notification:	The content of the notification
+:cdn:          The name of the CDN to which the notification shall belong
+:notification: The content of the notification
 
 .. code-block:: http
 	:caption: Request Example
@@ -117,11 +117,11 @@ Request Structure
 
 Response Structure
 ------------------
-:id:			The integral, unique identifier of the notification
-:cdn:			The name of the CDN to which the notification belongs to
-:lastUpdated:	The time and date this server entry was last updated in an ISO-like format
-:notification:	The content of the notification
-:user:			The user responsible for creating the notification
+:id:           The integral, unique identifier of the notification
+:cdn:          The name of the CDN to which the notification belongs to
+:lastUpdated:  The time and date this server entry was last updated in an ISO-like format
+:notification: The content of the notification
+:user:         The user responsible for creating the notification
 
 .. code-block:: http
 	:caption: Response Example

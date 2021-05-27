@@ -105,22 +105,22 @@ func CreateTestDeliveryServiceRequestComments(t *testing.T) {
 		ds = dsr.Requested
 	}
 	resetDS(ds)
-	if ds == nil || ds.XMLID == nil {
-		t.Fatal("first DSR in the test data had a nil DeliveryService or one with no XMLID")
+	if ds == nil {
+		t.Fatal("first DSR in the test data had a nil Delivery Service")
 	}
 
 	opts := client.NewRequestOptions()
-	opts.QueryParameters.Set("xmlId", *ds.XMLID)
+	opts.QueryParameters.Set("xmlId", ds.XMLID)
 	resp, _, err := TOSession.GetDeliveryServiceRequests(opts)
 	if err != nil {
-		t.Fatalf("cannot get Delivery Service Request by XMLID '%s': %v - alerts: %+v", *ds.XMLID, err, resp.Alerts)
+		t.Fatalf("cannot get Delivery Service Request by XMLID '%s': %v - alerts: %+v", ds.XMLID, err, resp.Alerts)
 	}
 	if len(resp.Response) != 1 {
-		t.Fatalf("found %d Delivery Service request by XMLID '%s, expected exactly one", len(resp.Response), *ds.XMLID)
+		t.Fatalf("found %d Delivery Service request by XMLID '%s, expected exactly one", len(resp.Response), ds.XMLID)
 	}
 	respDSR := resp.Response[0]
 	if respDSR.ID == nil {
-		t.Fatalf("got Delivery Service Request with xml_id '%s' that had a null ID", *ds.XMLID)
+		t.Fatalf("got Delivery Service Request with xml_id '%s' that had a null ID", ds.XMLID)
 	}
 
 	for _, comment := range testData.DeliveryServiceRequestComments {

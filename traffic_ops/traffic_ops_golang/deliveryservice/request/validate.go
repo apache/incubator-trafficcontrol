@@ -121,7 +121,7 @@ func validateV4(dsr tc.DeliveryServiceRequestV40, tx *sql.Tx) (error, error) {
 				}
 				err := deliveryservice.Validate(tx, ds)
 				if err == nil {
-					dsr.XMLID = *ds.XMLID
+					dsr.XMLID = ds.XMLID
 				}
 				return err
 			},

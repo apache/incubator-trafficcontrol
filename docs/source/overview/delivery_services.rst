@@ -20,7 +20,7 @@ Delivery Services
 *****************
 "Delivery Services" are a very important construct in :abbr:`ATC (Apache Traffic Control)`. At their most basic, they are a source of content and a set of :term:`cache servers` and configuration options used to distribute that content.
 
-Delivery Services are modeled several times over, in the Traffic Ops database, in Traffic Portal forms and tables, and several times for various :ref:`to-api` versions in the new Go Traffic Ops codebase. Go-specific data structures can be found in `the project's GoDoc documentation <https://pkg.go.dev/github.com/apache/trafficcontrol/lib/go-tc#DeliveryServiceNullableV11>`_. Rather than application-specific definitions, what follows is an attempt at consolidating all of the different properties and names of properties of Delivery Service objects throughout the :abbr:`ATC (Apache Traffic Control)` suite. The names of these fields are typically chosen as the most human-readable and/or most commonly-used names for the fields, and when reading please note that in many cases these names will appear camelCased or snake_cased to be machine-readable. Any aliases of these fields that are not merely case transformations of the indicated, canonical names will be noted in a table of aliases.
+Delivery Services are modeled several times over, in the Traffic Ops database, in Traffic Portal forms and tables, and several times for various :ref:`to-api` versions in the new Go Traffic Ops codebase. Go-specific data structures can be found in `the project's GoDoc documentation <https://pkg.go.dev/github.com/apache/trafficcontrol/lib/go-tc#DeliveryServiceV4>`_. Rather than application-specific definitions, what follows is an attempt at consolidating all of the different properties and names of properties of Delivery Service objects throughout the :abbr:`ATC (Apache Traffic Control)` suite. The names of these fields are typically chosen as the most human-readable and/or most commonly-used names for the fields, and when reading please note that in many cases these names will appear camelCased or snake_cased to be machine-readable. Any aliases of these fields that are not merely case transformations of the indicated, canonical names will be noted in a table of aliases.
 
 .. seealso:: The API reference for Delivery Service-related endpoints such as :ref:`to-api-deliveryservices` contains definitions of the Delivery Service object(s) returned and/or accepted by those endpoints.
 .. seealso:: :ref:`delivery-service-requests`
@@ -29,7 +29,19 @@ Delivery Services are modeled several times over, in the Traffic Ops database, i
 
 Active
 ------
-Whether or not this Delivery Service is active on the CDN and can be served. When a Delivery Service is not "active", Traffic Router will not be made aware of its existence - i.e. it will not appear in CDN :term:`Snapshots`. Setting a Delivery Service to be "active" (or "inactive") will require that a new :term:`Snapshot` be taken.
+"Active" defines whether or not this Delivery Service is routed by Traffic Router and whether or not :term:`cache servers` have the necessary configuration to serve its content. In nearly every case, this is a string which may have one of the following values with the associated meanings:
+
+ACTIVE
+	This Delivery Service is both routed (appears in CDN :term:`Snapshots`) and served by :term:`cache servers`.
+PRIMED
+	This Delivery Service is not routed (doesn't appear in CDN :term:`Snapshots`), but is still served by :term:`cache servers`.
+INACTIVE
+	This Delivery Service is neither routed (doesn't appear in CDN :term:`Snapshots`), nor is its content served by :term:`cache servers`.
+
+Setting a Delivery Service's Active property in a way that changes whether or not it is routed will require that a new :term:`Snapshot` be taken, while setting it in a way that changes whether or not its content is served by :term:`cache servers` will require that a :term:`Queue Server Updates` is performed on the affected :term:`cache servers`.
+
+.. versionchanged:: ATCv6/APIv4
+	Changed from a strict boolean to an enumeration of the herein listed values. In versions of :abbr:`ATC (Apache Traffic Control)` later than 6.0, :ref:`to-api` versions earlier than 4.0 will report ACTIVE Delivery Services with Active properties set to ``true``, and PRIMED or INACTIVE Delivery Services with Active properties set to ``false``.
 
 .. _ds-anonymous-blocking:
 

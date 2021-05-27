@@ -120,7 +120,7 @@ func filterAvailableAuthorized(tx *sql.Tx, dses []tc.UserAvailableDS, user *auth
 func getUserDSes(tx *sql.Tx, userID int) ([]tc.DeliveryServiceNullable, error) {
 	q := `
 SELECT
-ds.active,
+ds.active = 'ACTIVE' AS active,
 ds.anonymous_blocking_enabled,
 ds.cacheurl,
 ds.ccr_dns_ttl,

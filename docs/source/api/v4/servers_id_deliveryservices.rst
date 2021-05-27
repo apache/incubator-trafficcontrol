@@ -67,8 +67,12 @@ Request Structure
 
 Response Structure
 ------------------
-:active:                   A boolean that defines :ref:`ds-active`.
-:anonymousBlockingEnabled: A boolean that defines :ref:`ds-anonymous-blocking`
+:active: A string that defines :ref:`ds-active`.
+
+	.. versionchanged:: 4.0
+		Prior to API version 4.0, this was a boolean field.
+
+:anonymousBlockingEnabled:  A boolean that defines :ref:`ds-anonymous-blocking`
 :ccrDnsTtl:                 The :ref:`ds-dns-ttl` - named "ccrDnsTtl" for legacy reasons
 :cdnId:                     The integral, unique identifier of the :ref:`ds-cdn` to which the :term:`Delivery Service` belongs
 :cdnName:                   Name of the :ref:`ds-cdn` to which the :term:`Delivery Service` belongs
@@ -101,11 +105,15 @@ Response Structure
 :ipv6RoutingEnabled:        A boolean that defines the :ref:`ds-ipv6-routing` setting on this :term:`Delivery Service`
 :lastHeaderRewrite:         A set of :ref:`ds-last-header-rw-rules`
 :lastUpdated:               The date and time at which this :term:`Delivery Service` was last updated, in :rfc:`3339` format
-:logsEnabled:               A boolean that defines the :ref:`ds-logs-enabled` setting on this :term:`Delivery Service`
-:longDesc:                  The :ref:`ds-longdesc` of this :term:`Delivery Service`
-:longDesc1:                 The :ref:`ds-longdesc2` of this :term:`Delivery Service`
-:longDesc2:                 The :ref:`ds-longdesc3` of this :term:`Delivery Service`
-:matchList:                 The :term:`Delivery Service`'s :ref:`ds-matchlist`
+
+	.. versionchanged:: 4.0
+		In API versions earlier than 4.0, this string is in a legacy format - ``YYYY-MM-DD hh:mm:ss+ZZ`` (no sub-second precision) - instead of :rfc:`3339` format.
+
+:logsEnabled: A boolean that defines the :ref:`ds-logs-enabled` setting on this :term:`Delivery Service`
+:longDesc:    The :ref:`ds-longdesc` of this :term:`Delivery Service`
+:longDesc1:   The :ref:`ds-longdesc2` of this :term:`Delivery Service`
+:longDesc2:   The :ref:`ds-longdesc3` of this :term:`Delivery Service`
+:matchList:   The :term:`Delivery Service`'s :ref:`ds-matchlist`
 
 	:pattern:   A regular expression - the use of this pattern is dependent on the ``type`` field (backslashes are escaped)
 	:setNumber: An integer that provides explicit ordering of :ref:`ds-matchlist` items - this is used as a priority ranking by Traffic Router, and is not guaranteed to correspond to the ordering of items in the array.
@@ -148,29 +156,44 @@ Response Structure
 	Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept, Set-Cookie, Cookie
 	Access-Control-Allow-Methods: POST,GET,OPTIONS,PUT,DELETE
 	Access-Control-Allow-Origin: *
+	Content-Encoding: gzip
 	Content-Type: application/json
-	Set-Cookie: mojolicious=...; Path=/; Expires=Mon, 18 Nov 2019 17:40:54 GMT; Max-Age=3600; HttpOnly
-	Whole-Content-Sha512: CFmtW41aoDezCYxtAXnS54dfFOD6jdxDJ2/LMpbBqnndy5kac7JQhdFAWF109sl95XVSUV85JHFzXZTw/mJabQ==
+	Permissions-Policy: interest-cohort=()
+	Set-Cookie: mojolicious=...; Path=/; Expires=Wed, 19 May 2021 15:51:04 GMT; Max-Age=3600; HttpOnly
+	Vary: Accept-Encoding
 	X-Server-Name: traffic_ops_golang/
-	Date: Mon, 10 Jun 2019 17:01:30 GMT
-	Content-Length: 1500
+	Date: Wed, 19 May 2021 14:51:04 GMT
+	Content-Length: 839
 
-	{ "response": [ {
-		"active": true,
+	{ "response": [{
+		"active": "ACTIVE",
 		"anonymousBlockingEnabled": false,
-		"cacheurl": null,
 		"ccrDnsTtl": null,
 		"cdnId": 2,
 		"cdnName": "CDN-in-a-Box",
 		"checkPath": null,
+		"consistentHashQueryParams": [
+			"abc",
+			"pdq",
+			"xxx",
+			"zyx"
+		],
+		"consistentHashRegex": null,
+		"deepCachingType": "NEVER",
 		"displayName": "Demo 1",
 		"dnsBypassCname": null,
 		"dnsBypassIp": null,
 		"dnsBypassIp6": null,
 		"dnsBypassTtl": null,
 		"dscp": 0,
+		"ecsEnabled": false,
 		"edgeHeaderRewrite": null,
+		"exampleURLs": [
+			"http://video.demo1.mycdn.ciab.test",
+			"https://video.demo1.mycdn.ciab.test"
+		],
 		"firstHeaderRewrite": null,
+		"fqPacingRate": null,
 		"geoLimit": 0,
 		"geoLimitCountries": null,
 		"geoLimitRedirectURL": null,
@@ -178,13 +201,13 @@ Response Structure
 		"globalMaxMbps": null,
 		"globalMaxTps": null,
 		"httpBypassFqdn": null,
-		"id": 1,
+		"id": 2,
 		"infoUrl": null,
 		"initialDispersion": 1,
 		"innerHeaderRewrite": null,
 		"ipv6RoutingEnabled": true,
 		"lastHeaderRewrite": null,
-		"lastUpdated": "2019-06-10 15:14:29+00",
+		"lastUpdated": "2021-05-19T14:49:04.279784Z",
 		"logsEnabled": true,
 		"longDesc": "Apachecon North America 2018",
 		"longDesc1": null,
@@ -197,6 +220,8 @@ Response Structure
 			}
 		],
 		"maxDnsAnswers": null,
+		"maxOriginConnections": 0,
+		"maxRequestHeaderBytes": 0,
 		"midHeaderRewrite": null,
 		"missLat": 42,
 		"missLong": -88,
@@ -209,41 +234,25 @@ Response Structure
 		"protocol": 2,
 		"qstringIgnore": 0,
 		"rangeRequestHandling": 0,
+		"rangeSliceBlockSize": null,
 		"regexRemap": null,
 		"regionalGeoBlocking": false,
 		"remapText": null,
 		"routingName": "video",
+		"serviceCategory": null,
 		"signed": false,
-		"sslKeyVersion": 1,
-		"tenantId": 1,
-		"type": "HTTP",
-		"typeId": 1,
-		"xmlId": "demo1",
-		"exampleURLs": [
-			"http://video.demo1.mycdn.ciab.test",
-			"https://video.demo1.mycdn.ciab.test"
-		],
-		"deepCachingType": "NEVER",
-		"fqPacingRate": null,
 		"signingAlgorithm": null,
+		"sslKeyVersion": 1,
 		"tenant": "root",
+		"tenantId": 1,
+		"topology": null,
 		"trResponseHeaders": null,
 		"trRequestHeaders": null,
-		"consistentHashRegex": null,
-		"consistentHashQueryParams": [
-			"abc",
-			"pdq",
-			"xxx",
-			"zyx"
-		],
-		"maxOriginConnections": 0,
-		"ecsEnabled": false,
-		"rangeSliceBlockSize": null,
-		"topology": null
+		"type": "HTTP",
+		"typeId": 1,
+		"xmlId": "demo1"
 	}]}
 
-
-.. [#tenancy] Only the :term:`Delivery Services` visible to the requesting user's :term:`Tenant` will appear, regardless of their :term:`Role` or the :term:`Delivery Services`' actual 'server assignment' status.
 
 ``POST``
 ========
@@ -291,7 +300,7 @@ The request body is an array of IDs of :term:`Delivery Services` that you want t
 Response Structure
 ------------------
 :dsIds:         An array of integral, unique identifiers for :term:`Delivery Services` which the request added to server. If ``:replace:`` is ``false``, :term:`Delivery Services` that are already assigned will remain, though they are not listed by ``:dsIds:``.
-:replace:       The ``:replace:`` value you provided in the body of the request, or ``null`` if none was provided.
+:replace:       The ``replace`` value you provided in the body of the request, or ``null`` if none was provided.
 :serverId:      The server's integral, unique identifier
 
 .. code-block:: http
@@ -325,3 +334,6 @@ Response Structure
 			"replace": true
 		}
 	}
+
+
+.. [#tenancy] Only the :term:`Delivery Services` visible to the requesting user's :term:`Tenant` will appear, regardless of their :term:`Role` or the :term:`Delivery Services`' actual 'server assignment' status.

@@ -60,7 +60,7 @@ SELECT ds.xml_id, ds.remap_text, r.pattern
 FROM deliveryservice as ds
 JOIN deliveryservice_regex as dsr ON dsr.deliveryservice = ds.id
 JOIN regex as r ON r.id = dsr.regex
-WHERE ds.active = true
+WHERE ds.active = 'ACTIVE'
 `
 	qParams := []interface{}{}
 	tenantIDs, err := tenant.GetUserTenantIDListTx(tx, userTenantID)

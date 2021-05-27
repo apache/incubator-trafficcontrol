@@ -885,14 +885,14 @@ func CheckTopology(tx *sqlx.Tx, ds tc.DeliveryServiceV4) (int, error, error) {
 
 	cacheGroupIDs, _, err := GetTopologyCachegroups(tx.Tx, *ds.Topology)
 	if err != nil {
-		return http.StatusInternalServerError, nil, fmt.Errorf("getting topology cachegroups: %v", err)
+		return http.StatusInternalServerError, nil, fmt.Errorf("getting topology cachegroups: %w", err)
 	}
 	if len(cacheGroupIDs) == 0 {
 		return http.StatusBadRequest, fmt.Errorf("no such Topology '%s'", *ds.Topology), nil
 	}
 
-	if err = topology_validation.CheckForEmptyCacheGroups(tx, cacheGroupIDs, []int{*ds.CDNID}, true, []int{}); err != nil {
-		return http.StatusBadRequest, fmt.Errorf("empty cachegroups in Topology %s found for CDN %d: %s", *ds.Topology, *ds.CDNID, err.Error()), nil
+	if err = topology_validation.CheckForEmptyCacheGroups(tx, cacheGroupIDs, []int{ds.CDNID}, true, []int{}); err != nil {
+		return http.StatusBadRequest, fmt.Errorf("empty cachegroups in Topology %s found for CDN %d: %w", *ds.Topology, ds.CDNID, err), nil
 	}
 
 	return statusCode, userErr, sysErr

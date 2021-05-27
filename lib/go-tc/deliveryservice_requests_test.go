@@ -151,7 +151,7 @@ func TestDeliveryServiceRequestV40_Downgrade(t *testing.T) {
 		Requested:      &DeliveryServiceV4{},
 		Status:         RequestStatusComplete,
 	}
-	dsr.Requested.XMLID = &xmlid
+	dsr.Requested.XMLID = xmlid
 
 	downgraded := dsr.Downgrade()
 	if downgraded.Assignee != nil {
@@ -214,8 +214,7 @@ func ExampleDeliveryServiceRequestV40_SetXMLID() {
 	fmt.Println(dsr.XMLID == "")
 
 	dsr.Requested = new(DeliveryServiceV4)
-	dsr.Requested.XMLID = new(string)
-	*dsr.Requested.XMLID = "test"
+	dsr.Requested.XMLID = "test"
 	dsr.SetXMLID()
 
 	fmt.Println(dsr.XMLID)

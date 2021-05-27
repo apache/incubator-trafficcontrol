@@ -44,7 +44,7 @@ Glossary
 	Cache Groups
 		A group of caching HTTP proxy servers that together create a combined larger cache using consistent hashing. Traffic Router treats all servers in a :dfn:`Cache Group` as though they are in the  same geographic location, though they are in fact only in the same general area. A :dfn:`Cache Group` has one single set of geographical coordinates even if the :term:`cache servers` that make up the :dfn:`Cache Group` are actually in :term:`Physical Locations`. The :term:`cache servers` in a :dfn:`Cache Group` are not aware of the other :term:`cache servers` in the group - there is no clustering software or communications between :term:`cache servers` in a :dfn:`Cache Group`.
 
-  		There are two basic types of :dfn:`Cache Groups`: EDGE_LOC and MID_LOC ("LOC" being short for "location" - a holdover from when :dfn:`Cache Groups` were called "Cache Locations). Traffic Control is a two-tiered system, where the clients get directed to the Edge-tier (EDGE_LOC) :dfn:`Cache Group`. On cache miss, the :term:`cache server` in the Edge-tier :dfn:`Cache Group` obtains content from a Mid-tier (MID_LOC) :dfn:`Cache Group`, rather than the origin, which is shared with multiple Edge-tier :dfn:`Cache Groups`. Edge-tier :dfn:`Cache Groups` are usually configured to have a single "parent" :dfn:`Cache Group`, but in general Mid-tier :dfn:`Cache Groups` have many "children".
+		There are two basic types of :dfn:`Cache Groups`: EDGE_LOC and MID_LOC ("LOC" being short for "location" - a holdover from when :dfn:`Cache Groups` were called "Cache Locations). Traffic Control is a two-tiered system, where the clients get directed to the Edge-tier (EDGE_LOC) :dfn:`Cache Group`. On cache miss, the :term:`cache server` in the Edge-tier :dfn:`Cache Group` obtains content from a Mid-tier (MID_LOC) :dfn:`Cache Group`, rather than the origin, which is shared with multiple Edge-tier :dfn:`Cache Groups`. Edge-tier :dfn:`Cache Groups` are usually configured to have a single "parent" :dfn:`Cache Group`, but in general Mid-tier :dfn:`Cache Groups` have many "children".
 
 		..  Note:: Often the Edge-tier to Mid-tier relationship is based on network distance, and does not necessarily match the geographic distance.
 
@@ -238,8 +238,8 @@ Glossary
 	geo localization or geo routing
 		Localizing clients to the nearest caches using a geo database like the one from Maxmind.
 
- 	Health Protocol
- 		The protocol to monitor the health of all the caches. See :ref:`health-proto`.
+	Health Protocol
+		The protocol to monitor the health of all the caches. See :ref:`health-proto`.
 
 	Inner-tier
 	Inner-tier cache
@@ -255,8 +255,8 @@ Glossary
 	Last-tier cache servers
 		The tier above the First and Inner tiers. The last tier in a :term:`Topology` is the tier that forwards requests from other caches to :term:`Origins`.
 
- 	localization
- 		Finding location on the network, or on planet earth
+	localization
+		Finding location on the network, or on planet earth
 
 	Mid
 	Mid-tier

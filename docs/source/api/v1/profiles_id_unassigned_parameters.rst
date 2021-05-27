@@ -74,7 +74,7 @@ Response Structure
 	Date: Wed, 05 Dec 2018 21:37:50 GMT
 	Transfer-Encoding: chunked
 
-	{	"alerts": [{
+	{ "alerts": [{
 			"level": "warning",
 			"text": "This endpoint is deprecated, and will be removed in the future"
 		}],

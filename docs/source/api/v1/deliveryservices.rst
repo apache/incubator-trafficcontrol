@@ -63,7 +63,7 @@ Request Structure
 
 Response Structure
 ------------------
-:active:                   A boolean that defines :ref:`ds-active`.
+:active:                   A boolean that defines :ref:`ds-active`. ``true`` means that the Delivery Service is ACTIVE, while ``false`` means that it is either PRIMED or INACTIVE (API versions earlier than 4 are incapable of distinguishing between the two).
 :anonymousBlockingEnabled: A boolean that defines :ref:`ds-anonymous-blocking`
 :cacheurl:                 A :ref:`ds-cacheurl`
 
@@ -113,7 +113,7 @@ Response Structure
 :infoUrl:             An :ref:`ds-info-url`
 :initialDispersion:  The :ref:`ds-initial-dispersion`
 :ipv6RoutingEnabled: A boolean that defines the :ref:`ds-ipv6-routing` setting on this :term:`Delivery Service`
-:lastUpdated:        The date and time at which this :term:`Delivery Service` was last updated, in :rfc:`3339` format
+:lastUpdated:        The date and time at which this :term:`Delivery Service` was last updated, in an ISO-like format
 :logsEnabled:        A boolean that defines the :ref:`ds-logs-enabled` setting on this :term:`Delivery Service`
 :longDesc:           The :ref:`ds-longdesc` of this :term:`Delivery Service`
 :longDesc1:          The :ref:`ds-longdesc2` of this :term:`Delivery Service`
@@ -279,7 +279,7 @@ Allows users to create :term:`Delivery Service`.
 
 Request Structure
 -----------------
-:active:                   A boolean that defines :ref:`ds-active`.
+:active:                   A boolean that defines :ref:`ds-active`. ``true`` means that the Delivery Service is ACTIVE, while ``false`` means that it is either PRIMED or INACTIVE (API versions earlier than 4 are incapable of distinguishing between the two).
 :anonymousBlockingEnabled: A boolean that defines :ref:`ds-anonymous-blocking`
 :cacheurl:                 A :ref:`ds-cacheurl`
 
@@ -419,7 +419,7 @@ Request Structure
 
 Response Structure
 ------------------
-:active:                   A boolean that defines :ref:`ds-active`.
+:active:                   A boolean that defines :ref:`ds-active`. ``true`` means that the Delivery Service is ACTIVE, while ``false`` means that it is either PRIMED or INACTIVE (API versions earlier than 4 are incapable of distinguishing between the two).
 :anonymousBlockingEnabled: A boolean that defines :ref:`ds-anonymous-blocking`
 :cacheurl:                 A :ref:`ds-cacheurl`
 
@@ -469,7 +469,7 @@ Response Structure
 :infoUrl:             An :ref:`ds-info-url`
 :initialDispersion:   The :ref:`ds-initial-dispersion`
 :ipv6RoutingEnabled:  A boolean that defines the :ref:`ds-ipv6-routing` setting on this :term:`Delivery Service`
-:lastUpdated:         The date and time at which this :term:`Delivery Service` was last updated, in :rfc:`3339` format
+:lastUpdated:         A boolean that defines :ref:`ds-active`. ``true`` means that the Delivery Service is ACTIVE, while ``false`` means that it is either PRIMED or INACTIVE (API versions earlier than 4 are incapable of distinguishing between the two).
 :logsEnabled:         A boolean that defines the :ref:`ds-logs-enabled` setting on this :term:`Delivery Service`
 :longDesc:            The :ref:`ds-longdesc` of this :term:`Delivery Service`
 :longDesc1:           The :ref:`ds-longdesc2` of this :term:`Delivery Service`

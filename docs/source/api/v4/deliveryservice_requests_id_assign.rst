@@ -96,7 +96,7 @@ Request Structure
 	.. versionchanged:: 4.0
 		Prior to APIv4.0, this was the only property that could be used to change a :term:`Delivery Service Request`'s Assignee - and thus was a required field.
 
-		It is not required to send both of these; either property is sufficient to determine an :ref:`dsr-assignee`. In most cases, it's easier to use just `assignee`. If both *are* given, then `assigneeId` will take precedence in the event that the two properties do not refer to the same user. Sending a request that sets the assignee to ``null`` un-assigns the :term:`DSR` from any assignees it previously had\ [#implicit-null]_.
+It is not required to send both of these; either property is sufficient to determine an :ref:`dsr-assignee`. In most cases, it's easier to use just `assignee`. If both *are* given, then `assigneeId` will take precedence in the event that the two properties do not refer to the same user. Sending a request that sets the assignee to ``null`` un-assigns the :term:`DSR` from any assignees it previously had\ [#implicit-null]_.
 
 .. code-block:: http
 	:caption: Request Example
@@ -144,7 +144,7 @@ The response contains a full representation of the newly assigned :term:`Deliver
 		"lastEditedBy": "admin",
 		"lastUpdated": "2020-09-25T07:01:24.600029Z",
 		"original": {
-			"active": true,
+			"active": "ACTIVE",
 			"anonymousBlockingEnabled": false,
 			"cacheurl": null,
 			"ccrDnsTtl": null,
@@ -169,7 +169,7 @@ The response contains a full representation of the newly assigned :term:`Deliver
 			"infoUrl": null,
 			"initialDispersion": 1,
 			"ipv6RoutingEnabled": true,
-			"lastUpdated": "2020-09-25 02:09:54+00",
+			"lastUpdated": "2020-09-25T07:13:08.753352Z",
 			"logsEnabled": true,
 			"longDesc": "Apachecon North America 2018",
 			"longDesc1": null,
@@ -231,7 +231,7 @@ The response contains a full representation of the newly assigned :term:`Deliver
 			"serviceCategory": null
 		},
 		"requested": {
-			"active": true,
+			"active": "ACTIVE",
 			"anonymousBlockingEnabled": false,
 			"cacheurl": null,
 			"ccrDnsTtl": 30,

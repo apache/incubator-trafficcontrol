@@ -60,7 +60,7 @@ Response Structure
 
 :httpRoute:   The request route for which this capability applies - relative to the Traffic Ops server's URL
 :id:          An integer which uniquely identifies this capability
-:lastUpdated: The time at which this capability was last updated, in ISO format
+:lastUpdated: The time at which this capability was last updated, in an ISO-like format
 
 .. code-block:: http
 	:caption: Response Example
@@ -150,7 +150,7 @@ Response Structure
 
 :httpRoute:   The request route for which this capability applies - relative to the Traffic Ops server's URL
 :id:          An integer which uniquely identifies this capability
-:lastUpdated: The time at which this capability was last updated, in ISO format
+:lastUpdated: The time at which this capability was last updated, in an ISO-like format
 
 .. code-block:: http
 	:caption: Response Example
@@ -182,4 +182,3 @@ Response Structure
 		"id": 273,
 		"capability": "types-write"
 	}}
-

@@ -51,4 +51,4 @@ Audience for Ansible-based Lab Deployment
 	:caption: Read more
 	:glob:
 
- 	ansible-labs/*
+	ansible-labs/*

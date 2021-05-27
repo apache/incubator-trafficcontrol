@@ -296,7 +296,7 @@
         {
             "changeType": "create",
             "requested": {
-                "active": true,
+                "active": "ACTIVE",
                 "cdnName": "cdn1",
                 "ccrDnsTtl": 30,
                 "deepCachingType": "NEVER",
@@ -326,7 +326,7 @@
         {
             "changeType": "create",
             "requested": {
-                "active": true,
+                "active": "ACTIVE",
                 "cdnName": "cdn1",
                 "ccrDnsTtl": 30,
                 "deepCachingType": "NEVER",
@@ -384,7 +384,7 @@
         {
             "changeType": "create",
             "requested": {
-                "active": false,
+                "active": "PRIMED",
                 "cdnName": "cdn1",
                 "ccrDnsTtl": 30,
                 "deepCachingType": "NEVER",
@@ -414,7 +414,7 @@
     ],
     "deliveryServices": [
         {
-            "active": true,
+            "active": "ACTIVE",
             "cdnName": "cdn1",
             "ccrDnsTtl": 3600,
             "checkPath": "",
@@ -442,7 +442,6 @@
             "infoUrl": "TBD",
             "initialDispersion": 1,
             "ipv6RoutingEnabled": true,
-            "lastUpdated": "2018-04-06 16:48:51+00",
             "logsEnabled": false,
             "longDesc": "d s 1",
             "longDesc1": "ds1",
@@ -481,7 +480,7 @@
             "maxRequestHeaderBytes": 131072
         },
         {
-            "active": true,
+            "active": "ACTIVE",
             "cdnName": "cdn1",
             "ccrDnsTtl": 3600,
             "checkPath": "",
@@ -509,7 +508,6 @@
             "infoUrl": "TBD",
             "initialDispersion": 1,
             "ipv6RoutingEnabled": true,
-            "lastUpdated": "2018-04-06 16:48:51+00",
             "logsEnabled": false,
             "longDesc": "d s 1",
             "longDesc1": "ds2",
@@ -549,7 +547,7 @@
             "maxRequestHeaderBytes": 131072
         },
         {
-            "active": true,
+            "active": "ACTIVE",
             "cdnName": "cdn1",
             "ccrDnsTtl": 3600,
             "checkPath": "",
@@ -577,7 +575,6 @@
             "infoUrl": "TBD",
             "initialDispersion": 1,
             "ipv6RoutingEnabled": true,
-            "lastUpdated": "2018-04-06 16:48:51+00",
             "logsEnabled": false,
             "longDesc": "d s 3",
             "longDesc1": "ds3",
@@ -617,7 +614,7 @@
             "maxRequestHeaderBytes": 131072
         },
         {
-            "active": true,
+            "active": "ACTIVE",
             "cdnName": "cdn1",
             "ccrDnsTtl": 3600,
             "checkPath": "",
@@ -641,7 +638,6 @@
             "infoUrl": "",
             "initialDispersion": 1,
             "ipv6RoutingEnabled": true,
-            "lastUpdated": "2018-04-06 16:48:51+00",
             "logsEnabled": false,
             "longDesc": "",
             "longDesc1": "",
@@ -675,7 +671,7 @@
             "maxRequestHeaderBytes": 131072
         },
         {
-            "active": true,
+            "active": "ACTIVE",
             "cdnName": "cdn1",
             "ccrDnsTtl": 3600,
             "checkPath": "",
@@ -734,7 +730,7 @@
             "maxRequestHeaderBytes": 131072
         },
         {
-            "active": true,
+            "active": "ACTIVE",
             "cdnName": "cdn1",
             "ccrDnsTtl": 3600,
             "checkPath": "",
@@ -762,7 +758,6 @@
             "infoUrl": "TBD",
             "initialDispersion": 1,
             "ipv6RoutingEnabled": true,
-            "lastUpdated": "2018-04-06 16:48:51+00",
             "logsEnabled": false,
             "longDesc": "mso DS 1",
             "longDesc1": "msods1",
@@ -801,7 +796,7 @@
             "maxRequestHeaderBytes": 131072
         },
         {
-            "active": true,
+            "active": "ACTIVE",
             "cdnName": "cdn1",
             "ccrDnsTtl": 3600,
             "checkPath": "",
@@ -829,7 +824,6 @@
             "infoUrl": "TBD",
             "initialDispersion": 1,
             "ipv6RoutingEnabled": true,
-            "lastUpdated": "2018-04-06 16:48:51+00",
             "logsEnabled": false,
             "longDesc": "d s 1",
             "longDesc1": "ds1nat",
@@ -868,7 +862,7 @@
             "maxRequestHeaderBytes": 131072
         },
         {
-            "active": true,
+            "active": "ACTIVE",
             "cdnName": "cdn1",
             "ccrDnsTtl": 3600,
             "checkPath": "",
@@ -892,7 +886,6 @@
             "infoUrl": "TBD",
             "initialDispersion": 1,
             "ipv6RoutingEnabled": true,
-            "lastUpdated": "2018-04-06 16:48:51+00",
             "logsEnabled": false,
             "longDesc": "d s top",
             "longDesc1": "ds top",
@@ -935,7 +928,7 @@
             "maxRequestHeaderBytes": 131072
         },
         {
-            "active": true,
+            "active": "ACTIVE",
             "cdnName": "cdn1",
             "ccrDnsTtl": 3600,
             "checkPath": "",
@@ -959,7 +952,6 @@
             "infoUrl": "TBD",
             "initialDispersion": 1,
             "ipv6RoutingEnabled": true,
-            "lastUpdated": "2018-04-06 16:48:51+00",
             "logsEnabled": false,
             "longDesc": "",
             "longDesc1": "",
@@ -999,7 +991,7 @@
             "maxRequestHeaderBytes": 131072
         },
         {
-            "active": true,
+            "active": "ACTIVE",
             "cdnName": "cdn1",
             "ccrDnsTtl": 3600,
             "checkPath": "",
@@ -1023,7 +1015,6 @@
             "infoUrl": "TBD",
             "initialDispersion": 1,
             "ipv6RoutingEnabled": true,
-            "lastUpdated": "2018-04-06 16:48:51+00",
             "logsEnabled": false,
             "longDesc": "",
             "longDesc1": "",
@@ -1063,7 +1054,7 @@
             "maxRequestHeaderBytes": 131072
         },
         {
-            "active": true,
+            "active": "ACTIVE",
             "cdnName": "cdn1",
             "ccrDnsTtl": 3600,
             "checkPath": "",
@@ -1087,7 +1078,6 @@
             "infoUrl": "TBD",
             "initialDispersion": 1,
             "ipv6RoutingEnabled": true,
-            "lastUpdated": "2018-04-06 16:48:51+00",
             "logsEnabled": false,
             "longDesc": "d s client-steering",
             "longDesc1": "ds client-steering",
@@ -1126,7 +1116,7 @@
             "maxRequestHeaderBytes": 131072
         },
         {
-            "active": true,
+            "active": "ACTIVE",
             "cdnName": "cdn2",
             "ccrDnsTtl": 3600,
             "checkPath": "",
@@ -1150,7 +1140,6 @@
             "infoUrl": "TBD",
             "initialDispersion": 1,
             "ipv6RoutingEnabled": true,
-            "lastUpdated": "2018-04-06 16:48:51+00",
             "logsEnabled": false,
             "longDesc": "",
             "longDesc1": "",
@@ -1190,7 +1179,7 @@
             "maxRequestHeaderBytes": 131072
         },
         {
-            "active": true,
+            "active": "ACTIVE",
             "cdnName": "cdn1",
             "ccrDnsTtl": 3600,
             "checkPath": "",
@@ -1214,7 +1203,6 @@
             "infoUrl": "TBD",
             "initialDispersion": 1,
             "ipv6RoutingEnabled": true,
-            "lastUpdated": "2018-04-06 16:48:51+00",
             "logsEnabled": false,
             "longDesc": "",
             "longDesc1": "",
@@ -1254,7 +1242,7 @@
             "maxRequestHeaderBytes": 131072
         },
         {
-            "active": true,
+            "active": "ACTIVE",
             "cdnName": "cdn1",
             "ccrDnsTtl": 3600,
             "checkPath": "",
@@ -1278,7 +1266,6 @@
             "infoUrl": "TBD",
             "initialDispersion": 1,
             "ipv6RoutingEnabled": true,
-            "lastUpdated": "2018-04-06 16:48:51+00",
             "logsEnabled": false,
             "longDesc": "",
             "longDesc1": "",
@@ -1318,7 +1305,7 @@
             "maxRequestHeaderBytes": 131072
         },
         {
-            "active": true,
+            "active": "ACTIVE",
             "cdnName": "cdn2",
             "ccrDnsTtl": 3600,
             "checkPath": "",
@@ -1342,7 +1329,6 @@
             "infoUrl": "TBD",
             "initialDispersion": 1,
             "ipv6RoutingEnabled": true,
-            "lastUpdated": "2018-04-06 16:48:51+00",
             "logsEnabled": false,
             "longDesc": "",
             "longDesc1": "",
@@ -1382,7 +1368,7 @@
             "maxRequestHeaderBytes": 131072
         },
         {
-            "active": false,
+            "active": "PRIMED",
             "cdnName": "cdn1",
             "ccrDnsTtl": 3600,
             "checkPath": "",
@@ -1410,7 +1396,6 @@
             "infoUrl": "TBD",
             "initialDispersion": 1,
             "ipv6RoutingEnabled": true,
-            "lastUpdated": "2018-04-06 15:48:51+00",
             "logsEnabled": false,
             "longDesc": "d s inactive",
             "longDesc1": "dsinactive",
@@ -1449,7 +1434,7 @@
             "maxRequestHeaderBytes": 131072
         },
         {
-            "active": true,
+            "active": "ACTIVE",
             "anonymousBlockingEnabled": false,
             "cdnName": "cdn1",
             "displayName": "test",
@@ -1473,7 +1458,7 @@
             "maxRequestHeaderBytes": 131072
         },
         {
-            "active": false,
+            "active": "PRIMED",
             "cdnName": "cdn1",
             "cacheurl": "cacheUrl3",
             "ccrDnsTtl": 3600,
@@ -1502,7 +1487,6 @@
             "infoUrl": "TBD",
             "initialDispersion": 1,
             "ipv6RoutingEnabled": true,
-            "lastUpdated": "2018-04-06 16:48:51+00",
             "logsEnabled": false,
             "longDesc": "d s 4",
             "longDesc1": "ds4",
@@ -1682,126 +1666,108 @@
     "parameters": [
         {
             "configFile": "rascal.properties",
-            "lastUpdated": "2018-01-19T19:01:21.489534+00:00",
             "name": "history.count",
             "secure": false,
             "value": "30"
         },
         {
             "configFile": "records.config",
-            "lastUpdated": "2018-01-19T19:01:21.434425+00:00",
             "name": "CONFIG proxy.config.allocator.enable_reclaim",
             "secure": false,
             "value": "INT 0"
         },
         {
             "configFile": "records.config",
-            "lastUpdated": "2018-01-19T19:01:21.435957+00:00",
             "name": "CONFIG proxy.config.allocator.max_overage",
             "secure": false,
             "value": "INT 3"
         },
         {
             "configFile": "records.config",
-            "lastUpdated": "2018-01-19T19:01:21.437496+00:00",
             "name": "CONFIG proxy.config.diags.show_location",
             "secure": false,
             "value": "INT 0"
         },
         {
             "configFile": "records.config",
-            "lastUpdated": "2018-01-19T19:01:21.439033+00:00",
             "name": "CONFIG proxy.config.http.cache.allow_empty_doc",
             "secure": false,
             "value": "INT 0"
         },
         {
             "configFile": "records.config",
-            "lastUpdated": "2018-01-19T19:01:21.440502+00:00",
             "name": "LOCAL proxy.config.cache.interim.storage",
             "secure": false,
             "value": "STRING NULL"
         },
         {
             "configFile": "records.config",
-            "lastUpdated": "2018-01-19T19:01:21.441933+00:00",
             "name": "CONFIG proxy.config.http.parent_proxy.file",
             "secure": false,
             "value": "STRING parent.config"
         },
         {
             "configFile": "plugin.config",
-            "lastUpdated": "2018-01-19T19:01:21.447837+00:00",
             "name": "astats_over_http.so",
             "secure": false,
             "value": "_astats 33.101.99.100,172.39.19.39,172.39.19.49,172.39.19.49,172.39.29.49"
         },
         {
             "configFile": "logs_xml.config",
-            "lastUpdated": "2018-01-19T19:01:21.461206+00:00",
             "name": "LogFormat.Name",
             "secure": false,
             "value": "custom_ats_2"
         },
         {
             "configFile": "logs_xml.config",
-            "lastUpdated": "2018-01-19T19:01:21.462772+00:00",
             "name": "LogObject.Format",
             "secure": false,
             "value": "custom_ats_2"
         },
         {
             "configFile": "logs_xml.config",
-            "lastUpdated": "2018-01-19T19:01:21.464259+00:00",
             "name": "LogObject.Filename",
             "secure": false,
             "value": "custom_ats_2"
         },
         {
             "configFile": "records.config",
-            "lastUpdated": "2018-01-19T19:01:21.467349+00:00",
             "name": "CONFIG proxy.config.cache.control.filename",
             "secure": false,
             "value": "STRING cache.config"
         },
         {
             "configFile": "plugin.config",
-            "lastUpdated": "2018-01-19T19:01:21.469075+00:00",
             "name": "regex_revalidate.so",
             "secure": false,
             "value": "--config regex_revalidate.config"
         },
         {
             "configFile": "records.config",
-            "lastUpdated": "2018-01-19T19:01:21.49285+00:00",
             "name": "CONFIG proxy.config.hostdb.storage_size",
             "secure": false,
             "value": "INT 33554432"
         },
         {
             "configFile": "regex_revalidate.config",
-            "lastUpdated": "2018-01-19T19:01:21.496195+00:00",
             "name": "maxRevalDurationDays",
             "secure": false,
             "value": "90"
         },
         {
             "configFile": "package",
-            "lastUpdated": "2018-01-19T19:01:21.499423+00:00",
             "name": "trafficserver",
             "secure": false,
             "value": "5.3.2-765.f4354b9.el7.centos.x86_64"
         },
         {
             "configFile": "global",
-            "lastUpdated": "2018-01-19T19:01:21.501151+00:00",
             "name": "use_tenancy",
             "secure": false,
             "value": "1"
         },
         {
             "configFile": "global",
-            "lastUpdated": "2020-04-21T05:19:43.853831+00:00",
             "name": "tm.instance_name",
             "secure": false,
             "value": "Traffic Ops API Tests"
@@ -1813,7 +1779,6 @@
             "city": "Denver",
             "comments": null,
             "email": null,
-            "lastUpdated": "2018-01-19T21:19:32.081465+00:00",
             "name": "Denver",
             "phone": "303-111-1111",
             "poc": null,
@@ -1827,7 +1792,6 @@
             "city": "Boulder",
             "comments": null,
             "email": null,
-            "lastUpdated": "2018-01-19T21:19:32.086195+00:00",
             "name": "Boulder",
             "phone": "303-222-2222",
             "poc": null,
@@ -1841,7 +1805,6 @@
             "city": "Atlanta",
             "comments": null,
             "email": null,
-            "lastUpdated": "2018-01-19T21:19:32.089538+00:00",
             "name": "HotAtlanta",
             "phone": "404-222-2222",
             "poc": null,
@@ -2227,7 +2190,6 @@
         {
             "cdnName": "cdn1",
             "description": "edge1 description",
-            "lastUpdated": "2018-03-02T17:27:11.818418+00:00",
             "name": "EDGE1",
             "routing_disabled": false,
             "type": "ATS_PROFILE",
@@ -2255,7 +2217,6 @@
         {
             "cdnName": "cdn2",
             "description": "edge2 description",
-            "lastUpdated": "2018-03-02T17:27:11.818418+00:00",
             "name": "EDGEInCDN2",
             "routing_disabled": false,
             "type": "ATS_PROFILE"
@@ -2263,7 +2224,6 @@
         {
             "cdnName": "cdn4",
             "description": "edge2 description",
-            "lastUpdated": "2018-03-02T17:27:11.818418+00:00",
             "name": "EDGE2",
             "routing_disabled": false,
             "type": "ATS_PROFILE"
@@ -2278,7 +2238,6 @@
         {
             "cdnName": "cdn1",
             "description": "mid description",
-            "lastUpdated": "2018-03-02T17:27:11.80173+00:00",
             "name": "MID1",
             "routing_disabled": false,
             "type": "ATS_PROFILE"
@@ -2286,7 +2245,6 @@
         {
             "cdnName": "cdn2",
             "description": "mid description",
-            "lastUpdated": "2018-03-02T17:27:11.80173+00:00",
             "name": "MID2",
             "routing_disabled": false,
             "type": "ATS_PROFILE"
@@ -2294,7 +2252,6 @@
         {
             "cdnName": "cdn1",
             "description": "origin description",
-            "lastUpdated": "2018-03-02T17:27:11.80173+00:00",
             "name": "ORIGIN1",
             "routing_disabled": false,
             "type": "ORG_PROFILE"
@@ -2302,7 +2259,6 @@
         {
             "cdnName": "cdn1",
             "description": "cdn1 description",
-            "lastUpdated": "2018-03-02T17:27:11.80452+00:00",
             "name": "CCR1",
             "routing_disabled": false,
             "type": "TR_PROFILE"
@@ -2310,7 +2266,6 @@
         {
             "cdnName": "cdn2",
             "description": "cdn2 description",
-            "lastUpdated": "2018-03-02T17:27:11.807948+00:00",
             "name": "CCR2",
             "routing_disabled": false,
             "type": "TR_PROFILE"
@@ -2318,7 +2273,6 @@
         {
             "cdnName": "cdn1",
             "description": "rascal description",
-            "lastUpdated": "2018-03-02T17:27:11.813052+00:00",
             "name": "RASCAL1",
             "routing_disabled": false,
             "type": "TM_PROFILE",
@@ -2337,14 +2291,12 @@
                 },
                 {
                     "configFile": "rascal-config.txt",
-                    "lastUpdated": "2018-01-19T19:01:21.472279+00:00",
                     "name": "peers.polling.interval",
                     "secure": false,
                     "value": "60"
                 },
                 {
                     "configFile": "rascal-config.txt",
-                    "lastUpdated": "2018-01-19T19:01:21.472279+00:00",
                     "name": "health.polling.interval",
                     "secure": false,
                     "value": "30"
@@ -2354,7 +2306,6 @@
         {
             "cdnName": "cdn1",
             "description": "mso origin description",
-            "lastUpdated": "2018-03-02T17:27:11.80173+00:00",
             "name": "MSO",
             "routing_disabled": false,
             "type": "ORG_PROFILE"
@@ -2441,7 +2392,6 @@
                     "routerPort": "9000"
                 }
             ],
-            "lastUpdated": "2018-03-28T17:30:00.220351+00:00",
             "mgmtIpAddress": "",
             "mgmtIpGateway": "",
             "mgmtIpNetmask": "",
@@ -2486,7 +2436,6 @@
                     "routerPort": "9001"
                 }
             ],
-            "lastUpdated": "2018-03-28T17:30:00.220351+00:00",
             "mgmtIpAddress": "",
             "mgmtIpGateway": "",
             "mgmtIpNetmask": "",
@@ -2536,7 +2485,6 @@
                     "routerPort": "9002"
                 }
             ],
-            "lastUpdated": "2018-03-28T17:30:00.220351+00:00",
             "mgmtIpAddress": "",
             "mgmtIpGateway": "",
             "mgmtIpNetmask": "",
@@ -2586,7 +2534,6 @@
                     "routerPort": "9003"
                 }
             ],
-            "lastUpdated": "2018-03-28T17:30:00.220351+00:00",
             "mgmtIpAddress": "",
             "mgmtIpGateway": "",
             "mgmtIpNetmask": "",
@@ -2636,7 +2583,6 @@
                     "routerPort": "9004"
                 }
             ],
-            "lastUpdated": "2018-03-28T17:30:00.220351+00:00",
             "mgmtIpAddress": "",
             "mgmtIpGateway": "",
             "mgmtIpNetmask": "",
@@ -2686,7 +2632,6 @@
                     "routerPort": "9005"
                 }
             ],
-            "lastUpdated": "2018-03-28T17:30:00.220351+00:00",
             "mgmtIpAddress": "",
             "mgmtIpGateway": "",
             "mgmtIpNetmask": "",
@@ -2737,7 +2682,6 @@
                 }
             ],
             "ipNetmask": "255.255.255.252",
-            "lastUpdated": "2018-03-28T17:30:00.220351+00:00",
             "mgmtIpAddress": "",
             "mgmtIpGateway": "",
             "mgmtIpNetmask": "",
@@ -2787,7 +2731,6 @@
                     "routerPort": "9007"
                 }
             ],
-            "lastUpdated": "2018-03-28T17:30:00.220351+00:00",
             "mgmtIpAddress": "",
             "mgmtIpGateway": "",
             "mgmtIpNetmask": "",
@@ -2837,7 +2780,6 @@
                     "routerPort": "9008"
                 }
             ],
-            "lastUpdated": "2018-03-28T17:30:00.220351+00:00",
             "mgmtIpAddress": "",
             "mgmtIpGateway": "",
             "mgmtIpNetmask": "",
@@ -2887,7 +2829,6 @@
                     "routerPort": "9009"
                 }
             ],
-            "lastUpdated": "2018-03-28T17:30:00.220351+00:00",
             "mgmtIpAddress": "",
             "mgmtIpGateway": "",
             "mgmtIpNetmask": "",
@@ -2937,7 +2878,6 @@
                     "routerPort": "9010"
                 }
             ],
-            "lastUpdated": "2018-03-28T17:30:00.220351+00:00",
             "mgmtIpAddress": "",
             "mgmtIpGateway": "",
             "mgmtIpNetmask": "",
@@ -2987,7 +2927,6 @@
                     "routerPort": "9011"
                 }
             ],
-            "lastUpdated": "2018-03-28T17:30:00.220351+00:00",
             "mgmtIpAddress": "",
             "mgmtIpGateway": "",
             "mgmtIpNetmask": "",
@@ -3037,7 +2976,6 @@
                     "routerPort": "9012"
                 }
             ],
-            "lastUpdated": "2018-03-28T17:30:00.220351+00:00",
             "mgmtIpAddress": "",
             "mgmtIpGateway": "",
             "mgmtIpNetmask": "",
@@ -3136,7 +3074,6 @@
                     "routerPort": "9014"
                 }
             ],
-            "lastUpdated": "2018-03-28T17:30:00.220351+00:00",
             "mgmtIpAddress": "",
             "mgmtIpGateway": "",
             "mgmtIpNetmask": "",
@@ -3186,7 +3123,6 @@
                     "routerPort": "9015"
                 }
             ],
-            "lastUpdated": "2018-03-28T17:30:00.220351+00:00",
             "mgmtIpAddress": "",
             "mgmtIpGateway": "",
             "mgmtIpNetmask": "",
@@ -4067,7 +4003,6 @@
                     "routerPort": "9038"
                 }
             ],
-            "lastUpdated": "2018-03-28T17:30:00.220351+00:00",
             "mgmtIpAddress": "",
             "mgmtIpGateway": "",
             "mgmtIpNetmask": "",
@@ -4613,7 +4548,6 @@
                     "routerPort": "9000"
                 }
             ],
-            "lastUpdated": "2018-03-28T17:30:00.220351+00:00",
             "mgmtIpAddress": "",
             "mgmtIpGateway": "",
             "mgmtIpNetmask": "",
@@ -4663,7 +4597,6 @@
                     "routerPort": "9011"
                 }
             ],
-            "lastUpdated": "2018-03-28T17:30:00.220351+00:00",
             "mgmtIpAddress": "",
             "mgmtIpGateway": "",
             "mgmtIpNetmask": "",
@@ -5122,193 +5055,161 @@
     "types": [
         {
             "description": "Host header regular expression",
-            "lastUpdated": "2018-03-02T19:13:46.788583+00:00",
             "name": "HOST_REGEXP",
             "useInTable": "regex"
         },
         {
             "description": "DNS Content routing, RAM cache, National",
-            "lastUpdated": "2018-03-02T19:13:46.792319+00:00",
             "name": "DNS_LIVE_NATNL",
             "useInTable": "deliveryservice"
         },
         {
             "description": "Other CDN (CDS-IS, Akamai, etc)",
-            "lastUpdated": "2018-03-02T19:13:46.793921+00:00",
             "name": "OTHER_CDN",
             "useInTable": "server"
         },
         {
             "description": "Client-Controlled Steering Delivery Service",
-            "lastUpdated": "2018-03-02T19:13:46.795291+00:00",
             "name": "CLIENT_STEERING",
             "useInTable": "deliveryservice"
         },
         {
             "description": "influxdb type",
-            "lastUpdated": "2018-03-02T19:13:46.796707+00:00",
             "name": "INFLUXDB",
             "useInTable": "server"
         },
         {
             "description": "riak type",
-            "lastUpdated": "2018-03-02T19:13:46.798008+00:00",
             "name": "RIAK",
             "useInTable": "server"
         },
         {
             "description": "Origin",
-            "lastUpdated": "2018-03-02T19:13:46.799404+00:00",
             "name": "ORG",
             "useInTable": "server"
         },
         {
             "description": "HTTP Content routing cache in RAM ",
-            "lastUpdated": "2018-03-02T19:13:46.800738+00:00",
             "name": "HTTP_LIVE",
             "useInTable": "deliveryservice"
         },
         {
             "description": "Active Directory User",
-            "lastUpdated": "2018-03-02T19:13:46.802044+00:00",
             "name": "ACTIVE_DIRECTORY",
             "useInTable": "tm_user"
         },
         {
             "description": "federation type resolve4",
-            "lastUpdated": "2018-03-02T19:13:46.803471+00:00",
             "name": "RESOLVE4",
             "useInTable": "federation"
         },
         {
             "description": "Static DNS A entry",
-            "lastUpdated": "2018-03-02T19:13:46.804776+00:00",
             "name": "A_RECORD",
             "useInTable": "staticdnsentry"
         },
         {
             "description": "Local User",
-            "lastUpdated": "2018-03-02T19:13:46.806035+00:00",
             "name": "LOCAL",
             "useInTable": "tm_user"
         },
         {
             "description": "Weighted steering target",
-            "lastUpdated": "2018-03-02T19:13:46.80748+00:00",
             "name": "STEERING_WEIGHT",
             "useInTable": "steering_target"
         },
         {
             "description": "HTTP Content routing, RAM cache, National",
-            "lastUpdated": "2018-03-02T19:13:46.808911+00:00",
             "name": "HTTP_LIVE_NATNL",
             "useInTable": "deliveryservice"
         },
         {
             "description": "Ops hosts for management",
-            "lastUpdated": "2018-03-02T19:13:46.810576+00:00",
             "name": "TOOLS_SERVER",
             "useInTable": "server"
         },
         {
             "description": "Path regular expression",
-            "lastUpdated": "2018-03-02T19:13:46.812049+00:00",
             "name": "PATH_REGEXP",
             "useInTable": "regex"
         },
         {
             "description": "Static DNS CNAME entry",
-            "lastUpdated": "2018-03-02T19:13:46.813461+00:00",
             "name": "CNAME_RECORD",
             "useInTable": "staticdnsentry"
         },
         {
             "description": "Kabletown Content Router",
-            "lastUpdated": "2018-03-02T19:13:46.814833+00:00",
             "name": "CCR",
             "useInTable": "server"
         },
         {
             "description": "Origin Cachegroup",
-            "lastUpdated": "2018-03-02T19:13:46.816199+00:00",
             "name": "ORG_LOC",
             "useInTable": "cachegroup"
         },
         {
             "description": "Mid Cachegroup",
-            "lastUpdated": "2018-03-02T19:13:46.816199+00:00",
             "name": "MID_LOC",
             "useInTable": "cachegroup"
         },
         {
             "description": "Edge Cache",
-            "lastUpdated": "2018-03-02T19:13:46.817689+00:00",
             "name": "EDGE",
             "useInTable": "server"
         },
         {
             "description": "Ordered steering target",
-            "lastUpdated": "2018-03-02T19:13:46.81913+00:00",
             "name": "STEERING_ORDER",
             "useInTable": "steering_target"
         },
         {
             "description": "DNS Content Routing",
-            "lastUpdated": "2018-03-02T19:13:46.820528+00:00",
             "name": "DNS",
             "useInTable": "deliveryservice"
         },
         {
             "description": "federation type resolve6",
-            "lastUpdated": "2018-03-02T19:13:46.822161+00:00",
             "name": "RESOLVE6",
             "useInTable": "federation"
         },
         {
             "description": "Static DNS AAAA entry",
-            "lastUpdated": "2018-03-02T19:13:46.823506+00:00",
             "name": "AAAA_RECORD",
             "useInTable": "staticdnsentry"
         },
         {
             "description": "HTTP Content Routing, no caching",
-            "lastUpdated": "2018-03-02T19:13:46.824798+00:00",
             "name": "HTTP_NO_CACHE",
             "useInTable": "deliveryservice"
         },
         {
             "description": "any_map type",
-            "lastUpdated": "2018-03-02T19:13:46.826411+00:00",
             "name": "ANY_MAP",
             "useInTable": "deliveryservice"
         },
         {
             "description": "Steering Delivery Service",
-            "lastUpdated": "2018-03-02T19:13:46.827779+00:00",
             "name": "STEERING",
             "useInTable": "deliveryservice"
         },
         {
             "description": "Edge Cachegroup",
-            "lastUpdated": "2018-03-02T19:13:46.829249+00:00",
             "name": "EDGE_LOC",
             "useInTable": "cachegroup"
         },
         {
             "description": "HTTP Content routing cache ",
-            "lastUpdated": "2018-03-02T19:13:46.830862+00:00",
             "name": "HTTP",
             "useInTable": "deliveryservice"
         },
         {
             "description": "Mid Tier Cache",
-            "lastUpdated": "2018-03-02T19:13:46.832327+00:00",
             "name": "MID",
             "useInTable": "server"
         },
         {
             "description": "Traffic Monitor (Rascal)",
-            "lastUpdated": "2018-03-02T19:13:46.832327+00:00",
             "name": "RASCAL",
             "useInTable": "server"
         }

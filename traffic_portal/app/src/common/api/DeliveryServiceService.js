@@ -20,7 +20,7 @@
 var DeliveryServiceService = function($http, locationUtils, messageModel, ENV) {
 
     this.getDeliveryServices = function(queryParams) {
-        return $http.get(ENV.api['root'] + 'deliveryservices', {params: queryParams}).then(
+        return $http.get(ENV.api['stable'] + 'deliveryservices', {params: queryParams}).then(
             function(result) {
                 return result.data.response;
             },
@@ -31,7 +31,7 @@ var DeliveryServiceService = function($http, locationUtils, messageModel, ENV) {
     };
 
     this.getDeliveryService = function(id) {
-        return $http.get(ENV.api['root'] + 'deliveryservices', {params: {id: id}}).then(
+        return $http.get(ENV.api['stable'] + 'deliveryservices', {params: {id: id}}).then(
             function(result) {
                 return result.data.response[0];
             },
@@ -45,7 +45,7 @@ var DeliveryServiceService = function($http, locationUtils, messageModel, ENV) {
         // strip out any falsy values or duplicates from consistentHashQueryParams
         ds.consistentHashQueryParams = Array.from(new Set(ds.consistentHashQueryParams)).filter(function(i){return i;});
 
-        return $http.post(ENV.api['root'] + "deliveryservices", ds).then(
+        return $http.post(ENV.api['stable'] + "deliveryservices", ds).then(
             function(response) {
                 return response;
             },
@@ -59,7 +59,7 @@ var DeliveryServiceService = function($http, locationUtils, messageModel, ENV) {
         // strip out any falsy values or duplicates from consistentHashQueryParams
         ds.consistentHashQueryParams = Array.from(new Set(ds.consistentHashQueryParams)).filter(function(i){return i;});
 
-        return $http.put(ENV.api['root'] + "deliveryservices/" + ds.id, ds).then(
+        return $http.put(ENV.api['stable'] + "deliveryservices/" + ds.id, ds).then(
             function(response) {
                 return response;
             },
@@ -71,7 +71,7 @@ var DeliveryServiceService = function($http, locationUtils, messageModel, ENV) {
 
     // todo: change to use query param when it is supported
     this.deleteDeliveryService = function(ds) {
-        return $http.delete(ENV.api['root'] + "deliveryservices/" + ds.id).then(
+        return $http.delete(ENV.api['stable'] + "deliveryservices/" + ds.id).then(
             function(response) {
                 return response;
             },
@@ -121,7 +121,7 @@ var DeliveryServiceService = function($http, locationUtils, messageModel, ENV) {
     };
 
     this.getServerDeliveryServices = function(serverId) {
-        return $http.get(ENV.api['root'] + 'servers/' + serverId + '/deliveryservices').then(
+        return $http.get(ENV.api['stable'] + 'servers/' + serverId + '/deliveryservices').then(
             function(result) {
                 return result.data.response;
             },
@@ -190,17 +190,6 @@ var DeliveryServiceService = function($http, locationUtils, messageModel, ENV) {
             },
             function(err) {
                 messageModel.setMessages(err.data.alerts, true);
-                throw err;
-            }
-        );
-    };
-
-    this.getUserDeliveryServices = function(userId) {
-        return $http.get(ENV.api['root'] + 'users/' + userId + '/deliveryservices').then(
-            function(result) {
-                return result.data.response;
-            },
-            function(err) {
                 throw err;
             }
         );
