@@ -709,6 +709,32 @@ The following needs to be completed for Steering to work correctly:
 
 .. seealso:: For more information see :ref:`steering-qht`.
 
+Client-Controlled Steering
+--------------------------
+While normally this would refer to "CLIENT_STEERING" :term:`Delivery Service`\ s, it can also refer to methods provided to clients that can influence "Steering" behavior. There are a few ways this can be accomplished
+
+.. _trred:
+
+``trred``
+"""""""""
+When a client requests resolution from a Steering :term:`Delivery Service`, they may optionally provide the ``trred`` Query Parameter - e.g. ``http://video.demo1.mycdn.ciab.test/?trred=false``. If provided, its value must be exactly ``false`` (case-insensitive) to have any effect. When this happens, Traffic Router will respond with a ``200 OK`` HTTP response (as opposed to the standard ``302 Moved Temporarily`` with associated ``Location``), and the response body can be expected to contain a list of "targets" from which the client may choose.
+
+``X-TC-Steering-Option``
+""""""""""""""""""""""""
+Clients may provide an ``X-TC-Steering-Option`` header with a value set to the ``xml_id`` of the desired "target" - thus bypassing Steering behavior.
+
+``format``/``X-TC-Format``
+""""""""""""""""""""""""""
+In cases where multiple "targets" are presented to the client, the formatting of the target list can be adjusted by either a Query Parameter or an HTTP header. In the case of the ``format`` query parameter, the only permissible value is ``json`` (case-sensitive). Failure to provide exactly that value will result in the parameter being ignored entirely - the response will be the same as if the parameter were not provided at all. e.g. ``http://video.demo1.mycdn.ciab.test/?format=json`` will result in a JSON-encoded response, while ``http://video.demo1.mycdn.ciab.test?format=yaml`` is ignored entirely.
+
+In the case of the ``X-TC-Format`` header, exactly two values are permissible: ``json`` and its MIME-Type equivalent :mimetype:`application/json`.
+
+.. note:: ``format`` and ``X-TC-Format`` only make sense on STEERING :term:`Delivery Service`\ s (since a CLIENT_STEERING :term:`Delivery Service` already provides the same information in the same encoding). Furthermore, they will cause Traffic Router to return a ``200 OK`` response (similar to :ref:`trred`'s behavior) containing *a single target* that would otherwise appear in a ``Location`` header. The only difference between ``format``/``X-TC-Format`` and :ref:`trred` is that the former will return only a single target while the latter returns all available targets as an array.
+
+.. warning:: While not strictly deprecated, it is recommended that, where possible, developers disregard the Query Parameter in favor of the HTTP header. This is because ``format`` is a fairly typical query parameter that may be used by origins (and JSON is an immensely popular encoding format), so using it may cause unintended side-effects.
+
+.. tip:: When using the :ref:`trred` Query Parameter, it is not necessary to use either ``format`` or ``X-TC-Format``; the response will be JSON-encoded by default.
+
 HTTPS for HTTP Delivery Services
 ================================
 .. versionadded:: 1.7

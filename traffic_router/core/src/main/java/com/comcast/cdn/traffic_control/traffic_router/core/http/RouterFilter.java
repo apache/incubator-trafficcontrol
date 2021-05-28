@@ -37,10 +37,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+@SuppressWarnings("PMD.AvoidDuplicateLiterals")
 public class RouterFilter extends OncePerRequestFilter {
 	private static final Logger ACCESS = Logger.getLogger("com.comcast.cdn.traffic_control.traffic_router.core.access");
 	public static final String REDIRECT_QUERY_PARAM = "trred";
+	public static final String FORMAT_HEADER = "X-TC-Format";
 	private static final String HEAD = "HEAD";
+	public static final String GET = "GET";
 
 	@Autowired
 	private TrafficRouterManager trafficRouterManager;
@@ -153,9 +156,11 @@ public class RouterFilter extends OncePerRequestFilter {
 		}
 	}
 
+	@SuppressWarnings("PMD.CyclomaticComplexity")
 	private void setSingleResponse(final HTTPRouteResult routeResult, final HttpServletRequest httpServletRequest, final HttpServletResponse response, final HTTPAccessRecord.Builder httpAccessRecordBuilder) throws IOException {
 		final String redirect = httpServletRequest.getParameter(REDIRECT_QUERY_PARAM);
 		final String format = httpServletRequest.getParameter("format");
+		final String formatHdr = httpServletRequest.getHeader(FORMAT_HEADER);
 		final URL location = routeResult.getUrl();
 
 		if (routeResult.getDeliveryService() != null) {
@@ -175,6 +180,29 @@ public class RouterFilter extends OncePerRequestFilter {
 			}
 
 			httpAccessRecordBuilder.responseCode(HttpServletResponse.SC_OK);
+
+		} else if (formatHdr != null) {
+			if ("json".equals(formatHdr) || "application/json".equals(formatHdr)) {
+				if (HEAD.equals(httpServletRequest.getMethod()) || GET.equals(httpServletRequest.getMethod())) {
+					response.setContentType("application/json");
+					final String resp = routeResult.toMultiLocationJSONString();
+					if (!HEAD.equals(httpServletRequest.getMethod())) {
+						response.getWriter().println(resp);
+						httpAccessRecordBuilder.responseURLs(routeResult.getUrls());
+					} else {
+						response.setHeader("Content-Length", Integer.toString(resp.length()));
+					}
+					httpAccessRecordBuilder.responseCode(HttpServletResponse.SC_OK);
+				} else {
+					response.setHeader("Allow", GET + ',' + HEAD);
+					httpAccessRecordBuilder.responseCode(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
+				}
+			} else {
+				response.setContentType("text/plain");
+				response.getWriter().println("Unsupported target format: " + formatHdr);
+				httpAccessRecordBuilder.responseCode(HttpServletResponse.SC_NOT_ACCEPTABLE);
+			}
+
 		} else if ("json".equals(format)) {
 			if (!HEAD.equals(httpServletRequest.getMethod())) {
 				response.setContentType("application/json");

@@ -626,6 +626,60 @@ public class RouterTest {
 	}
 
 	@Test
+	public void itDoesUseLocationFormatHeader() throws IOException, InterruptedException {
+
+		// queryparam-compatible format
+		HttpGet httpGet = new HttpGet("http://localhost:" + routerHttpPort + "/stuff?fakeClientIpAddress=12.34.56.78");
+		httpGet.addHeader("Host", "tr." + deliveryServiceId + ".bar");
+		httpGet.addHeader("X-TC-Format", "json");
+		CloseableHttpResponse response = null;
+
+		try {
+			response = httpClient.execute(httpGet);
+			assert response.getStatusLine().getStatusCode() == 200;
+
+			HttpEntity entity = response.getEntity();
+
+			assert entity.getContent() != null;
+			System.out.println(entity.getContent());
+
+			JsonNode json = (new ObjectMapper(new JsonFactory())).readTree(entity.getContent());
+			System.out.println(json);
+
+			assert json.has("location");
+			assert validLocations.contains(json.get("location").asText());
+			assert json.get("location").asText().startsWith("http://");
+		} finally {
+			if (response != null) response.close();
+		}
+
+		// MIME-type format
+		httpGet = new HttpGet("http://localhost:" + routerHttpPort + "/stuff?fakeClientIpAddress=12.34.56.78");
+		httpGet.addHeader("Host", "tr." + deliveryServiceId + ".bar");
+		httpGet.addHeader("X-TC-Format", "application/json");
+		response = null;
+
+		try {
+			response = httpClient.execute(httpGet);
+			assert response.getStatusLine().getStatusCode() == 200;
+
+			HttpEntity entity = response.getEntity();
+
+			assert entity.getContent() != null;
+			System.out.println(entity.getContent());
+
+			JsonNode json = (new ObjectMapper(new JsonFactory())).readTree(entity.getContent());
+			System.out.println(json);
+
+			assert json.has("location");
+			assert validLocations.contains(json.get("location").asText());
+			assert json.get("location").asText().startsWith("http://");
+		} finally {
+			if (response != null) response.close();
+		}
+	}
+
+	@Test
 	public void itDoesNotUseLocationFormatResponseForHead() throws IOException, InterruptedException {
 		HttpHead httpHead = new HttpHead("http://localhost:" + routerHttpPort + "/stuff?fakeClientIpAddress=12.34.56.78&format=json");
 		httpHead.addHeader("Host", "tr." + deliveryServiceId + ".bar");
