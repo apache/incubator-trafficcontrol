@@ -213,7 +213,11 @@ func MakeRemapDotConfig(toData *t3cutil.ConfigData, fileName string, hdrCommentT
 		toData.CacheGroups,
 		toData.ServerCapabilities,
 		toData.DSRequiredCapabilities,
-		hdrCommentTxt,
+		atscfg.RemapConfigOpts{
+			HdrComment:      hdrCommentTxt,
+			VerboseComments: true,
+			UseStrategies:   cfg.UseStrategies,
+		},
 	)
 }
 
@@ -263,6 +267,26 @@ func MakeURLSigConfig(toData *t3cutil.ConfigData, fileName string, hdrCommentTxt
 
 func MakeURISigningConfig(toData *t3cutil.ConfigData, fileName string, hdrCommentTxt string, cfg config.Cfg) (atscfg.Cfg, error) {
 	return atscfg.MakeURISigningConfig(fileName, toData.URISigningKeys)
+}
+
+func MakeStrategiesDotYAML(toData *t3cutil.ConfigData, fileName string, hdrCommentTxt string, cfg config.Cfg) (atscfg.Cfg, error) {
+	return atscfg.MakeStrategiesDotYAML(
+		toData.DeliveryServices,
+		toData.Server,
+		toData.Servers,
+		toData.Topologies,
+		toData.ServerParams,
+		toData.ParentConfigParams,
+		toData.ServerCapabilities,
+		toData.DSRequiredCapabilities,
+		toData.CacheGroups,
+		toData.DeliveryServiceServers,
+		toData.CDN,
+		atscfg.StrategiesYAMLOpts{
+			HdrComment:      hdrCommentTxt,
+			VerboseComments: cfg.ParentComments, // TODO add a CLI flag?
+		},
+	)
 }
 
 func MakeUnknownConfig(toData *t3cutil.ConfigData, fileName string, hdrCommentTxt string, cfg config.Cfg) (atscfg.Cfg, error) {

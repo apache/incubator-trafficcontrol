@@ -37,6 +37,22 @@ const LineCommentRemapDotConfig = LineCommentHash
 
 const RemapConfigRangeDirective = `__RANGE_DIRECTIVE__`
 
+// RemapConfigOpts contains settings to configure remap.config generation options.
+type RemapConfigOpts struct {
+	// VerboseComments is whether to add informative comments to the generated file, about what was generated and why.
+	// Note this does not include the header comment, which is configured separately with HdrComment.
+	// These comments are human-readable and not guarnateed to be consistent between versions. Automating anything based on them is strongly discouraged.
+	VerboseComments bool
+
+	// HdrComment is the header comment to include at the beginning of the file.
+	// This should be the text desired, without comment syntax (like # or //). The file's comment syntax will be added.
+	// To omit the header comment, pass the empty string.
+	HdrComment string
+
+	// UseStrategies is whether to use strategies.yaml rather than parent.config.
+	UseStrategies bool
+}
+
 func MakeRemapDotConfig(
 	server *Server,
 	unfilteredDSes []DeliveryService,
@@ -49,7 +65,7 @@ func MakeRemapDotConfig(
 	cacheGroupArr []tc.CacheGroupNullable,
 	serverCapabilities map[int]map[ServerCapability]struct{},
 	dsRequiredCapabilities map[int]map[ServerCapability]struct{},
-	hdrComment string,
+	opts RemapConfigOpts,
 ) (Cfg, error) {
 	warnings := []string{}
 	if server.HostName == nil {
@@ -87,13 +103,13 @@ func MakeRemapDotConfig(
 
 	nameTopologies := makeTopologyNameMap(topologies)
 
-	hdr := makeHdrComment(hdrComment)
+	hdr := makeHdrComment(opts.HdrComment)
 	txt := ""
 	typeWarns := []string{}
 	if tc.CacheTypeFromString(server.Type) == tc.CacheTypeMid {
-		txt, typeWarns, err = getServerConfigRemapDotConfigForMid(atsMajorVersion, dsProfilesCacheKeyConfigParams, dses, dsRegexes, hdr, server, nameTopologies, cacheGroups, serverCapabilities, dsRequiredCapabilities)
+		txt, typeWarns, err = getServerConfigRemapDotConfigForMid(atsMajorVersion, dsProfilesCacheKeyConfigParams, dses, dsRegexes, hdr, server, nameTopologies, cacheGroups, serverCapabilities, dsRequiredCapabilities, opts)
 	} else {
-		txt, typeWarns, err = getServerConfigRemapDotConfigForEdge(cacheURLConfigParams, dsProfilesCacheKeyConfigParams, serverPackageParamData, dses, dsRegexes, atsMajorVersion, hdr, server, nameTopologies, cacheGroups, serverCapabilities, dsRequiredCapabilities, cdnDomain)
+		txt, typeWarns, err = getServerConfigRemapDotConfigForEdge(cacheURLConfigParams, dsProfilesCacheKeyConfigParams, serverPackageParamData, dses, dsRegexes, atsMajorVersion, hdr, server, nameTopologies, cacheGroups, serverCapabilities, dsRequiredCapabilities, cdnDomain, opts)
 	}
 	warnings = append(warnings, typeWarns...)
 	if err != nil {
@@ -120,6 +136,7 @@ func getServerConfigRemapDotConfigForMid(
 	cacheGroups map[tc.CacheGroupName]tc.CacheGroupNullable,
 	serverCapabilities map[int]map[ServerCapability]struct{},
 	dsRequiredCapabilities map[int]map[ServerCapability]struct{},
+	opts RemapConfigOpts,
 ) (string, []string, error) {
 	warnings := []string{}
 	midRemaps := map[string]string{}
@@ -157,6 +174,11 @@ func getServerConfigRemapDotConfigForMid(
 		hasCacheKey := false
 
 		midRemap := ""
+
+		if opts.UseStrategies {
+			strategyName := *ds.XMLID
+			midRemap += ` @strategy=` + strategyName
+		}
 
 		if *ds.Topology != "" {
 			topoTxt, err := makeDSTopologyHeaderRewriteTxt(ds, tc.CacheGroupName(*server.Cachegroup), topology, cacheGroups)
@@ -228,6 +250,7 @@ func getServerConfigRemapDotConfigForEdge(
 	serverCapabilities map[int]map[ServerCapability]struct{},
 	dsRequiredCapabilities map[int]map[ServerCapability]struct{},
 	cdnDomain string,
+	opts RemapConfigOpts,
 ) (string, []string, error) {
 	warnings := []string{}
 	textLines := []string{}
@@ -277,7 +300,7 @@ func getServerConfigRemapDotConfigForEdge(
 					profilecacheKeyConfigParams = profilesCacheKeyConfigParams[*ds.ProfileID]
 				}
 				remapWarns := []string{}
-				remapText, remapWarns, err = buildEdgeRemapLine(cacheURLConfigParams, atsMajorVersion, server, serverPackageParamData, remapText, ds, line.From, line.To, profilecacheKeyConfigParams, cacheGroups, nameTopologies)
+				remapText, remapWarns, err = buildEdgeRemapLine(cacheURLConfigParams, atsMajorVersion, server, serverPackageParamData, remapText, ds, line.From, line.To, profilecacheKeyConfigParams, cacheGroups, nameTopologies, opts)
 				warnings = append(warnings, remapWarns...)
 				if err != nil {
 					return "", warnings, err
@@ -312,15 +335,23 @@ func buildEdgeRemapLine(
 	cacheKeyConfigParams map[string]string,
 	cacheGroups map[tc.CacheGroupName]tc.CacheGroupNullable,
 	nameTopologies map[TopologyName]tc.Topology,
+	opts RemapConfigOpts,
 ) (string, []string, error) {
 	warnings := []string{}
 	// ds = 'remap' in perl
 	mapFrom = strings.Replace(mapFrom, `__http__`, *server.HostName, -1)
 
+	text += "map	" + mapFrom + "     " + mapTo
+
+	if opts.UseStrategies {
+		strategyName := *ds.XMLID
+		text += ` @strategy=` + strategyName
+	}
+
 	if _, hasDSCPRemap := pData["dscp_remap"]; hasDSCPRemap {
-		text += "map	" + mapFrom + "     " + mapTo + ` @plugin=dscp_remap.so @pparam=` + strconv.Itoa(*ds.DSCP)
+		text += ` @plugin=dscp_remap.so @pparam=` + strconv.Itoa(*ds.DSCP)
 	} else {
-		text += "map	" + mapFrom + "     " + mapTo + ` @plugin=header_rewrite.so @pparam=dscp/set_dscp_` + strconv.Itoa(*ds.DSCP) + ".config"
+		text += ` @plugin=header_rewrite.so @pparam=dscp/set_dscp_` + strconv.Itoa(*ds.DSCP) + ".config"
 	}
 
 	if *ds.Topology != "" {

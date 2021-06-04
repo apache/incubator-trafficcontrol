@@ -83,6 +83,7 @@ type Cfg struct {
 	ReverseProxyDisable bool
 	RunMode             t3cutil.Mode
 	SkipOSCheck         bool
+	UseStrategies       bool
 	TOInsecure          bool
 	TOTimeoutMS         time.Duration
 	TOUser              string
@@ -202,6 +203,7 @@ func GetCfg() (Cfg, error) {
 	toUserPtr := getopt.StringLong("traffic-ops-user", 'U', "", "Traffic Ops username. Required. May also be set with the environment variable TO_USER")
 	toPassPtr := getopt.StringLong("traffic-ops-password", 'P', "", "Traffic Ops password. Required. May also be set with the environment variable TO_PASS")
 	tsHomePtr := getopt.StringLong("trafficserver-home", 'R', "", "Trafficserver Package directory. May also be set with the environment variable TS_HOME")
+	useStrategiesPtr := getopt.BoolLong("use-strategies", 'S', "[true | false] whether to generate config using strategies.yaml instead of parent.config")
 	waitForParentsPtr := getopt.BoolLong("wait-for-parents", 'W', "[true | false] do not update if parent_pending = 1 in the update json. default is false, wait for parents")
 	dnsLocalBindPtr := getopt.BoolLong("dns-local-bind", 'b', "[true | false] whether to use the server's Service Addresses to set the ATS DNS local bind address")
 	helpPtr := getopt.BoolLong("help", 'h', "Print usage information and exit")
@@ -242,6 +244,7 @@ func GetCfg() (Cfg, error) {
 	revalWaitTime := time.Second * time.Duration(*revalWaitTimePtr)
 	reverseProxyDisable := *reverseProxyDisablePtr
 	skipOsCheck := *skipOSCheckPtr
+	useStrategies := *useStrategiesPtr
 	toInsecure := *toInsecurePtr
 	toTimeoutMS := time.Millisecond * time.Duration(*toTimeoutMSPtr)
 	toURL := *toURLPtr
@@ -343,6 +346,7 @@ func GetCfg() (Cfg, error) {
 		ReverseProxyDisable:         reverseProxyDisable,
 		RunMode:                     runMode,
 		SkipOSCheck:                 skipOsCheck,
+		UseStrategies:               useStrategies,
 		TOInsecure:                  toInsecure,
 		TOTimeoutMS:                 toTimeoutMS,
 		TOUser:                      toUser,

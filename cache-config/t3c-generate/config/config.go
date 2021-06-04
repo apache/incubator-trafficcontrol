@@ -52,6 +52,7 @@ type Cfg struct {
 	LogLocationWarn    string
 	RevalOnly          bool
 	Dir                string
+	UseStrategies      bool
 	ViaRelease         bool
 	SetDNSLocalBind    bool
 	ParentComments     bool

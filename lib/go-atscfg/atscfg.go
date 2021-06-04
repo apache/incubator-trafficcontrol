@@ -36,6 +36,7 @@ const DefaultATSVersion = "5" // TODO Emulates Perl; change to 6? ATC no longer 
 // todo also unused
 const HeaderCommentDateFormat = "Mon Jan 2 15:04:05 MST 2006"
 const ContentTypeTextASCII = `text/plain; charset=us-ascii`
+
 const LineCommentHash = "#"
 const ConfigSuffix = ".config"
 const TsDefaultRequestHeaderMaxSize = 131072

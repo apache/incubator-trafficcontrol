@@ -454,6 +454,7 @@ func requiredFiles9() []string {
 		"sni.yaml",
 		"storage.config",
 		"volume.config",
+		"strategies.yaml",
 	}
 }
 
