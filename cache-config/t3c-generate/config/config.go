@@ -180,8 +180,8 @@ type TOData struct {
 	// ServerParams must be all Parameters on the Profile of the current server. Must not include other Parameters.
 	ServerParams []tc.Parameter
 
-	// CacheKeyParams must be all Parameters with the ConfigFile atscfg.CacheKeyParameterConfigFile.
-	CacheKeyParams []tc.Parameter
+	// RemapConfigParams must be all Parameters with the ConfigFile "remap.config". Also includes cachekey.config parameters
+	RemapConfigParams []tc.Parameter
 
 	// ParentConfigParams must be all Parameters with the ConfigFile "parent.config.
 	ParentConfigParams []tc.Parameter

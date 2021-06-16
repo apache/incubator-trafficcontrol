@@ -45,7 +45,7 @@ func makeTestRemapServer() *Server {
 	return server
 }
 
-func TestMakeRemapDotConfig(t *testing.T) {
+func TestMakeRemapDotConfig0(t *testing.T) {
 	hdr := "myHeaderComment"
 
 	server := makeTestRemapServer()
@@ -106,16 +106,10 @@ func TestMakeRemapDotConfig(t *testing.T) {
 
 	cacheKeyParams := []tc.Parameter{
 		tc.Parameter{
-			Name:       "cachekeyparamname",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyparamval",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
-			Name:       "not_location",
-			ConfigFile: "cacheurl.config",
-			Value:      "notinconfig",
-			Profiles:   []byte(`["global"]`),
+			Name:       "cachekey.pparam",
+			ConfigFile: "remap.config",
+			Value:      "--cachekeykey=cachekeyval",
+			Profiles:   []byte(`["dsprofile"]`),
 		},
 		tc.Parameter{
 			Name:       "not_location",
@@ -140,6 +134,8 @@ func TestMakeRemapDotConfig(t *testing.T) {
 		t.Fatal(err)
 	}
 	txt := cfg.Text
+
+	t.Logf("text: %v", txt)
 
 	txt = strings.TrimSpace(txt)
 
@@ -232,18 +228,6 @@ func TestMakeRemapDotConfigMidLiveLocalExcluded(t *testing.T) {
 	}
 
 	cacheKeyParams := []tc.Parameter{
-		tc.Parameter{
-			Name:       "cachekeyparamname",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyparamval",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
-			Name:       "not_location",
-			ConfigFile: "cacheurl.config",
-			Value:      "notinconfig",
-			Profiles:   []byte(`["global"]`),
-		},
 		tc.Parameter{
 			Name:       "not_location",
 			ConfigFile: "cachekey.config",
@@ -344,18 +328,6 @@ func TestMakeRemapDotConfigMid(t *testing.T) {
 	}
 
 	cacheKeyParams := []tc.Parameter{
-		tc.Parameter{
-			Name:       "cachekeyparamname",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyparamval",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
-			Name:       "not_location",
-			ConfigFile: "cacheurl.config",
-			Value:      "notinconfig",
-			Profiles:   []byte(`["global"]`),
-		},
 		tc.Parameter{
 			Name:       "not_location",
 			ConfigFile: "cachekey.config",
@@ -471,18 +443,6 @@ func TestMakeRemapDotConfigNilOrigin(t *testing.T) {
 
 	cacheKeyParams := []tc.Parameter{
 		tc.Parameter{
-			Name:       "cachekeyparamname",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyparamval",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
-			Name:       "not_location",
-			ConfigFile: "cacheurl.config",
-			Value:      "notinconfig",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
 			Name:       "not_location",
 			ConfigFile: "cachekey.config",
 			Value:      "notinconfig",
@@ -582,18 +542,6 @@ func TestMakeRemapDotConfigEmptyOrigin(t *testing.T) {
 	}
 
 	cacheKeyParams := []tc.Parameter{
-		tc.Parameter{
-			Name:       "cachekeyparamname",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyparamval",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
-			Name:       "not_location",
-			ConfigFile: "cacheurl.config",
-			Value:      "notinconfig",
-			Profiles:   []byte(`["global"]`),
-		},
 		tc.Parameter{
 			Name:       "not_location",
 			ConfigFile: "cachekey.config",
@@ -733,18 +681,6 @@ func TestMakeRemapDotConfigDuplicateOrigins(t *testing.T) {
 
 	cacheKeyParams := []tc.Parameter{
 		tc.Parameter{
-			Name:       "cachekeyparamname",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyparamval",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
-			Name:       "not_location",
-			ConfigFile: "cacheurl.config",
-			Value:      "notinconfig",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
 			Name:       "not_location",
 			ConfigFile: "cachekey.config",
 			Value:      "notinconfig",
@@ -843,18 +779,6 @@ func TestMakeRemapDotConfigNilMidRewrite(t *testing.T) {
 	}
 
 	cacheKeyParams := []tc.Parameter{
-		tc.Parameter{
-			Name:       "cachekeyparamname",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyparamval",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
-			Name:       "not_location",
-			ConfigFile: "cacheurl.config",
-			Value:      "notinconfig",
-			Profiles:   []byte(`["global"]`),
-		},
 		tc.Parameter{
 			Name:       "not_location",
 			ConfigFile: "cachekey.config",
@@ -956,18 +880,6 @@ func TestMakeRemapDotConfigMidHasNoEdgeRewrite(t *testing.T) {
 	}
 
 	cacheKeyParams := []tc.Parameter{
-		tc.Parameter{
-			Name:       "cachekeyparamname",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyparamval",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
-			Name:       "not_location",
-			ConfigFile: "cacheurl.config",
-			Value:      "notinconfig",
-			Profiles:   []byte(`["global"]`),
-		},
 		tc.Parameter{
 			Name:       "not_location",
 			ConfigFile: "cachekey.config",
@@ -1072,27 +984,9 @@ func TestMakeRemapDotConfigMidProfileCacheKey(t *testing.T) {
 	cacheKeyParams := []tc.Parameter{
 		tc.Parameter{
 			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
+			ConfigFile: "cachekey.config",
 			Value:      "cachekeyval",
 			Profiles:   []byte(`["dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "shouldnotexist",
-			ConfigFile: "cacheurl.config",
-			Value:      "shouldnotexisteither",
-			Profiles:   []byte(`["not-dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
-			Name:       "not_location",
-			ConfigFile: "cacheurl.config",
-			Value:      "notinconfig",
-			Profiles:   []byte(`["global"]`),
 		},
 		tc.Parameter{
 			Name:       "not_location",
@@ -1359,30 +1253,6 @@ func TestMakeRemapDotConfigMidRangeRequestHandling(t *testing.T) {
 
 	cacheKeyParams := []tc.Parameter{
 		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "shouldnotexist",
-			ConfigFile: "cacheurl.config",
-			Value:      "shouldnotexisteither",
-			Profiles:   []byte(`["not-dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
-			Name:       "not_location",
-			ConfigFile: "cacheurl.config",
-			Value:      "notinconfig",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
 			Name:       "not_location",
 			ConfigFile: "cachekey.config",
 			Value:      "notinconfig",
@@ -1522,30 +1392,6 @@ func TestMakeRemapDotConfigMidSlicePluginRangeRequestHandling(t *testing.T) {
 	}
 
 	cacheKeyParams := []tc.Parameter{
-		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "shouldnotexist",
-			ConfigFile: "cacheurl.config",
-			Value:      "shouldnotexisteither",
-			Profiles:   []byte(`["not-dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
-			Name:       "not_location",
-			ConfigFile: "cacheurl.config",
-			Value:      "notinconfig",
-			Profiles:   []byte(`["global"]`),
-		},
 		tc.Parameter{
 			Name:       "not_location",
 			ConfigFile: "cachekey.config",
@@ -1687,30 +1533,6 @@ func TestMakeRemapDotConfigAnyMap(t *testing.T) {
 	}
 
 	cacheKeyParams := []tc.Parameter{
-		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "shouldnotexist",
-			ConfigFile: "cacheurl.config",
-			Value:      "shouldnotexisteither",
-			Profiles:   []byte(`["not-dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
-			Name:       "not_location",
-			ConfigFile: "cacheurl.config",
-			Value:      "notinconfig",
-			Profiles:   []byte(`["global"]`),
-		},
 		tc.Parameter{
 			Name:       "not_location",
 			ConfigFile: "cachekey.config",
@@ -2109,30 +1931,6 @@ func TestMakeRemapDotConfigEdgeMissingRemapData(t *testing.T) {
 
 	cacheKeyParams := []tc.Parameter{
 		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "shouldnotexist",
-			ConfigFile: "cacheurl.config",
-			Value:      "shouldnotexisteither",
-			Profiles:   []byte(`["not-dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
-			Name:       "not_location",
-			ConfigFile: "cacheurl.config",
-			Value:      "notinconfig",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
 			Name:       "not_location",
 			ConfigFile: "cachekey.config",
 			Value:      "notinconfig",
@@ -2236,30 +2034,6 @@ func TestMakeRemapDotConfigEdgeHostRegexReplacement(t *testing.T) {
 	}
 
 	cacheKeyParams := []tc.Parameter{
-		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "shouldnotexist",
-			ConfigFile: "cacheurl.config",
-			Value:      "shouldnotexisteither",
-			Profiles:   []byte(`["not-dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
-			Name:       "not_location",
-			ConfigFile: "cacheurl.config",
-			Value:      "notinconfig",
-			Profiles:   []byte(`["global"]`),
-		},
 		tc.Parameter{
 			Name:       "not_location",
 			ConfigFile: "cachekey.config",
@@ -2382,30 +2156,6 @@ func TestMakeRemapDotConfigEdgeHostRegexReplacementHTTP(t *testing.T) {
 
 	cacheKeyParams := []tc.Parameter{
 		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "shouldnotexist",
-			ConfigFile: "cacheurl.config",
-			Value:      "shouldnotexisteither",
-			Profiles:   []byte(`["not-dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
-			Name:       "not_location",
-			ConfigFile: "cacheurl.config",
-			Value:      "notinconfig",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
 			Name:       "not_location",
 			ConfigFile: "cachekey.config",
 			Value:      "notinconfig",
@@ -2526,30 +2276,6 @@ func TestMakeRemapDotConfigEdgeHostRegexReplacementHTTPS(t *testing.T) {
 	}
 
 	cacheKeyParams := []tc.Parameter{
-		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "shouldnotexist",
-			ConfigFile: "cacheurl.config",
-			Value:      "shouldnotexisteither",
-			Profiles:   []byte(`["not-dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
-			Name:       "not_location",
-			ConfigFile: "cacheurl.config",
-			Value:      "notinconfig",
-			Profiles:   []byte(`["global"]`),
-		},
 		tc.Parameter{
 			Name:       "not_location",
 			ConfigFile: "cachekey.config",
@@ -2672,30 +2398,6 @@ func TestMakeRemapDotConfigEdgeHostRegexReplacementHTTPToHTTPS(t *testing.T) {
 
 	cacheKeyParams := []tc.Parameter{
 		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "shouldnotexist",
-			ConfigFile: "cacheurl.config",
-			Value:      "shouldnotexisteither",
-			Profiles:   []byte(`["not-dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
-			Name:       "not_location",
-			ConfigFile: "cacheurl.config",
-			Value:      "notinconfig",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
 			Name:       "not_location",
 			ConfigFile: "cachekey.config",
 			Value:      "notinconfig",
@@ -2816,30 +2518,6 @@ func TestMakeRemapDotConfigEdgeRemapUnderscoreHTTPReplace(t *testing.T) {
 	}
 
 	cacheKeyParams := []tc.Parameter{
-		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "shouldnotexist",
-			ConfigFile: "cacheurl.config",
-			Value:      "shouldnotexisteither",
-			Profiles:   []byte(`["not-dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
-			Name:       "not_location",
-			ConfigFile: "cacheurl.config",
-			Value:      "notinconfig",
-			Profiles:   []byte(`["global"]`),
-		},
 		tc.Parameter{
 			Name:       "not_location",
 			ConfigFile: "cachekey.config",
@@ -2964,30 +2642,6 @@ func TestMakeRemapDotConfigEdgeDSCPRemap(t *testing.T) {
 
 	cacheKeyParams := []tc.Parameter{
 		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "shouldnotexist",
-			ConfigFile: "cacheurl.config",
-			Value:      "shouldnotexisteither",
-			Profiles:   []byte(`["not-dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
-			Name:       "not_location",
-			ConfigFile: "cacheurl.config",
-			Value:      "notinconfig",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
 			Name:       "not_location",
 			ConfigFile: "cachekey.config",
 			Value:      "notinconfig",
@@ -3111,30 +2765,6 @@ func TestMakeRemapDotConfigEdgeNoDSCPRemap(t *testing.T) {
 
 	cacheKeyParams := []tc.Parameter{
 		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "shouldnotexist",
-			ConfigFile: "cacheurl.config",
-			Value:      "shouldnotexisteither",
-			Profiles:   []byte(`["not-dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
-			Name:       "not_location",
-			ConfigFile: "cacheurl.config",
-			Value:      "notinconfig",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
 			Name:       "not_location",
 			ConfigFile: "cachekey.config",
 			Value:      "notinconfig",
@@ -3257,30 +2887,6 @@ func TestMakeRemapDotConfigEdgeHeaderRewrite(t *testing.T) {
 	}
 
 	cacheKeyParams := []tc.Parameter{
-		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "shouldnotexist",
-			ConfigFile: "cacheurl.config",
-			Value:      "shouldnotexisteither",
-			Profiles:   []byte(`["not-dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
-			Name:       "not_location",
-			ConfigFile: "cacheurl.config",
-			Value:      "notinconfig",
-			Profiles:   []byte(`["global"]`),
-		},
 		tc.Parameter{
 			Name:       "not_location",
 			ConfigFile: "cachekey.config",
@@ -3409,30 +3015,6 @@ func TestMakeRemapDotConfigEdgeHeaderRewriteEmpty(t *testing.T) {
 
 	cacheKeyParams := []tc.Parameter{
 		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "shouldnotexist",
-			ConfigFile: "cacheurl.config",
-			Value:      "shouldnotexisteither",
-			Profiles:   []byte(`["not-dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
-			Name:       "not_location",
-			ConfigFile: "cacheurl.config",
-			Value:      "notinconfig",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
 			Name:       "not_location",
 			ConfigFile: "cachekey.config",
 			Value:      "notinconfig",
@@ -3559,30 +3141,6 @@ func TestMakeRemapDotConfigEdgeHeaderRewriteNil(t *testing.T) {
 	}
 
 	cacheKeyParams := []tc.Parameter{
-		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "shouldnotexist",
-			ConfigFile: "cacheurl.config",
-			Value:      "shouldnotexisteither",
-			Profiles:   []byte(`["not-dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
-			Name:       "not_location",
-			ConfigFile: "cacheurl.config",
-			Value:      "notinconfig",
-			Profiles:   []byte(`["global"]`),
-		},
 		tc.Parameter{
 			Name:       "not_location",
 			ConfigFile: "cachekey.config",
@@ -3711,30 +3269,6 @@ func TestMakeRemapDotConfigEdgeSigningURLSig(t *testing.T) {
 
 	cacheKeyParams := []tc.Parameter{
 		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "shouldnotexist",
-			ConfigFile: "cacheurl.config",
-			Value:      "shouldnotexisteither",
-			Profiles:   []byte(`["not-dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
-			Name:       "not_location",
-			ConfigFile: "cacheurl.config",
-			Value:      "notinconfig",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
 			Name:       "not_location",
 			ConfigFile: "cachekey.config",
 			Value:      "notinconfig",
@@ -3856,30 +3390,6 @@ func TestMakeRemapDotConfigEdgeSigningURISigning(t *testing.T) {
 	}
 
 	cacheKeyParams := []tc.Parameter{
-		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "shouldnotexist",
-			ConfigFile: "cacheurl.config",
-			Value:      "shouldnotexisteither",
-			Profiles:   []byte(`["not-dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
-			Name:       "not_location",
-			ConfigFile: "cacheurl.config",
-			Value:      "notinconfig",
-			Profiles:   []byte(`["global"]`),
-		},
 		tc.Parameter{
 			Name:       "not_location",
 			ConfigFile: "cachekey.config",
@@ -4003,30 +3513,6 @@ func TestMakeRemapDotConfigEdgeSigningNone(t *testing.T) {
 
 	cacheKeyParams := []tc.Parameter{
 		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "shouldnotexist",
-			ConfigFile: "cacheurl.config",
-			Value:      "shouldnotexisteither",
-			Profiles:   []byte(`["not-dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
-			Name:       "not_location",
-			ConfigFile: "cacheurl.config",
-			Value:      "notinconfig",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
 			Name:       "not_location",
 			ConfigFile: "cachekey.config",
 			Value:      "notinconfig",
@@ -4148,30 +3634,6 @@ func TestMakeRemapDotConfigEdgeSigningEmpty(t *testing.T) {
 	}
 
 	cacheKeyParams := []tc.Parameter{
-		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "shouldnotexist",
-			ConfigFile: "cacheurl.config",
-			Value:      "shouldnotexisteither",
-			Profiles:   []byte(`["not-dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
-			Name:       "not_location",
-			ConfigFile: "cacheurl.config",
-			Value:      "notinconfig",
-			Profiles:   []byte(`["global"]`),
-		},
 		tc.Parameter{
 			Name:       "not_location",
 			ConfigFile: "cachekey.config",
@@ -4295,30 +3757,6 @@ func TestMakeRemapDotConfigEdgeSigningWrong(t *testing.T) {
 
 	cacheKeyParams := []tc.Parameter{
 		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "shouldnotexist",
-			ConfigFile: "cacheurl.config",
-			Value:      "shouldnotexisteither",
-			Profiles:   []byte(`["not-dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
-			Name:       "not_location",
-			ConfigFile: "cacheurl.config",
-			Value:      "notinconfig",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
 			Name:       "not_location",
 			ConfigFile: "cachekey.config",
 			Value:      "notinconfig",
@@ -4441,30 +3879,6 @@ func TestMakeRemapDotConfigEdgeQStringDropAtEdge(t *testing.T) {
 
 	cacheKeyParams := []tc.Parameter{
 		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "shouldnotexist",
-			ConfigFile: "cacheurl.config",
-			Value:      "shouldnotexisteither",
-			Profiles:   []byte(`["not-dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
-			Name:       "not_location",
-			ConfigFile: "cacheurl.config",
-			Value:      "notinconfig",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
 			Name:       "not_location",
 			ConfigFile: "cachekey.config",
 			Value:      "notinconfig",
@@ -4584,30 +3998,6 @@ func TestMakeRemapDotConfigEdgeQStringIgnorePassUp(t *testing.T) {
 	}
 
 	cacheKeyParams := []tc.Parameter{
-		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "shouldnotexist",
-			ConfigFile: "cacheurl.config",
-			Value:      "shouldnotexisteither",
-			Profiles:   []byte(`["not-dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
-			Name:       "not_location",
-			ConfigFile: "cacheurl.config",
-			Value:      "notinconfig",
-			Profiles:   []byte(`["global"]`),
-		},
 		tc.Parameter{
 			Name:       "not_location",
 			ConfigFile: "cachekey.config",
@@ -4732,28 +4122,10 @@ func TestMakeRemapDotConfigEdgeQStringIgnorePassUpWithCacheKeyParameter(t *testi
 
 	cacheKeyParams := []tc.Parameter{
 		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
+			Name:       "cachekey.pparam",
+			ConfigFile: "remap.config",
+			Value:      "--cachekeykey=cachekeyval",
 			Profiles:   []byte(`["dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "shouldnotexist",
-			ConfigFile: "cacheurl.config",
-			Value:      "shouldnotexisteither",
-			Profiles:   []byte(`["not-dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
-			Name:       "not_location",
-			ConfigFile: "cacheurl.config",
-			Value:      "notinconfig",
-			Profiles:   []byte(`["global"]`),
 		},
 		tc.Parameter{
 			Name:       "not_location",
@@ -4801,124 +4173,6 @@ func TestMakeRemapDotConfigEdgeQStringIgnorePassUpWithCacheKeyParameter(t *testi
 
 	if !strings.Contains(remapLine, "cachekeykey") {
 		t.Errorf("expected remap on edge server with qstring ignore pass up and cachekey param to include both, actual '%v'", txt)
-	}
-}
-
-func TestMakeRemapDotConfigEdgeQStringIgnorePassUpCacheURLParam(t *testing.T) {
-	hdr := "myHeaderComment"
-
-	server := makeTestRemapServer()
-	server.Type = "EDGE"
-
-	ds := DeliveryService{}
-	ds.ID = util.IntPtr(48)
-	dsType := tc.DSType("HTTP_LIVE_NATNL")
-	ds.Type = &dsType
-	ds.OrgServerFQDN = util.StrPtr("origin.example.test")
-	ds.MidHeaderRewrite = util.StrPtr("")
-	ds.RangeRequestHandling = util.IntPtr(int(tc.RangeRequestHandlingCacheRangeRequest))
-	ds.RemapText = util.StrPtr("myremaptext")
-	ds.EdgeHeaderRewrite = nil
-	ds.SigningAlgorithm = util.StrPtr("foo")
-	ds.XMLID = util.StrPtr("mydsname")
-	ds.QStringIgnore = util.IntPtr(int(tc.QueryStringIgnoreIgnoreInCacheKeyAndPassUp))
-	ds.RegexRemap = util.StrPtr("myregexremap")
-	ds.FQPacingRate = util.IntPtr(0)
-	ds.DSCP = util.IntPtr(0)
-	ds.RoutingName = util.StrPtr("myroutingname")
-	ds.MultiSiteOrigin = util.BoolPtr(false)
-	ds.OriginShield = util.StrPtr("myoriginshield")
-	ds.ProfileID = util.IntPtr(49)
-	ds.ProfileName = util.StrPtr("dsprofile")
-	ds.Protocol = util.IntPtr(int(tc.DSProtocolHTTPToHTTPS))
-	ds.AnonymousBlockingEnabled = util.BoolPtr(false)
-	ds.Active = util.BoolPtr(true)
-
-	dses := []DeliveryService{ds}
-
-	dss := []DeliveryServiceServer{
-		DeliveryServiceServer{
-			Server:          *server.ID,
-			DeliveryService: *ds.ID,
-		},
-	}
-
-	dsRegexes := []tc.DeliveryServiceRegexes{
-		tc.DeliveryServiceRegexes{
-			DSName: *ds.XMLID,
-			Regexes: []tc.DeliveryServiceRegex{
-				tc.DeliveryServiceRegex{
-					Type:      string(tc.DSMatchTypeHostRegex),
-					SetNumber: 0,
-					Pattern:   `myliteralpattern__http__foo`,
-				},
-			},
-		},
-	}
-
-	serverParams := []tc.Parameter{
-		tc.Parameter{
-			Name:       "trafficserver",
-			ConfigFile: "package",
-			Value:      "7",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
-			Name:       "serverpkgval",
-			ConfigFile: "package",
-			Value:      "serverpkgval __HOSTNAME__ foo",
-			Profiles:   []byte(*server.Profile),
-		},
-		tc.Parameter{
-			Name:       "dscp_remap_no",
-			ConfigFile: "package",
-			Value:      "notused",
-			Profiles:   []byte(*server.Profile),
-		},
-		tc.Parameter{
-			Name:       "location",
-			ConfigFile: "cacheurl.config",
-			Value:      "notinconfig",
-			Profiles:   []byte(`["global"]`),
-		},
-	}
-
-	cacheKeyParams := []tc.Parameter{}
-
-	cdn := &tc.CDN{
-		DomainName: "cdndomain.example",
-		Name:       "my-cdn-name",
-	}
-
-	topologies := []tc.Topology{}
-	cgs := []tc.CacheGroupNullable{}
-	serverCapabilities := map[int]map[ServerCapability]struct{}{}
-	dsRequiredCapabilities := map[int]map[ServerCapability]struct{}{}
-
-	cfg, err := MakeRemapDotConfig(server, dses, dss, dsRegexes, serverParams, cdn, cacheKeyParams, topologies, cgs, serverCapabilities, dsRequiredCapabilities, hdr)
-	if err != nil {
-		t.Fatal(err)
-	}
-	txt := cfg.Text
-
-	txt = strings.TrimSpace(txt)
-
-	testComment(t, txt, hdr)
-
-	txtLines := strings.Split(txt, "\n")
-
-	if len(txtLines) != 2 {
-		t.Fatalf("expected 1 remaps from HTTP_TO_HTTPS DS, actual: '%v' count %v", txt, len(txtLines))
-	}
-
-	remapLine := txtLines[1]
-
-	if !strings.HasPrefix(remapLine, "map") {
-		t.Errorf("expected to start with 'map', actual '%v'", txt)
-	}
-
-	if strings.Contains(remapLine, "cachekey.so") {
-		t.Errorf("expected remap on edge server with qstring ignore pass up but also cacheurl parameter to not contain cachekey plugin, actual '%v'", txt)
 	}
 }
 
@@ -5039,343 +4293,6 @@ func TestMakeRemapDotConfigEdgeQStringIgnorePassUpCacheURLParamCacheURL(t *testi
 	}
 }
 
-func TestMakeRemapDotConfigEdgeQStringIgnorePassUpCacheURLParamCacheURLAndDSCacheURL(t *testing.T) {
-	// Currently, the make func should log an error if the QString results in a cacheurl plugin, and there's also a cacheurl, but it should generate it anyway.
-
-	hdr := "myHeaderComment"
-
-	server := makeTestRemapServer()
-	server.Type = "EDGE"
-
-	ds := DeliveryService{}
-	ds.ID = util.IntPtr(48)
-	dsType := tc.DSType("HTTP_LIVE_NATNL")
-	ds.Type = &dsType
-	ds.OrgServerFQDN = util.StrPtr("origin.example.test")
-	ds.MidHeaderRewrite = util.StrPtr("")
-	ds.RangeRequestHandling = util.IntPtr(int(tc.RangeRequestHandlingCacheRangeRequest))
-	ds.RemapText = util.StrPtr("myremaptext")
-	ds.EdgeHeaderRewrite = nil
-	ds.SigningAlgorithm = util.StrPtr("foo")
-	ds.XMLID = util.StrPtr("mydsname")
-	ds.QStringIgnore = util.IntPtr(int(tc.QueryStringIgnoreIgnoreInCacheKeyAndPassUp))
-	ds.RegexRemap = util.StrPtr("myregexremap")
-	ds.FQPacingRate = util.IntPtr(0)
-	ds.DSCP = util.IntPtr(0)
-	ds.RoutingName = util.StrPtr("myroutingname")
-	ds.MultiSiteOrigin = util.BoolPtr(false)
-	ds.OriginShield = util.StrPtr("myoriginshield")
-	ds.ProfileID = util.IntPtr(49)
-	ds.ProfileName = util.StrPtr("dsprofile")
-	ds.Protocol = util.IntPtr(int(tc.DSProtocolHTTPToHTTPS))
-	ds.AnonymousBlockingEnabled = util.BoolPtr(false)
-	ds.Active = util.BoolPtr(true)
-
-	dses := []DeliveryService{ds}
-
-	dss := []DeliveryServiceServer{
-		DeliveryServiceServer{
-			Server:          *server.ID,
-			DeliveryService: *ds.ID,
-		},
-	}
-
-	dsRegexes := []tc.DeliveryServiceRegexes{
-		tc.DeliveryServiceRegexes{
-			DSName: *ds.XMLID,
-			Regexes: []tc.DeliveryServiceRegex{
-				tc.DeliveryServiceRegex{
-					Type:      string(tc.DSMatchTypeHostRegex),
-					SetNumber: 0,
-					Pattern:   `myliteralpattern__http__foo`,
-				},
-			},
-		},
-	}
-
-	serverParams := []tc.Parameter{
-		tc.Parameter{
-			Name:       "trafficserver",
-			ConfigFile: "package",
-			Value:      "5",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
-			Name:       "serverpkgval",
-			ConfigFile: "package",
-			Value:      "serverpkgval __HOSTNAME__ foo",
-			Profiles:   []byte(*server.Profile),
-		},
-		tc.Parameter{
-			Name:       "dscp_remap_no",
-			ConfigFile: "package",
-			Value:      "notused",
-			Profiles:   []byte(*server.Profile),
-		},
-	}
-
-	cacheKeyParams := []tc.Parameter{}
-
-	cdn := &tc.CDN{
-		DomainName: "cdndomain.example",
-		Name:       "my-cdn-name",
-	}
-
-	topologies := []tc.Topology{}
-	cgs := []tc.CacheGroupNullable{}
-	serverCapabilities := map[int]map[ServerCapability]struct{}{}
-	dsRequiredCapabilities := map[int]map[ServerCapability]struct{}{}
-
-	cfg, err := MakeRemapDotConfig(server, dses, dss, dsRegexes, serverParams, cdn, cacheKeyParams, topologies, cgs, serverCapabilities, dsRequiredCapabilities, hdr)
-	if err != nil {
-		t.Fatal(err)
-	}
-	txt := cfg.Text
-
-	txt = strings.TrimSpace(txt)
-
-	testComment(t, txt, hdr)
-
-	txtLines := strings.Split(txt, "\n")
-
-	if len(txtLines) != 2 {
-		t.Fatalf("expected 1 remaps from HTTP_TO_HTTPS DS, actual: '%v' count %v", txt, len(txtLines))
-	}
-
-	remapLine := txtLines[1]
-
-	if !strings.HasPrefix(remapLine, "map") {
-		t.Errorf("expected to start with 'map', actual '%v'", txt)
-	}
-
-	if strings.Contains(remapLine, "cachekey.so") {
-		t.Errorf("expected remap on edge server with ats<5 to not contain cachekey plugin, actual '%v'", txt)
-	}
-}
-
-func TestMakeRemapDotConfigMidQStringIgnorePassUpCacheURLParamCacheURLAndDSCacheURL(t *testing.T) {
-
-	// Currently, the make func should log an error if the QString results in a cacheurl plugin, and there's also a cacheurl, but it should generate it anyway.
-
-	hdr := "myHeaderComment"
-
-	server := makeTestRemapServer()
-	server.Type = "EDGE"
-
-	ds := DeliveryService{}
-	ds.ID = util.IntPtr(48)
-	dsType := tc.DSType("HTTP_LIVE_NATNL")
-	ds.Type = &dsType
-	ds.OrgServerFQDN = util.StrPtr("origin.example.test")
-	ds.MidHeaderRewrite = util.StrPtr("")
-	ds.RangeRequestHandling = util.IntPtr(int(tc.RangeRequestHandlingCacheRangeRequest))
-	ds.RemapText = util.StrPtr("myremaptext")
-	ds.EdgeHeaderRewrite = nil
-	ds.SigningAlgorithm = util.StrPtr("foo")
-	ds.XMLID = util.StrPtr("mydsname")
-	ds.QStringIgnore = util.IntPtr(int(tc.QueryStringIgnoreIgnoreInCacheKeyAndPassUp))
-	ds.RegexRemap = util.StrPtr("myregexremap")
-	ds.FQPacingRate = util.IntPtr(0)
-	ds.DSCP = util.IntPtr(0)
-	ds.RoutingName = util.StrPtr("myroutingname")
-	ds.MultiSiteOrigin = util.BoolPtr(false)
-	ds.OriginShield = util.StrPtr("myoriginshield")
-	ds.ProfileID = util.IntPtr(49)
-	ds.ProfileName = util.StrPtr("dsprofile")
-	ds.Protocol = util.IntPtr(int(tc.DSProtocolHTTPToHTTPS))
-	ds.AnonymousBlockingEnabled = util.BoolPtr(false)
-	ds.Active = util.BoolPtr(true)
-
-	dses := []DeliveryService{ds}
-
-	dss := []DeliveryServiceServer{
-		DeliveryServiceServer{
-			Server:          *server.ID,
-			DeliveryService: *ds.ID,
-		},
-	}
-
-	dsRegexes := []tc.DeliveryServiceRegexes{
-		tc.DeliveryServiceRegexes{
-			DSName: *ds.XMLID,
-			Regexes: []tc.DeliveryServiceRegex{
-				tc.DeliveryServiceRegex{
-					Type:      string(tc.DSMatchTypeHostRegex),
-					SetNumber: 0,
-					Pattern:   `myliteralpattern__http__foo`,
-				},
-			},
-		},
-	}
-
-	serverParams := []tc.Parameter{
-		tc.Parameter{
-			Name:       "trafficserver",
-			ConfigFile: "package",
-			Value:      "5",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
-			Name:       "serverpkgval",
-			ConfigFile: "package",
-			Value:      "serverpkgval __HOSTNAME__ foo",
-			Profiles:   []byte(*server.Profile),
-		},
-		tc.Parameter{
-			Name:       "dscp_remap_no",
-			ConfigFile: "package",
-			Value:      "notused",
-			Profiles:   []byte(*server.Profile),
-		},
-	}
-
-	cacheKeyParams := []tc.Parameter{}
-
-	cdn := &tc.CDN{
-		DomainName: "cdndomain.example",
-		Name:       "my-cdn-name",
-	}
-
-	topologies := []tc.Topology{}
-	cgs := []tc.CacheGroupNullable{}
-	serverCapabilities := map[int]map[ServerCapability]struct{}{}
-	dsRequiredCapabilities := map[int]map[ServerCapability]struct{}{}
-
-	cfg, err := MakeRemapDotConfig(server, dses, dss, dsRegexes, serverParams, cdn, cacheKeyParams, topologies, cgs, serverCapabilities, dsRequiredCapabilities, hdr)
-	if err != nil {
-		t.Fatal(err)
-	}
-	txt := cfg.Text
-
-	txt = strings.TrimSpace(txt)
-
-	testComment(t, txt, hdr)
-
-	txtLines := strings.Split(txt, "\n")
-
-	if len(txtLines) != 2 {
-		t.Fatalf("expected 1 remaps from HTTP_TO_HTTPS DS, actual: '%v' count %v", txt, len(txtLines))
-	}
-
-	remapLine := txtLines[1]
-
-	if !strings.HasPrefix(remapLine, "map") {
-		t.Errorf("expected to start with 'map', actual '%v'", txt)
-	}
-
-	if strings.Contains(remapLine, "cachekey.so") {
-		t.Errorf("expected remap on edge server with ats<5 to not contain cachekey plugin, actual '%v'", txt)
-	}
-}
-
-func TestMakeRemapDotConfigEdgeCacheURL(t *testing.T) {
-	hdr := "myHeaderComment"
-
-	server := makeTestRemapServer()
-	server.Type = "EDGE"
-
-	ds := DeliveryService{}
-	ds.ID = util.IntPtr(48)
-	dsType := tc.DSType("HTTP_LIVE_NATNL")
-	ds.Type = &dsType
-	ds.OrgServerFQDN = util.StrPtr("origin.example.test")
-	ds.MidHeaderRewrite = util.StrPtr("")
-	ds.RangeRequestHandling = util.IntPtr(int(tc.RangeRequestHandlingCacheRangeRequest))
-	ds.RemapText = util.StrPtr("myremaptext")
-	ds.EdgeHeaderRewrite = nil
-	ds.SigningAlgorithm = util.StrPtr("foo")
-	ds.XMLID = util.StrPtr("mydsname")
-	ds.QStringIgnore = util.IntPtr(int(tc.QueryStringIgnoreIgnoreInCacheKeyAndPassUp))
-	ds.RegexRemap = util.StrPtr("myregexremap")
-	ds.FQPacingRate = util.IntPtr(0)
-	ds.DSCP = util.IntPtr(0)
-	ds.RoutingName = util.StrPtr("myroutingname")
-	ds.MultiSiteOrigin = util.BoolPtr(false)
-	ds.OriginShield = util.StrPtr("myoriginshield")
-	ds.ProfileID = util.IntPtr(49)
-	ds.ProfileName = util.StrPtr("dsprofile")
-	ds.Protocol = util.IntPtr(int(tc.DSProtocolHTTPToHTTPS))
-	ds.AnonymousBlockingEnabled = util.BoolPtr(false)
-	ds.Active = util.BoolPtr(true)
-
-	dses := []DeliveryService{ds}
-
-	dss := []DeliveryServiceServer{
-		DeliveryServiceServer{
-			Server:          *server.ID,
-			DeliveryService: *ds.ID,
-		},
-	}
-
-	dsRegexes := []tc.DeliveryServiceRegexes{
-		tc.DeliveryServiceRegexes{
-			DSName: *ds.XMLID,
-			Regexes: []tc.DeliveryServiceRegex{
-				tc.DeliveryServiceRegex{
-					Type:      string(tc.DSMatchTypeHostRegex),
-					SetNumber: 0,
-					Pattern:   `myliteralpattern__http__foo`,
-				},
-			},
-		},
-	}
-
-	serverParams := []tc.Parameter{
-		tc.Parameter{
-			Name:       "trafficserver",
-			ConfigFile: "package",
-			Value:      "7",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
-			Name:       "serverpkgval",
-			ConfigFile: "package",
-			Value:      "serverpkgval __HOSTNAME__ foo",
-			Profiles:   []byte(*server.Profile),
-		},
-		tc.Parameter{
-			Name:       "dscp_remap_no",
-			ConfigFile: "package",
-			Value:      "notused",
-			Profiles:   []byte(*server.Profile),
-		},
-	}
-
-	cacheKeyParams := []tc.Parameter{}
-
-	cdn := &tc.CDN{
-		DomainName: "cdndomain.example",
-		Name:       "my-cdn-name",
-	}
-
-	topologies := []tc.Topology{}
-	cgs := []tc.CacheGroupNullable{}
-	serverCapabilities := map[int]map[ServerCapability]struct{}{}
-	dsRequiredCapabilities := map[int]map[ServerCapability]struct{}{}
-
-	cfg, err := MakeRemapDotConfig(server, dses, dss, dsRegexes, serverParams, cdn, cacheKeyParams, topologies, cgs, serverCapabilities, dsRequiredCapabilities, hdr)
-	if err != nil {
-		t.Fatal(err)
-	}
-	txt := cfg.Text
-
-	txt = strings.TrimSpace(txt)
-
-	testComment(t, txt, hdr)
-
-	txtLines := strings.Split(txt, "\n")
-
-	if len(txtLines) != 2 {
-		t.Fatalf("expected 1 remaps from HTTP_TO_HTTPS DS, actual: '%v' count %v", txt, len(txtLines))
-	}
-
-	remapLine := txtLines[1]
-
-	if !strings.HasPrefix(remapLine, "map") {
-		t.Errorf("expected to start with 'map', actual '%v'", txt)
-	}
-}
-
 func TestMakeRemapDotConfigEdgeCacheKeyParams(t *testing.T) {
 	hdr := "myHeaderComment"
 
@@ -5451,28 +4368,16 @@ func TestMakeRemapDotConfigEdgeCacheKeyParams(t *testing.T) {
 
 	cacheKeyParams := []tc.Parameter{
 		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
+			Name:       "cachekey.pparam",
+			ConfigFile: "remap.config",
+			Value:      "--cachekeykey=cachekeyval",
 			Profiles:   []byte(`["dsprofile"]`),
 		},
 		tc.Parameter{
-			Name:       "shouldnotexist",
-			ConfigFile: "cacheurl.config",
-			Value:      "shouldnotexisteither",
-			Profiles:   []byte(`["not-dsprofile"]`),
-		},
-		tc.Parameter{
 			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
-			Name:       "not_location",
-			ConfigFile: "cacheurl.config",
-			Value:      "notinconfig",
-			Profiles:   []byte(`["global"]`),
+			ConfigFile: "cachekey.config",
+			Value:      "cachekeyvalfoo",
+			Profiles:   []byte(`["dsprofile"]`),
 		},
 		tc.Parameter{
 			Name:       "not_location",
@@ -5523,6 +4428,9 @@ func TestMakeRemapDotConfigEdgeCacheKeyParams(t *testing.T) {
 	}
 	if !strings.Contains(remapLine, "cachekeyval") {
 		t.Errorf("expected remap on edge server with ds cache key params to contain param vals, actual '%v'", txt)
+	}
+	if strings.Contains(remapLine, "cachekeyvalfoo") {
+		t.Errorf("expected remap on edge server with ds cache key params to prefer cachekey.pparam vals, actual '%v'", txt)
 	}
 
 	if strings.Contains(remapLine, "shouldnotinclude") {
@@ -5605,30 +4513,6 @@ func TestMakeRemapDotConfigEdgeRegexRemap(t *testing.T) {
 	}
 
 	cacheKeyParams := []tc.Parameter{
-		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "shouldnotexist",
-			ConfigFile: "cacheurl.config",
-			Value:      "shouldnotexisteither",
-			Profiles:   []byte(`["not-dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
-			Name:       "not_location",
-			ConfigFile: "cacheurl.config",
-			Value:      "notinconfig",
-			Profiles:   []byte(`["global"]`),
-		},
 		tc.Parameter{
 			Name:       "not_location",
 			ConfigFile: "cachekey.config",
@@ -5753,30 +4637,6 @@ func TestMakeRemapDotConfigEdgeRegexRemapEmpty(t *testing.T) {
 
 	cacheKeyParams := []tc.Parameter{
 		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "shouldnotexist",
-			ConfigFile: "cacheurl.config",
-			Value:      "shouldnotexisteither",
-			Profiles:   []byte(`["not-dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
-			Name:       "not_location",
-			ConfigFile: "cacheurl.config",
-			Value:      "notinconfig",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
 			Name:       "not_location",
 			ConfigFile: "cachekey.config",
 			Value:      "notinconfig",
@@ -5895,30 +4755,6 @@ func TestMakeRemapDotConfigEdgeRangeRequestNil(t *testing.T) {
 	}
 
 	cacheKeyParams := []tc.Parameter{
-		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "shouldnotexist",
-			ConfigFile: "cacheurl.config",
-			Value:      "shouldnotexisteither",
-			Profiles:   []byte(`["not-dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
-			Name:       "not_location",
-			ConfigFile: "cacheurl.config",
-			Value:      "notinconfig",
-			Profiles:   []byte(`["global"]`),
-		},
 		tc.Parameter{
 			Name:       "not_location",
 			ConfigFile: "cachekey.config",
@@ -6043,30 +4879,6 @@ func TestMakeRemapDotConfigEdgeRangeRequestDontCache(t *testing.T) {
 
 	cacheKeyParams := []tc.Parameter{
 		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "shouldnotexist",
-			ConfigFile: "cacheurl.config",
-			Value:      "shouldnotexisteither",
-			Profiles:   []byte(`["not-dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
-			Name:       "not_location",
-			ConfigFile: "cacheurl.config",
-			Value:      "notinconfig",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
 			Name:       "not_location",
 			ConfigFile: "cachekey.config",
 			Value:      "notinconfig",
@@ -6189,30 +5001,6 @@ func TestMakeRemapDotConfigEdgeRangeRequestBGFetch(t *testing.T) {
 	}
 
 	cacheKeyParams := []tc.Parameter{
-		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "shouldnotexist",
-			ConfigFile: "cacheurl.config",
-			Value:      "shouldnotexisteither",
-			Profiles:   []byte(`["not-dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
-			Name:       "not_location",
-			ConfigFile: "cacheurl.config",
-			Value:      "notinconfig",
-			Profiles:   []byte(`["global"]`),
-		},
 		tc.Parameter{
 			Name:       "not_location",
 			ConfigFile: "cachekey.config",
@@ -6338,28 +5126,282 @@ func TestMakeRemapDotConfigEdgeRangeRequestSlice(t *testing.T) {
 
 	cacheKeyParams := []tc.Parameter{
 		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
+			Name:       "not_location",
+			ConfigFile: "cachekey.config",
+			Value:      "notinconfig",
+			Profiles:   []byte(`["global"]`),
+		},
+	}
+
+	cdn := &tc.CDN{
+		DomainName: "cdndomain.example",
+		Name:       "my-cdn-name",
+	}
+
+	topologies := []tc.Topology{}
+	cgs := []tc.CacheGroupNullable{}
+	serverCapabilities := map[int]map[ServerCapability]struct{}{}
+	dsRequiredCapabilities := map[int]map[ServerCapability]struct{}{}
+
+	cfg, err := MakeRemapDotConfig(server, dses, dss, dsRegexes, serverParams, cdn, cacheKeyParams, topologies, cgs, serverCapabilities, dsRequiredCapabilities, hdr)
+	if err != nil {
+		t.Fatal(err)
+	}
+	txt := cfg.Text
+
+	txt = strings.TrimSpace(txt)
+
+	testComment(t, txt, hdr)
+
+	txtLines := strings.Split(txt, "\n")
+
+	if len(txtLines) != 2 {
+		t.Fatalf("expected 1 remaps from HTTP_TO_HTTPS DS, actual: '%v' count %v", txt, len(txtLines))
+	}
+
+	remapLine := txtLines[1]
+
+	if !strings.HasPrefix(remapLine, "map") {
+		t.Errorf("expected to start with 'map', actual '%v'", txt)
+	}
+
+	if !strings.Contains(remapLine, "slice.so") {
+		t.Errorf("expected remap on edge server with ds slice range request handling to contain background fetch plugin, actual '%v'", txt)
+	}
+
+	if !strings.Contains(remapLine, "cache_range_requests.so") {
+		t.Errorf("expected remap on edge server with ds slice range request handling to contain cache_range_requests plugin, actual '%v'", txt)
+	}
+
+	if !strings.Contains(remapLine, "pparam=--blockbytes=262144") {
+		t.Errorf("expected remap on edge server with ds slice range request handling to contain block size for the slice plugin, actual '%v'", txt)
+	}
+}
+
+func TestMakeRemapDotConfigMidRangeRequestSlicePparam(t *testing.T) {
+	hdr := "myHeaderComment"
+
+	server := makeTestRemapServer()
+	server.Type = "MID"
+
+	ds := DeliveryService{}
+	ds.ID = util.IntPtr(48)
+	dsType := tc.DSType("HTTP_LIVE_NATNL")
+	ds.Type = &dsType
+	ds.OrgServerFQDN = util.StrPtr("origin.example.test")
+	ds.MidHeaderRewrite = util.StrPtr("")
+	ds.RangeRequestHandling = util.IntPtr(tc.RangeRequestHandlingSlice)
+	ds.RemapText = util.StrPtr("myremaptext")
+	ds.EdgeHeaderRewrite = nil
+	ds.SigningAlgorithm = util.StrPtr("foo")
+	ds.XMLID = util.StrPtr("mydsname")
+	ds.QStringIgnore = util.IntPtr(int(tc.QueryStringIgnoreIgnoreInCacheKeyAndPassUp))
+	ds.RegexRemap = util.StrPtr("")
+	ds.FQPacingRate = util.IntPtr(0)
+	ds.DSCP = util.IntPtr(0)
+	ds.RoutingName = util.StrPtr("myroutingname")
+	ds.MultiSiteOrigin = util.BoolPtr(false)
+	ds.OriginShield = util.StrPtr("myoriginshield")
+	ds.ProfileID = util.IntPtr(49)
+	ds.ProfileName = util.StrPtr("dsprofile")
+	ds.Protocol = util.IntPtr(int(tc.DSProtocolHTTPToHTTPS))
+	ds.AnonymousBlockingEnabled = util.BoolPtr(false)
+	ds.Active = util.BoolPtr(true)
+	ds.RangeSliceBlockSize = util.IntPtr(262144)
+
+	dses := []DeliveryService{ds}
+
+	dss := []DeliveryServiceServer{
+		DeliveryServiceServer{
+			Server:          *server.ID,
+			DeliveryService: *ds.ID,
+		},
+	}
+
+	dsRegexes := []tc.DeliveryServiceRegexes{
+		tc.DeliveryServiceRegexes{
+			DSName: *ds.XMLID,
+			Regexes: []tc.DeliveryServiceRegex{
+				tc.DeliveryServiceRegex{
+					Type:      string(tc.DSMatchTypeHostRegex),
+					SetNumber: 0,
+					Pattern:   `myliteralpattern__http__foo`,
+				},
+			},
+		},
+	}
+
+	serverParams := []tc.Parameter{
+		tc.Parameter{
+			Name:       "trafficserver",
+			ConfigFile: "package",
+			Value:      "7",
+			Profiles:   []byte(`["global"]`),
+		},
+		tc.Parameter{
+			Name:       "serverpkgval",
+			ConfigFile: "package",
+			Value:      "serverpkgval __HOSTNAME__ foo",
+			Profiles:   []byte(*server.Profile),
+		},
+		tc.Parameter{
+			Name:       "dscp_remap_no",
+			ConfigFile: "package",
+			Value:      "notused",
+			Profiles:   []byte(*server.Profile),
+		},
+	}
+
+	cacheKeyParams := []tc.Parameter{
+		tc.Parameter{
+			Name:       "cache_range_requests.pparam",
+			ConfigFile: "remap.config",
+			Value:      "--consider-ims",
 			Profiles:   []byte(`["dsprofile"]`),
 		},
 		tc.Parameter{
-			Name:       "shouldnotexist",
-			ConfigFile: "cacheurl.config",
-			Value:      "shouldnotexisteither",
-			Profiles:   []byte(`["not-dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
 			Name:       "not_location",
-			ConfigFile: "cacheurl.config",
+			ConfigFile: "cachekey.config",
 			Value:      "notinconfig",
 			Profiles:   []byte(`["global"]`),
+		},
+	}
+
+	cdn := &tc.CDN{
+		DomainName: "cdndomain.example",
+		Name:       "my-cdn-name",
+	}
+
+	topologies := []tc.Topology{}
+	cgs := []tc.CacheGroupNullable{}
+	serverCapabilities := map[int]map[ServerCapability]struct{}{}
+	dsRequiredCapabilities := map[int]map[ServerCapability]struct{}{}
+
+	cfg, err := MakeRemapDotConfig(server, dses, dss, dsRegexes, serverParams, cdn, cacheKeyParams, topologies, cgs, serverCapabilities, dsRequiredCapabilities, hdr)
+	if err != nil {
+		t.Fatal(err)
+	}
+	txt := cfg.Text
+
+	txt = strings.TrimSpace(txt)
+
+	testComment(t, txt, hdr)
+
+	txtLines := strings.Split(txt, "\n")
+
+	if len(txtLines) != 2 {
+		t.Fatalf("expected 1 remaps from HTTP_TO_HTTPS DS, actual: '%v' count %v", txt, len(txtLines))
+	}
+
+	remapLine := txtLines[1]
+
+	if !strings.HasPrefix(remapLine, "map") {
+		t.Errorf("expected to start with 'map', actual '%v'", txt)
+	}
+
+	if strings.Contains(remapLine, "slice.so") {
+		t.Errorf("did not expected remap on mid server with ds slice range request handling to contain slice plugin, actual '%v'", txt)
+	}
+
+	if !strings.Contains(remapLine, "cache_range_requests.so") {
+		t.Errorf("expected remap on mid server with ds slice range request handling to contain cache_range_requests plugin, actual '%v'", txt)
+	}
+
+	if !strings.Contains(remapLine, "--consider-ims") {
+		t.Errorf("expected remap on mid server with ds slice range request handling to contain cache_range_requests plugin arg --consider-ims, actual '%v'", txt)
+	}
+
+	if strings.Contains(remapLine, "pparam=--blockbytes") {
+		t.Errorf("did not expected remap on edge server with ds slice range request handling to contain block size for the slice plugin, actual '%v'", txt)
+	}
+}
+
+func TestMakeRemapDotConfigEdgeRangeRequestSlicePparam(t *testing.T) {
+	hdr := "myHeaderComment"
+
+	server := makeTestRemapServer()
+	server.Type = "EDGE"
+
+	ds := DeliveryService{}
+	ds.ID = util.IntPtr(48)
+	dsType := tc.DSType("HTTP_LIVE_NATNL")
+	ds.Type = &dsType
+	ds.OrgServerFQDN = util.StrPtr("origin.example.test")
+	ds.MidHeaderRewrite = util.StrPtr("")
+	ds.RangeRequestHandling = util.IntPtr(tc.RangeRequestHandlingSlice)
+	ds.RemapText = util.StrPtr("myremaptext")
+	ds.EdgeHeaderRewrite = nil
+	ds.SigningAlgorithm = util.StrPtr("foo")
+	ds.XMLID = util.StrPtr("mydsname")
+	ds.QStringIgnore = util.IntPtr(int(tc.QueryStringIgnoreIgnoreInCacheKeyAndPassUp))
+	ds.RegexRemap = util.StrPtr("")
+	ds.FQPacingRate = util.IntPtr(0)
+	ds.DSCP = util.IntPtr(0)
+	ds.RoutingName = util.StrPtr("myroutingname")
+	ds.MultiSiteOrigin = util.BoolPtr(false)
+	ds.OriginShield = util.StrPtr("myoriginshield")
+	ds.ProfileID = util.IntPtr(49)
+	ds.ProfileName = util.StrPtr("dsprofile")
+	ds.Protocol = util.IntPtr(int(tc.DSProtocolHTTPToHTTPS))
+	ds.AnonymousBlockingEnabled = util.BoolPtr(false)
+	ds.Active = util.BoolPtr(true)
+	ds.RangeSliceBlockSize = util.IntPtr(262144)
+
+	dses := []DeliveryService{ds}
+
+	dss := []DeliveryServiceServer{
+		DeliveryServiceServer{
+			Server:          *server.ID,
+			DeliveryService: *ds.ID,
+		},
+	}
+
+	dsRegexes := []tc.DeliveryServiceRegexes{
+		tc.DeliveryServiceRegexes{
+			DSName: *ds.XMLID,
+			Regexes: []tc.DeliveryServiceRegex{
+				tc.DeliveryServiceRegex{
+					Type:      string(tc.DSMatchTypeHostRegex),
+					SetNumber: 0,
+					Pattern:   `myliteralpattern__http__foo`,
+				},
+			},
+		},
+	}
+
+	serverParams := []tc.Parameter{
+		tc.Parameter{
+			Name:       "trafficserver",
+			ConfigFile: "package",
+			Value:      "7",
+			Profiles:   []byte(`["global"]`),
+		},
+		tc.Parameter{
+			Name:       "serverpkgval",
+			ConfigFile: "package",
+			Value:      "serverpkgval __HOSTNAME__ foo",
+			Profiles:   []byte(*server.Profile),
+		},
+		tc.Parameter{
+			Name:       "dscp_remap_no",
+			ConfigFile: "package",
+			Value:      "notused",
+			Profiles:   []byte(*server.Profile),
+		},
+	}
+
+	cacheKeyParams := []tc.Parameter{
+		tc.Parameter{
+			Name:       "cache_range_requests.pparam",
+			ConfigFile: "remap.config",
+			Value:      "--consider-ims",
+			Profiles:   []byte(`["dsprofile"]`),
+		},
+		tc.Parameter{
+			Name:       "cache_range_requests.pparam",
+			ConfigFile: "remap.config",
+			Value:      "--no-modify-cachekey",
+			Profiles:   []byte(`["dsprofile"]`),
 		},
 		tc.Parameter{
 			Name:       "not_location",
@@ -6407,6 +5449,14 @@ func TestMakeRemapDotConfigEdgeRangeRequestSlice(t *testing.T) {
 
 	if !strings.Contains(remapLine, "cache_range_requests.so") {
 		t.Errorf("expected remap on edge server with ds slice range request handling to contain cache_range_requests plugin, actual '%v'", txt)
+	}
+
+	if !strings.Contains(remapLine, "--consider-ims") {
+		t.Errorf("expected remap on edge server with ds slice range request handling to contain cache_range_requests plugin arg --consider-ims, actual '%v'", txt)
+	}
+
+	if !strings.Contains(remapLine, "--no-modify-cachekey") {
+		t.Errorf("expected remap on edge server with ds slice range request handling to contain cache_range_requests plugin arg --no-modify-cachekey, actual '%v'", txt)
 	}
 
 	if !strings.Contains(remapLine, "pparam=--blockbytes=262144") {
@@ -6489,30 +5539,6 @@ func TestMakeRemapDotConfigRawRemapRangeDirective(t *testing.T) {
 	}
 
 	cacheKeyParams := []tc.Parameter{
-		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "shouldnotexist",
-			ConfigFile: "cacheurl.config",
-			Value:      "shouldnotexisteither",
-			Profiles:   []byte(`["not-dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
-			Name:       "not_location",
-			ConfigFile: "cacheurl.config",
-			Value:      "notinconfig",
-			Profiles:   []byte(`["global"]`),
-		},
 		tc.Parameter{
 			Name:       "not_location",
 			ConfigFile: "cachekey.config",
@@ -6655,30 +5681,6 @@ func TestMakeRemapDotConfigRawRemapWithoutRangeDirective(t *testing.T) {
 
 	cacheKeyParams := []tc.Parameter{
 		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "shouldnotexist",
-			ConfigFile: "cacheurl.config",
-			Value:      "shouldnotexisteither",
-			Profiles:   []byte(`["not-dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
-			Name:       "not_location",
-			ConfigFile: "cacheurl.config",
-			Value:      "notinconfig",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
 			Name:       "not_location",
 			ConfigFile: "cachekey.config",
 			Value:      "notinconfig",
@@ -6813,30 +5815,6 @@ func TestMakeRemapDotConfigEdgeRangeRequestCache(t *testing.T) {
 
 	cacheKeyParams := []tc.Parameter{
 		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "shouldnotexist",
-			ConfigFile: "cacheurl.config",
-			Value:      "shouldnotexisteither",
-			Profiles:   []byte(`["not-dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
-			Name:       "not_location",
-			ConfigFile: "cacheurl.config",
-			Value:      "notinconfig",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
 			Name:       "not_location",
 			ConfigFile: "cachekey.config",
 			Value:      "notinconfig",
@@ -6960,30 +5938,6 @@ func TestMakeRemapDotConfigEdgeFQPacingNil(t *testing.T) {
 
 	cacheKeyParams := []tc.Parameter{
 		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "shouldnotexist",
-			ConfigFile: "cacheurl.config",
-			Value:      "shouldnotexisteither",
-			Profiles:   []byte(`["not-dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
-			Name:       "not_location",
-			ConfigFile: "cacheurl.config",
-			Value:      "notinconfig",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
 			Name:       "not_location",
 			ConfigFile: "cachekey.config",
 			Value:      "notinconfig",
@@ -7102,30 +6056,6 @@ func TestMakeRemapDotConfigEdgeFQPacingNegative(t *testing.T) {
 	}
 
 	cacheKeyParams := []tc.Parameter{
-		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "shouldnotexist",
-			ConfigFile: "cacheurl.config",
-			Value:      "shouldnotexisteither",
-			Profiles:   []byte(`["not-dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
-			Name:       "not_location",
-			ConfigFile: "cacheurl.config",
-			Value:      "notinconfig",
-			Profiles:   []byte(`["global"]`),
-		},
 		tc.Parameter{
 			Name:       "not_location",
 			ConfigFile: "cachekey.config",
@@ -7246,30 +6176,6 @@ func TestMakeRemapDotConfigEdgeFQPacingZero(t *testing.T) {
 
 	cacheKeyParams := []tc.Parameter{
 		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "shouldnotexist",
-			ConfigFile: "cacheurl.config",
-			Value:      "shouldnotexisteither",
-			Profiles:   []byte(`["not-dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
-			Name:       "not_location",
-			ConfigFile: "cacheurl.config",
-			Value:      "notinconfig",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
 			Name:       "not_location",
 			ConfigFile: "cachekey.config",
 			Value:      "notinconfig",
@@ -7388,30 +6294,6 @@ func TestMakeRemapDotConfigEdgeFQPacingPositive(t *testing.T) {
 	}
 
 	cacheKeyParams := []tc.Parameter{
-		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "shouldnotexist",
-			ConfigFile: "cacheurl.config",
-			Value:      "shouldnotexisteither",
-			Profiles:   []byte(`["not-dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
-			Name:       "not_location",
-			ConfigFile: "cacheurl.config",
-			Value:      "notinconfig",
-			Profiles:   []byte(`["global"]`),
-		},
 		tc.Parameter{
 			Name:       "not_location",
 			ConfigFile: "cachekey.config",
@@ -7536,30 +6418,6 @@ func TestMakeRemapDotConfigEdgeDNS(t *testing.T) {
 
 	cacheKeyParams := []tc.Parameter{
 		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "shouldnotexist",
-			ConfigFile: "cacheurl.config",
-			Value:      "shouldnotexisteither",
-			Profiles:   []byte(`["not-dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
-			Name:       "not_location",
-			ConfigFile: "cacheurl.config",
-			Value:      "notinconfig",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
 			Name:       "not_location",
 			ConfigFile: "cachekey.config",
 			Value:      "notinconfig",
@@ -7679,30 +6537,6 @@ func TestMakeRemapDotConfigEdgeDNSNoRoutingName(t *testing.T) {
 
 	cacheKeyParams := []tc.Parameter{
 		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "shouldnotexist",
-			ConfigFile: "cacheurl.config",
-			Value:      "shouldnotexisteither",
-			Profiles:   []byte(`["not-dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
-			Name:       "not_location",
-			ConfigFile: "cacheurl.config",
-			Value:      "notinconfig",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
 			Name:       "not_location",
 			ConfigFile: "cachekey.config",
 			Value:      "notinconfig",
@@ -7811,30 +6645,6 @@ func TestMakeRemapDotConfigEdgeRegexTypeNil(t *testing.T) {
 	}
 
 	cacheKeyParams := []tc.Parameter{
-		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "shouldnotexist",
-			ConfigFile: "cacheurl.config",
-			Value:      "shouldnotexisteither",
-			Profiles:   []byte(`["not-dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
-			Name:       "not_location",
-			ConfigFile: "cacheurl.config",
-			Value:      "notinconfig",
-			Profiles:   []byte(`["global"]`),
-		},
 		tc.Parameter{
 			Name:       "not_location",
 			ConfigFile: "cachekey.config",
@@ -7949,30 +6759,6 @@ func TestMakeRemapDotConfigNoHeaderRewrite(t *testing.T) {
 	}
 
 	cacheKeyParams := []tc.Parameter{
-		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "shouldnotexist",
-			ConfigFile: "cacheurl.config",
-			Value:      "shouldnotexisteither",
-			Profiles:   []byte(`["not-dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
-			Name:       "not_location",
-			ConfigFile: "cacheurl.config",
-			Value:      "notinconfig",
-			Profiles:   []byte(`["global"]`),
-		},
 		tc.Parameter{
 			Name:       "not_location",
 			ConfigFile: "cachekey.config",
@@ -8093,30 +6879,6 @@ func TestMakeRemapDotConfigMidNoHeaderRewrite(t *testing.T) {
 
 	cacheKeyParams := []tc.Parameter{
 		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "shouldnotexist",
-			ConfigFile: "cacheurl.config",
-			Value:      "shouldnotexisteither",
-			Profiles:   []byte(`["not-dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
-			Name:       "not_location",
-			ConfigFile: "cacheurl.config",
-			Value:      "notinconfig",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
 			Name:       "not_location",
 			ConfigFile: "cachekey.config",
 			Value:      "notinconfig",
@@ -8235,30 +6997,6 @@ func TestMakeRemapDotConfigMidNoNoCacheRemapLine(t *testing.T) {
 	}
 
 	cacheKeyParams := []tc.Parameter{
-		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "shouldnotexist",
-			ConfigFile: "cacheurl.config",
-			Value:      "shouldnotexisteither",
-			Profiles:   []byte(`["not-dsprofile"]`),
-		},
-		tc.Parameter{
-			Name:       "cachekeykey",
-			ConfigFile: "cacheurl.config",
-			Value:      "cachekeyval",
-			Profiles:   []byte(`["global"]`),
-		},
-		tc.Parameter{
-			Name:       "not_location",
-			ConfigFile: "cacheurl.config",
-			Value:      "notinconfig",
-			Profiles:   []byte(`["global"]`),
-		},
 		tc.Parameter{
 			Name:       "not_location",
 			ConfigFile: "cachekey.config",
