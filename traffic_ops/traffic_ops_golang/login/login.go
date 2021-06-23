@@ -105,12 +105,11 @@ Subject: {{.InstanceName}} Password Reset Request` + "\r\n\r" + `
 
 func LoginHandler(db *sqlx.DB, cfg config.Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		handleErrs := tc.GetHandleErrorsFunc(w, r)
 		defer r.Body.Close()
 		authenticated := false
 		form := auth.PasswordForm{}
 		if err := json.NewDecoder(r.Body).Decode(&form); err != nil {
-			handleErrs(http.StatusBadRequest, err)
+			api.HandleErr(w, r, nil, http.StatusBadRequest, err, nil)
 			return
 		}
 		if form.Username == "" || form.Password == "" {
@@ -164,7 +163,7 @@ func LoginHandler(db *sqlx.DB, cfg config.Config) http.HandlerFunc {
 		}
 		respBts, err := json.Marshal(resp)
 		if err != nil {
-			handleErrs(http.StatusInternalServerError, err)
+			api.HandleErr(w, r, nil, http.StatusInternalServerError, err, nil)
 			return
 		}
 		w.Header().Set(rfc.ContentType, rfc.ApplicationJSON)
@@ -217,7 +216,6 @@ func TokenLoginHandler(db *sqlx.DB, cfg config.Config) http.HandlerFunc {
 // OauthLoginHandler accepts a JSON web token previously obtained from an OAuth provider, decodes it, validates it, authorizes the user against the database, and returns the login result as either an error or success message
 func OauthLoginHandler(db *sqlx.DB, cfg config.Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		handleErrs := tc.GetHandleErrorsFunc(w, r)
 		defer r.Body.Close()
 		authenticated := false
 		resp := struct {
@@ -233,7 +231,7 @@ func OauthLoginHandler(db *sqlx.DB, cfg config.Config) http.HandlerFunc {
 		}{}
 
 		if err := json.NewDecoder(r.Body).Decode(&parameters); err != nil {
-			handleErrs(http.StatusBadRequest, err)
+			api.HandleErr(w, r, nil, http.StatusBadRequest, err, nil)
 			return
 		}
 
@@ -290,7 +288,7 @@ func OauthLoginHandler(db *sqlx.DB, cfg config.Config) http.HandlerFunc {
 
 		if encodedToken == "" {
 			log.Errorf("Token not found in request but is required")
-			handleErrs(http.StatusBadRequest, errors.New("Token not found in request but is required"))
+			api.HandleErr(w, r, nil, http.StatusBadRequest, errors.New("Token not found in request but is required"), nil)
 			return
 		}
 
@@ -324,7 +322,7 @@ func OauthLoginHandler(db *sqlx.DB, cfg config.Config) http.HandlerFunc {
 			return selectedKey, nil
 		})
 		if err != nil {
-			handleErrs(http.StatusInternalServerError, errors.New("Error decoding token with message: "+err.Error()))
+			api.HandleErr(w, r, nil, http.StatusInternalServerError, nil, errors.New("Error decoding token with message: "+err.Error()))
 			log.Errorf("Error decoding token: %s\n", err.Error())
 			return
 		}
@@ -357,7 +355,7 @@ func OauthLoginHandler(db *sqlx.DB, cfg config.Config) http.HandlerFunc {
 
 		respBts, err := json.Marshal(resp)
 		if err != nil {
-			handleErrs(http.StatusInternalServerError, err)
+			api.HandleErr(w, r, nil, http.StatusInternalServerError, nil, err)
 			return
 		}
 		w.Header().Set(rfc.ContentType, rfc.ApplicationJSON)

@@ -36,12 +36,12 @@ import (
 
 //we need a type alias to define functions on
 type TODivision struct {
-	api.APIInfoImpl `json:"-"`
+	api.InfoerImpl `json:"-"`
 	tc.DivisionNullable
 }
 
 func (v *TODivision) GetLastUpdated() (*time.Time, bool, error) {
-	return api.GetLastUpdated(v.APIInfo().Tx, *v.ID, "division")
+	return api.GetLastUpdated(v.Info().Tx, *v.ID, "division")
 }
 
 func (v *TODivision) SetLastUpdated(t tc.TimeNoMod) { v.LastUpdated = &t }
@@ -104,12 +104,12 @@ func (division TODivision) Validate() error {
 
 func (dv *TODivision) Create() (error, error, int) { return api.GenericCreate(dv) }
 func (dv *TODivision) Read(h http.Header, useIMS bool) ([]interface{}, error, error, int, *time.Time) {
-	params := dv.APIInfo().Params
+	params := dv.Info().Params
 	// TODO move to router, and do for all endpoints
 	if strings.HasSuffix(params["name"], ".json") {
 		params["name"] = params["name"][:len(params["name"])-len(".json")]
 	}
-	api.DefaultSort(dv.APIInfo(), "name")
+	api.DefaultSort(dv.Info(), "name")
 	return api.GenericRead(h, dv, useIMS)
 }
 func (dv *TODivision) Update(h http.Header) (error, error, int) { return api.GenericUpdate(h, dv) }

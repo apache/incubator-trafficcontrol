@@ -35,7 +35,7 @@ import (
 )
 
 func PostDSes(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"id"}, []string{"id"})
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, []string{"id"}, []string{"id"})
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
 		return
@@ -117,8 +117,8 @@ func getFedNameByID(tx *sql.Tx, id int) (string, bool, error) {
 
 // TOFedDSes data structure to use on read/delete of federation deliveryservices
 type TOFedDSes struct {
-	api.APIInfoImpl `json:"-"`
-	fedID           *int
+	api.InfoerImpl `json:"-"`
+	fedID          *int
 	tc.FederationDeliveryServiceNullable
 }
 
@@ -169,12 +169,12 @@ func (v *TOFedDSes) GetKeyFieldsInfo() []api.KeyFieldInfo {
 }
 
 func (v *TOFedDSes) Read(h http.Header, useIMS bool) ([]interface{}, error, error, int, *time.Time) {
-	api.DefaultSort(v.APIInfo(), "xmlId")
+	api.DefaultSort(v.Info(), "xmlId")
 	return api.GenericRead(h, v, useIMS)
 }
 
 func (v *TOFedDSes) Delete() (error, error, int) {
-	dsIDStr, ok := v.APIInfo().Params["dsID"]
+	dsIDStr, ok := v.Info().Params["dsID"]
 	if !ok {
 		return errors.New("dsID must be specified for deletion"), nil, http.StatusBadRequest
 	}
@@ -185,7 +185,7 @@ func (v *TOFedDSes) Delete() (error, error, int) {
 	v.ID = &dsID
 
 	// Check that we can delete it
-	if respCode, usrErr, sysErr := checkFedDSDeletion(v.APIInfo().Tx.Tx, *v.fedID, dsID); usrErr != nil || sysErr != nil {
+	if respCode, usrErr, sysErr := checkFedDSDeletion(v.Info().Tx.Tx, *v.fedID, dsID); usrErr != nil || sysErr != nil {
 		if usrErr != nil {
 			return usrErr, sysErr, respCode
 		}
@@ -193,7 +193,7 @@ func (v *TOFedDSes) Delete() (error, error, int) {
 	}
 
 	// Actually delete the DS from the Federation
-	if err := deleteFedDS(v.APIInfo().Tx.Tx, *v.fedID, dsID); err != nil {
+	if err := deleteFedDS(v.Info().Tx.Tx, *v.fedID, dsID); err != nil {
 		return api.ParseDBError(err)
 	}
 

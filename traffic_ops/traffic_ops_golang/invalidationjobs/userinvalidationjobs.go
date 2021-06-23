@@ -19,16 +19,18 @@ package invalidationjobs
  * under the License.
  */
 
-import "database/sql"
-import "errors"
-import "fmt"
-import "net/http"
-import "strconv"
-import "time"
+import (
+	"database/sql"
+	"errors"
+	"fmt"
+	"net/http"
+	"strconv"
+	"time"
 
-import "github.com/apache/trafficcontrol/lib/go-tc"
-import "github.com/apache/trafficcontrol/lib/go-log"
-import "github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/api"
+	"github.com/apache/trafficcontrol/lib/go-log"
+	"github.com/apache/trafficcontrol/lib/go-tc"
+	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/api"
+)
 
 const userReadQuery = `
 SELECT job.agent,
@@ -64,7 +66,7 @@ type response struct {
 func CreateUserJob(w http.ResponseWriter, r *http.Request) {
 	alerts := tc.CreateAlerts(tc.WarnLevel, "This endpoint is deprecated, please use the POST method /jobs instead")
 
-	inf, userErr, sysErr, errCode := api.NewInfo(r, nil, nil)
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, nil, nil)
 	if userErr != nil || sysErr != nil {
 		userErr = api.LogErr(r, errCode, userErr, sysErr)
 		alerts.AddNewAlert(tc.ErrorLevel, userErr.Error())
@@ -144,7 +146,7 @@ func CreateUserJob(w http.ResponseWriter, r *http.Request) {
 func GetUserJobs(w http.ResponseWriter, r *http.Request) {
 	alerts := tc.CreateAlerts(tc.WarnLevel, "This endpoint is deprecated, please use the 'userId' or 'createdBy' query parameters of a GET request to /jobs instead")
 
-	inf, userErr, sysErr, errCode := api.NewInfo(r, nil, nil)
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, nil, nil)
 	if userErr != nil || sysErr != nil {
 		userErr = api.LogErr(r, errCode, userErr, sysErr)
 		alerts.AddNewAlert(tc.ErrorLevel, userErr.Error())

@@ -137,9 +137,9 @@ func TestReadCacheGroups(t *testing.T) {
 	mock.ExpectQuery("SELECT").WillReturnRows(rows)
 	mock.ExpectCommit()
 
-	reqInfo := api.APIInfo{Tx: db.MustBegin(), Params: map[string]string{"id": "1"}}
+	reqInfo := api.Info{Tx: db.MustBegin(), Params: map[string]string{"id": "1"}}
 	obj := TOCacheGroup{
-		api.APIInfoImpl{ReqInfo: &reqInfo},
+		api.InfoerImpl{ReqInfo: &reqInfo},
 		tc.CacheGroupNullable{},
 	}
 	cachegroups, userErr, sysErr, _, _ := obj.Read(nil, false)
@@ -205,7 +205,7 @@ func TestValidate(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT\\s+name,\\s+use_in_table").WillReturnRows(rows)
 	tx := db.MustBegin()
-	reqInfo := api.APIInfo{Tx: tx}
+	reqInfo := api.Info{Tx: tx}
 
 	// invalid name, shortname, loattude, and longitude
 	id := 1
@@ -218,7 +218,7 @@ func TestValidate(t *testing.T) {
 	ti := 6
 	lu := tc.TimeNoMod{Time: time.Now()}
 	c := TOCacheGroup{
-		api.APIInfoImpl{ReqInfo: &reqInfo},
+		api.InfoerImpl{ReqInfo: &reqInfo},
 		tc.CacheGroupNullable{
 			ID:                  &id,
 			Name:                &nm,
@@ -259,7 +259,7 @@ func TestValidate(t *testing.T) {
 	lo = 90.0
 	lm = []tc.LocalizationMethod{tc.LocalizationMethodGeo, tc.LocalizationMethodCZ, tc.LocalizationMethodDeepCZ}
 	c = TOCacheGroup{
-		api.APIInfoImpl{ReqInfo: &reqInfo},
+		api.InfoerImpl{ReqInfo: &reqInfo},
 		tc.CacheGroupNullable{
 			ID:                  &id,
 			Name:                &nm,
@@ -331,9 +331,9 @@ func TestBadTypeParamCacheGroups(t *testing.T) {
 	mock.ExpectQuery("SELECT").WillReturnRows(rows)
 	mock.ExpectCommit()
 
-	reqInfo := api.APIInfo{Tx: db.MustBegin(), Params: map[string]string{"type": "wrong"}}
+	reqInfo := api.Info{Tx: db.MustBegin(), Params: map[string]string{"type": "wrong"}}
 	obj := TOCacheGroup{
-		api.APIInfoImpl{ReqInfo: &reqInfo},
+		api.InfoerImpl{ReqInfo: &reqInfo},
 		tc.CacheGroupNullable{},
 	}
 	_, userErr, _, sc, _ := obj.Read(nil, false)

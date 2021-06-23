@@ -37,7 +37,7 @@ import (
 
 type GenericCreator interface {
 	GetType() string
-	APIInfo() *APIInfo
+	Info() *Info
 	SetKeys(map[string]interface{})
 	SetLastUpdated(tc.TimeNoMod)
 	InsertQuery() string
@@ -45,7 +45,7 @@ type GenericCreator interface {
 
 type GenericReader interface {
 	GetType() string
-	APIInfo() *APIInfo
+	Info() *Info
 	ParamColumns() map[string]dbhelpers.WhereColumnInfo
 	NewReadObj() interface{}
 	SelectQuery() string
@@ -54,7 +54,7 @@ type GenericReader interface {
 
 type GenericUpdater interface {
 	GetType() string
-	APIInfo() *APIInfo
+	Info() *Info
 	SetLastUpdated(tc.TimeNoMod)
 	UpdateQuery() string
 	GetLastUpdated() (*time.Time, bool, error)
@@ -62,21 +62,21 @@ type GenericUpdater interface {
 
 type GenericDeleter interface {
 	GetType() string
-	APIInfo() *APIInfo
+	Info() *Info
 	DeleteQuery() string
 }
 
 // GenericOptionsDeleter can use any key listed in DeleteKeyOptions() to delete a resource.
 type GenericOptionsDeleter interface {
 	GetType() string
-	APIInfo() *APIInfo
+	Info() *Info
 	DeleteKeyOptions() map[string]dbhelpers.WhereColumnInfo
 	DeleteQueryBase() string
 }
 
 // GenericCreate does a Create (POST) for the given GenericCreator object and type. This exists as a generic function, for the common use case of a single "id" key and a lastUpdated field.
 func GenericCreate(val GenericCreator) (error, error, int) {
-	resultRows, err := val.APIInfo().Tx.NamedQuery(val.InsertQuery(), val)
+	resultRows, err := val.Info().Tx.NamedQuery(val.InsertQuery(), val)
 	if err != nil {
 		return ParseDBError(err)
 	}
@@ -113,7 +113,7 @@ func GenericCreate(val GenericCreator) (error, error, int) {
 
 // GenericCreateNameBasedID does a Create (POST) for the given GenericCreator object and type. This exists as a generic function, for the use case of a single "name" key (not a numerical "id" key) and a lastUpdated field.
 func GenericCreateNameBasedID(val GenericCreator) (error, error, int) {
-	resultRows, err := val.APIInfo().Tx.NamedQuery(val.InsertQuery(), val)
+	resultRows, err := val.Info().Tx.NamedQuery(val.InsertQuery(), val)
 	if err != nil {
 		return ParseDBError(err)
 	}
@@ -159,7 +159,7 @@ func TryIfModifiedSinceQuery(val GenericReader, h http.Header, where string, ord
 	}
 	// ToDo: Remove orderBy, pagination from all the implementations, and eventually remove it from the function definition
 	query := val.SelectMaxLastUpdatedQuery(where, "", "", val.GetType())
-	rows, err := val.APIInfo().Tx.NamedQuery(query, queryValues)
+	rows, err := val.Info().Tx.NamedQuery(query, queryValues)
 	if err != nil {
 		log.Warnf("Couldn't get the max last updated time: %v", err)
 		return runSecond, max
@@ -191,7 +191,7 @@ func GenericRead(h http.Header, val GenericReader, useIMS bool) ([]interface{}, 
 	code := http.StatusOK
 	var maxTime time.Time
 	var runSecond bool
-	where, orderBy, pagination, queryValues, errs := dbhelpers.BuildWhereAndOrderByAndPagination(val.APIInfo().Params, val.ParamColumns())
+	where, orderBy, pagination, queryValues, errs := dbhelpers.BuildWhereAndOrderByAndPagination(val.Info().Params, val.ParamColumns())
 	if len(errs) > 0 {
 		return nil, util.JoinErrs(errs), nil, http.StatusBadRequest, nil
 	}
@@ -208,7 +208,7 @@ func GenericRead(h http.Header, val GenericReader, useIMS bool) ([]interface{}, 
 	}
 	// Case where we need to run the second query
 	query := val.SelectQuery() + where + orderBy + pagination
-	rows, err := val.APIInfo().Tx.NamedQuery(query, queryValues)
+	rows, err := val.Info().Tx.NamedQuery(query, queryValues)
 	if err != nil {
 		return nil, nil, errors.New("querying " + val.GetType() + ": " + err.Error()), http.StatusInternalServerError, &maxTime
 	}
@@ -237,7 +237,7 @@ func GenericUpdate(h http.Header, val GenericUpdater) (error, error, int) {
 		return ResourceModifiedError, nil, http.StatusPreconditionFailed
 	}
 
-	rows, err := val.APIInfo().Tx.NamedQuery(val.UpdateQuery(), val)
+	rows, err := val.Info().Tx.NamedQuery(val.UpdateQuery(), val)
 	if err != nil {
 		return ParseDBError(err)
 	}
@@ -261,13 +261,13 @@ func GenericUpdate(h http.Header, val GenericUpdater) (error, error, int) {
 // GenericDelete, there is no requirement that a specific key is used as the parameter.
 // GenericOptionsDeleter.DeleteKeyOptions() specifies which keys can be used.
 func GenericOptionsDelete(val GenericOptionsDeleter) (error, error, int) {
-	where, _, _, queryValues, errs := dbhelpers.BuildWhereAndOrderByAndPagination(val.APIInfo().Params, val.DeleteKeyOptions())
+	where, _, _, queryValues, errs := dbhelpers.BuildWhereAndOrderByAndPagination(val.Info().Params, val.DeleteKeyOptions())
 	if len(errs) > 0 {
 		return util.JoinErrs(errs), nil, http.StatusBadRequest
 	}
 
 	query := val.DeleteQueryBase() + where
-	tx := val.APIInfo().Tx
+	tx := val.Info().Tx
 	result, err := tx.NamedExec(query, queryValues)
 	if err != nil {
 		return ParseDBError(err)
@@ -286,7 +286,7 @@ func GenericOptionsDelete(val GenericOptionsDeleter) (error, error, int) {
 
 // GenericDelete does a Delete (DELETE) for the given GenericDeleter object and type. This exists as a generic function, for the common use case of a simple delete with query parameters defined in the sqlx struct tags.
 func GenericDelete(val GenericDeleter) (error, error, int) {
-	result, err := val.APIInfo().Tx.NamedExec(val.DeleteQuery(), val)
+	result, err := val.Info().Tx.NamedExec(val.DeleteQuery(), val)
 	if err != nil {
 		return ParseDBError(err)
 	}

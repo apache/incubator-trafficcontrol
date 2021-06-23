@@ -41,7 +41,7 @@ const (
 
 //we need a type alias to define functions on
 type TOProfileParameter struct {
-	api.APIInfoImpl `json:"-"`
+	api.InfoerImpl `json:"-"`
 	tc.ProfileParameterNullable
 }
 
@@ -117,7 +117,7 @@ func (pp *TOProfileParameter) Validate() error {
 //The insert sql returns the profile and lastUpdated values of the newly inserted profileparameter and have
 //to be added to the struct
 func (pp *TOProfileParameter) Create() (error, error, int) {
-	resultRows, err := pp.APIInfo().Tx.NamedQuery(insertQuery(), pp)
+	resultRows, err := pp.Info().Tx.NamedQuery(insertQuery(), pp)
 	if err != nil {
 		return api.ParseDBError(err)
 	}
@@ -156,7 +156,7 @@ func (pp *TOProfileParameter) Update(h http.Header) (error, error, int) {
 	return nil, nil, http.StatusNotImplemented
 }
 func (pp *TOProfileParameter) Read(h http.Header, useIMS bool) ([]interface{}, error, error, int, *time.Time) {
-	api.DefaultSort(pp.APIInfo(), "parameter")
+	api.DefaultSort(pp.Info(), "parameter")
 	return api.GenericRead(h, pp, useIMS)
 }
 func (pp *TOProfileParameter) Delete() (error, error, int) { return api.GenericDelete(pp) }

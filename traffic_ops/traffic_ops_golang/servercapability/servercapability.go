@@ -35,8 +35,8 @@ import (
 )
 
 type TOServerCapability struct {
-	api.APIInfoImpl `json:"-"`
-	RequestedName   string
+	api.InfoerImpl `json:"-"`
+	RequestedName  string
 	tc.ServerCapability
 }
 
@@ -116,7 +116,7 @@ func (v *TOServerCapability) Validate() error {
 }
 
 func (v *TOServerCapability) Read(h http.Header, useIMS bool) ([]interface{}, error, error, int, *time.Time) {
-	api.DefaultSort(v.APIInfo(), "name")
+	api.DefaultSort(v.Info(), "name")
 	return api.GenericRead(h, v, useIMS)
 }
 

@@ -79,12 +79,12 @@ func TestInterfaces(t *testing.T) {
 func TestValidate(t *testing.T) {
 	// invalid name, empty domainname
 	n := "not_a_valid_role"
-	reqInfo := api.APIInfo{}
+	reqInfo := api.Info{}
 	role := tc.Role{}
 	role.Name = &n
 	r := TORole{
-		APIInfoImpl: api.APIInfoImpl{ReqInfo: &reqInfo},
-		Role:        role,
+		InfoerImpl: api.InfoerImpl{ReqInfo: &reqInfo},
+		Role:       role,
 	}
 	errs := util.JoinErrsStr(test.SortErrors(test.SplitErrors(r.Validate())))
 
@@ -103,8 +103,8 @@ func TestValidate(t *testing.T) {
 	role.Description = stringAddr("this is a description")
 	role.PrivLevel = intAddr(30)
 	r = TORole{
-		APIInfoImpl: api.APIInfoImpl{ReqInfo: &reqInfo},
-		Role:        role,
+		InfoerImpl: api.InfoerImpl{ReqInfo: &reqInfo},
+		Role:       role,
 	}
 	err := r.Validate()
 	if err != nil {

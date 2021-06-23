@@ -50,7 +50,7 @@ const (
 	defaultInterval = "1m"
 )
 
-func tsConfigFromRequest(r *http.Request, i *api.APIInfo) (tc.TrafficStatsConfig, int, error) {
+func tsConfigFromRequest(r *http.Request, i *api.Info) (tc.TrafficStatsConfig, int, error) {
 	c := tc.TrafficStatsConfig{}
 	var e error
 	if accept := r.Header.Get("Accept"); accept != "" {

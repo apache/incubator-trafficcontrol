@@ -19,17 +19,18 @@ package capabilities
  * under the License.
  */
 
-import "database/sql"
-import "encoding/json"
-import "errors"
-import "fmt"
-import "net/http"
+import (
+	"database/sql"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"net/http"
 
-import "github.com/apache/trafficcontrol/lib/go-tc"
-import "github.com/apache/trafficcontrol/lib/go-util"
-
-import "github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/api"
-import "github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/dbhelpers"
+	"github.com/apache/trafficcontrol/lib/go-tc"
+	"github.com/apache/trafficcontrol/lib/go-util"
+	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/api"
+	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/dbhelpers"
+)
 
 const readQuery = `
 SELECT description,
@@ -45,7 +46,7 @@ RETURNING description, last_updated, name
 `
 
 func Read(w http.ResponseWriter, r *http.Request) {
-	inf, sysErr, userErr, errCode := api.NewInfo(r, nil, nil)
+	inf, sysErr, userErr, errCode := api.NewInfo(w, r, nil, nil)
 	tx := inf.Tx.Tx
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, tx, errCode, userErr, sysErr)
@@ -92,7 +93,7 @@ func Read(w http.ResponseWriter, r *http.Request) {
 }
 
 func Create(w http.ResponseWriter, r *http.Request) {
-	inf, sysErr, userErr, errCode := api.NewInfo(r, nil, nil)
+	inf, sysErr, userErr, errCode := api.NewInfo(w, r, nil, nil)
 	tx := inf.Tx.Tx
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, tx, errCode, userErr, sysErr)

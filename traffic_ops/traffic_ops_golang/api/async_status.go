@@ -51,7 +51,7 @@ const updateAsyncStatusQuery = `UPDATE async_status SET status = $1, message = $
 
 // GetAsyncStatus returns the status of an asynchronous job.
 func GetAsyncStatus(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := NewInfo(r, []string{"id"}, []string{"id"})
+	inf, userErr, sysErr, errCode := NewInfo(w, r, []string{"id"}, []string{"id"})
 	if userErr != nil || sysErr != nil {
 		HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
 		return

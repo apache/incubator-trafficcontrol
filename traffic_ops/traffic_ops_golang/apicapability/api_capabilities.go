@@ -34,7 +34,7 @@ import (
 // API Capabilities. In the event a capability parameter is supplied,
 // it will return only those with an exact match.
 func GetAPICapabilitiesHandler(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, nil, nil)
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, nil, nil)
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
 		return

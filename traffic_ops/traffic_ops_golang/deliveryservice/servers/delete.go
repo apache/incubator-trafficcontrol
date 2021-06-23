@@ -86,7 +86,7 @@ func checkLastServer(dsID, serverID int, tx *sql.Tx) (int, error, error) {
 
 func delete(w http.ResponseWriter, r *http.Request, deprecated bool) {
 	alt := "DELETE deliveryserviceserver/{{Delivery Service ID}}/{{Server ID}}"
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"serverid", "dsid"}, []string{"serverid", "dsid"})
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, []string{"serverid", "dsid"}, []string{"serverid", "dsid"})
 	tx := inf.Tx.Tx
 	if userErr != nil || sysErr != nil {
 		api.HandleErrOptionalDeprecation(w, r, tx, errCode, userErr, sysErr, deprecated, &alt)

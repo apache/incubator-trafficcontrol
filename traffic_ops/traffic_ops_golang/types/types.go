@@ -38,12 +38,12 @@ import (
 
 // TOType is a needed type alias to define functions on.
 type TOType struct {
-	api.APIInfoImpl `json:"-"`
+	api.InfoerImpl `json:"-"`
 	tc.TypeNullable
 }
 
 func (v *TOType) GetLastUpdated() (*time.Time, bool, error) {
-	return api.GetLastUpdated(v.APIInfo().Tx, *v.ID, "type")
+	return api.GetLastUpdated(v.Info().Tx, *v.ID, "type")
 }
 
 func (v *TOType) SetLastUpdated(t tc.TimeNoMod) { v.LastUpdated = &t }
@@ -107,7 +107,7 @@ func (typ *TOType) Validate() error {
 }
 
 func (tp *TOType) Read(h http.Header, useIMS bool) ([]interface{}, error, error, int, *time.Time) {
-	api.DefaultSort(tp.APIInfo(), "name")
+	api.DefaultSort(tp.Info(), "name")
 	return api.GenericRead(h, tp, useIMS)
 }
 
@@ -133,7 +133,7 @@ func (tp *TOType) Create() (error, error, int) {
 }
 
 func (tp *TOType) AllowMutation(forCreation bool) bool {
-	apiInfo := tp.APIInfo()
+	apiInfo := tp.Info()
 	if apiInfo.Version.Major < 2 {
 		return true
 	}

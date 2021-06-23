@@ -81,9 +81,9 @@ func TestReadCDNs(t *testing.T) {
 	mock.ExpectQuery("SELECT").WillReturnRows(rows)
 	mock.ExpectCommit()
 
-	reqInfo := api.APIInfo{Tx: db.MustBegin(), Params: map[string]string{"dsId": "1"}}
+	reqInfo := api.Info{Tx: db.MustBegin(), Params: map[string]string{"dsId": "1"}}
 	obj := TOCDN{
-		api.APIInfoImpl{ReqInfo: &reqInfo},
+		api.InfoerImpl{ReqInfo: &reqInfo},
 		tc.CDNNullable{},
 	}
 	cdns, userErr, sysErr, _, _ := obj.Read(nil, false)

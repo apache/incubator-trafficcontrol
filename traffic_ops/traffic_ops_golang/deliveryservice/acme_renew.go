@@ -39,7 +39,7 @@ import (
 
 // RenewAcmeCertificate renews the SSL certificate for a delivery service if possible through ACME protocol.
 func RenewAcmeCertificate(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"xmlid"}, nil)
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, []string{"xmlid"}, nil)
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
 		return

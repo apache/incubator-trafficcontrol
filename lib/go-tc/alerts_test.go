@@ -22,8 +22,6 @@ package tc
 import (
 	"errors"
 	"fmt"
-	"net/http"
-	"net/http/httptest"
 	"reflect"
 	"testing"
 )
@@ -120,30 +118,6 @@ func ExampleAlerts_ErrorString() {
 
 	// Output: foo; bar
 	//
-}
-
-func TestGetHandleErrorFunc(t *testing.T) {
-	w := httptest.NewRecorder()
-	r, err := http.NewRequest("", ".", nil)
-	if err != nil {
-		t.Error("Error creating new request")
-	}
-	body := `{"alerts":[{"text":"this is an error","level":"error"}]}`
-
-	errHandler := GetHandleErrorsFunc(w, r)
-	errHandler(http.StatusBadRequest, fmt.Errorf("this is an error"))
-	if w.Body.String() != body {
-		t.Error("Expected body", body, "got", w.Body.String())
-	}
-
-	w = httptest.NewRecorder()
-	body = `{"alerts":[]}`
-
-	errHandler = GetHandleErrorsFunc(w, r)
-	errHandler(http.StatusBadRequest, nil)
-	if w.Body.String() != body {
-		t.Error("Expected body", body, "got", w.Body.String())
-	}
 }
 
 func TestCreateAlerts(t *testing.T) {

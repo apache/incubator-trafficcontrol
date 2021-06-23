@@ -37,7 +37,7 @@ import (
 
 // endpoint handler for fetching uri signing keys from riak
 func GetURIsignkeysHandler(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, nil, nil)
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, nil, nil)
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
 		return
@@ -73,7 +73,7 @@ func GetURIsignkeysHandler(w http.ResponseWriter, r *http.Request) {
 
 // removeDeliveryServiceURIKeysHandler is the HTTP DELETE handler used to remove urisigning keys assigned to a delivery service.
 func RemoveDeliveryServiceURIKeysHandler(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, nil, nil)
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, nil, nil)
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
 		return
@@ -120,7 +120,7 @@ func RemoveDeliveryServiceURIKeysHandler(w http.ResponseWriter, r *http.Request)
 
 // saveDeliveryServiceURIKeysHandler is the HTTP POST or PUT handler used to store urisigning keys to a delivery service.
 func SaveDeliveryServiceURIKeysHandler(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, nil, nil)
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, nil, nil)
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
 		return

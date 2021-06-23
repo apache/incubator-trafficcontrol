@@ -36,7 +36,7 @@ import (
 func GetMatches(w http.ResponseWriter, r *http.Request) {
 	alerts := tc.CreateAlerts(tc.WarnLevel, "This endpoint is deprecated, please use /deliveryservices_regexes instead")
 
-	inf, userErr, sysErr, errCode := api.NewInfo(r, nil, nil)
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, nil, nil)
 	if userErr != nil || sysErr != nil {
 		userErr = api.LogErr(r, errCode, userErr, sysErr)
 		alerts.AddNewAlert(tc.ErrorLevel, userErr.Error())

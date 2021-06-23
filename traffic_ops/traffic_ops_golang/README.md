@@ -135,7 +135,7 @@ func CreateV15(w http.ResponseWriter, r *http.Request) {
 	api.WriteRespAlertObj(w, r, tc.SuccessLevel, "Deliveryservice creation was successful.", []tc.DeliveryServiceNullableV15{*res})
 }
 
-func createV15(w http.ResponseWriter, r *http.Request, inf *api.APIInfo, reqDS tc.DeliveryServiceNullableV15) *tc.DeliveryServiceNullableV15 {
+func createV15(w http.ResponseWriter, r *http.Request, inf *api.Info, reqDS tc.DeliveryServiceNullableV15) *tc.DeliveryServiceNullableV15 {
   ...
 }
 ```

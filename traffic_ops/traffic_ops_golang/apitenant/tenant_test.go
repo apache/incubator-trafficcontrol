@@ -83,7 +83,7 @@ func TestIsUpdateable(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT")
 
-	child.ReqInfo = &api.APIInfo{Tx: db.MustBegin(), Params: map[string]string{"id": strconv.Itoa(*child.ID)}}
+	child.ReqInfo = &api.Info{Tx: db.MustBegin(), Params: map[string]string{"id": strconv.Itoa(*child.ID)}}
 	userErr, _, statusCode = child.isUpdatable()
 	if userErr != nil && statusCode != http.StatusOK {
 		t.Errorf("Should be able to update child to new parent (from Parent to Root). userErr = %s, statuscode = %d", userErr, statusCode)
@@ -106,7 +106,7 @@ func TestIsUpdateable(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT").WillReturnRows(rows)
 
-	parent.ReqInfo = &api.APIInfo{Tx: db.MustBegin(), Params: map[string]string{"id": strconv.Itoa(*parent.ID)}}
+	parent.ReqInfo = &api.Info{Tx: db.MustBegin(), Params: map[string]string{"id": strconv.Itoa(*parent.ID)}}
 	userErr, _, statusCode = parent.isUpdatable()
 	if userErr == nil && statusCode != http.StatusBadRequest {
 		t.Errorf("Should NOT be able to update parent to own child (from Parent to Child). userErr = %s, statuscode = %d", userErr, statusCode)
@@ -129,7 +129,7 @@ func getValidChildTenant() *TOTenant {
 		ParentID:    &tenpid,
 		ParentName:  &tenpaname,
 	}
-	ten.ReqInfo = &api.APIInfo{}
+	ten.ReqInfo = &api.Info{}
 	return ten
 }
 
@@ -148,7 +148,7 @@ func getValidParentTenant() *TOTenant {
 		ParentID:    &tenpid,
 		ParentName:  &tenpaname,
 	}
-	ten.ReqInfo = &api.APIInfo{}
+	ten.ReqInfo = &api.Info{}
 	return ten
 }
 
@@ -165,6 +165,6 @@ func getRootTestTenant() *TOTenant {
 		ParentID:    nil,
 		ParentName:  nil,
 	}
-	ten.ReqInfo = &api.APIInfo{}
+	ten.ReqInfo = &api.Info{}
 	return ten
 }

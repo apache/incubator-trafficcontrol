@@ -20,11 +20,12 @@ package api
  */
 
 import (
+	"net/http"
+	"time"
+
 	"github.com/apache/trafficcontrol/lib/go-tc"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/auth"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/dbhelpers"
-	"net/http"
-	"time"
 )
 
 type CRUDer interface {
@@ -32,7 +33,7 @@ type CRUDer interface {
 	Read(h http.Header, useIMS bool) ([]interface{}, error, error, int, *time.Time)
 	Update(http.Header) (error, error, int)
 	Delete() (error, error, int)
-	APIInfoer
+	Infoer
 	Identifier
 	Validator
 }
@@ -62,7 +63,7 @@ type Identifier interface {
 type Creator interface {
 	// Create returns any user error, any system error, and the HTTP error code to be returned if there was an error.
 	Create() (error, error, int)
-	APIInfoer
+	Infoer
 	Identifier
 	Validator
 }
@@ -75,13 +76,13 @@ type MultipleCreator interface {
 type Reader interface {
 	// Read returns the object to write to the user, any user error, any system error, and the HTTP error code to be returned if there was an error.
 	Read(h http.Header, useIMS bool) ([]interface{}, error, error, int, *time.Time)
-	APIInfoer
+	Infoer
 }
 
 type Updater interface {
 	// Update returns any user error, any system error, and the HTTP error code to be returned if there was an error.
 	Update(h http.Header) (error, error, int)
-	APIInfoer
+	Infoer
 	Identifier
 	Validator
 }
@@ -89,7 +90,7 @@ type Updater interface {
 type Deleter interface {
 	// Delete returns any user error, any system error, and the HTTP error code to be returned if there was an error.
 	Delete() (error, error, int)
-	APIInfoer
+	Infoer
 	Identifier
 }
 
@@ -98,7 +99,7 @@ type OptionsDeleter interface {
 	// OptionsDelete returns any user error, any system error, and the HTTP error code to be returned if there was an
 	// error.
 	OptionsDelete() (error, error, int)
-	APIInfoer
+	Infoer
 	Identifier
 	DeleteKeyOptions() map[string]dbhelpers.WhereColumnInfo
 }
@@ -111,9 +112,25 @@ type Tenantable interface {
 	IsTenantAuthorized(user *auth.CurrentUser) (bool, error)
 }
 
-// APIInfoer is an interface that guarantees the existance of a variable through its setters and getters.
+// Infoer is an interface that guarantees the existance of a variable through its setters and getters.
 // Every CRUD operation uses this login session context
-type APIInfoer interface {
-	SetInfo(*APIInfo)
-	APIInfo() *APIInfo
+type Infoer interface {
+	SetInfo(*Info)
+	Info() *Info
+}
+
+// InfoerImpl is an implementation of the Infoer interface.
+type InfoerImpl struct {
+	// ReqInfo is the stored API Info.
+	ReqInfo *Info `json:"-"`
+}
+
+// Info returns the InfoerImpl's stored API Info.
+func (i InfoerImpl) Info() *Info {
+	return i.ReqInfo
+}
+
+// SetInfo sets the InfoerImpl's stored API Info.
+func (i *InfoerImpl) SetInfo(inf *Info) {
+	i.ReqInfo = inf
 }

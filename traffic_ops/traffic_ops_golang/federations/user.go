@@ -42,8 +42,8 @@ const (
 
 // TOUsers data structure to use on read/delete of federation users
 type TOUsers struct {
-	api.APIInfoImpl `json:"-"`
-	Federation      *int `json:"-" db:"federation"`
+	api.InfoerImpl `json:"-"`
+	Federation     *int `json:"-" db:"federation"`
 	tc.FederationUser
 }
 
@@ -127,12 +127,12 @@ func (v *TOUsers) GetType() string {
 }
 
 func (v *TOUsers) Read(h http.Header, useIMS bool) ([]interface{}, error, error, int, *time.Time) {
-	fedIDStr := v.APIInfo().Params["id"]
+	fedIDStr := v.Info().Params["id"]
 	fedID, err := strconv.Atoi(fedIDStr)
 	if err != nil {
 		return nil, errors.New("federation id must be an integer"), nil, http.StatusBadRequest, nil
 	}
-	_, exists, err := getFedNameByID(v.APIInfo().Tx.Tx, fedID)
+	_, exists, err := getFedNameByID(v.Info().Tx.Tx, fedID)
 	if err != nil {
 		return nil, nil, fmt.Errorf("getting federation cname from ID %v: %v", fedID, err), http.StatusInternalServerError, nil
 	} else if !exists {
@@ -144,7 +144,7 @@ func (v *TOUsers) Read(h http.Header, useIMS bool) ([]interface{}, error, error,
 func (v *TOUsers) Delete() (error, error, int) { return api.GenericDelete(v) }
 
 func PostUsers(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"id"}, []string{"id"})
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, []string{"id"}, []string{"id"})
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
 		return

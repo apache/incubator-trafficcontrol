@@ -43,7 +43,7 @@ const msg = "From: %s\r\nTo:%s\r\nContent-Type: text/html\r\nSubject: Delivery S
 // /deliveryservices/request - not to be confused with a Delivery Service
 // Request as created using the /deliveryservice_requests.
 func Request(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, nil, nil)
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, nil, nil)
 	tx := inf.Tx.Tx
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, tx, errCode, userErr, sysErr)

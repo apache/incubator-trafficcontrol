@@ -35,7 +35,7 @@ import (
 )
 
 func GetServersEligible(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"id"}, []string{"id"})
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, []string{"id"}, []string{"id"})
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
 		return
@@ -137,7 +137,7 @@ JOIN type t ON s.type = t.id
 WHERE s.cdn_id = (SELECT cdn_id from deliveryservice where id = (select v from ds_id))
 	AND (t.name LIKE 'EDGE%' OR t.name LIKE 'ORG%')
 `
-	dataFetchQuery := `, 
+	dataFetchQuery := `,
 cg.name as cachegroup,
 s.cachegroup as cachegroup_id,
 s.cdn_id,

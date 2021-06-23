@@ -136,7 +136,7 @@ type DeliveryService struct {
 }
 
 func Get(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"cdn"}, nil)
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, []string{"cdn"}, nil)
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
 		return

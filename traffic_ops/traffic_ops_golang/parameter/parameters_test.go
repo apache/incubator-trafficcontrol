@@ -94,13 +94,13 @@ func TestGetParameters(t *testing.T) {
 	mock.ExpectQuery("SELECT").WillReturnRows(rows)
 	mock.ExpectCommit()
 
-	reqInfo := api.APIInfo{
+	reqInfo := api.Info{
 		Tx:     db.MustBegin(),
 		User:   &auth.CurrentUser{PrivLevel: 30},
 		Params: map[string]string{"name": "1"},
 	}
 	obj := TOParameter{
-		api.APIInfoImpl{ReqInfo: &reqInfo},
+		api.InfoerImpl{ReqInfo: &reqInfo},
 		tc.ParameterNullable{},
 	}
 	pps, userErr, sysErr, _, _ := obj.Read(nil, false)

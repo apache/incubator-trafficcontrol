@@ -19,17 +19,18 @@ package dbdump
  * under the License.
  */
 
-import "errors"
-import "fmt"
-import "net/http"
-import "os"
-import "os/exec"
-import "time"
+import (
+	"errors"
+	"fmt"
+	"net/http"
+	"os"
+	"os/exec"
+	"time"
 
-import "github.com/apache/trafficcontrol/lib/go-log"
-import "github.com/apache/trafficcontrol/lib/go-rfc"
-
-import "github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/api"
+	"github.com/apache/trafficcontrol/lib/go-log"
+	"github.com/apache/trafficcontrol/lib/go-rfc"
+	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/api"
+)
 
 func filename() string {
 	host, err := os.Hostname()
@@ -42,7 +43,7 @@ func filename() string {
 }
 
 func DBDump(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, nil, nil)
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, nil, nil)
 	tx := inf.Tx.Tx
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, tx, errCode, userErr, sysErr)

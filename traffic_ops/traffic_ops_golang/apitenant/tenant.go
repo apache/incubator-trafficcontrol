@@ -44,12 +44,12 @@ const rootName = `root`
 
 // TOTenant provides a local type against which to define methods
 type TOTenant struct {
-	api.APIInfoImpl `json:"-"`
+	api.InfoerImpl `json:"-"`
 	tc.TenantNullable
 }
 
 func (ten *TOTenant) GetLastUpdated() (*time.Time, bool, error) {
-	return api.GetLastUpdated(ten.APIInfo().Tx, *ten.ID, "tenant")
+	return api.GetLastUpdated(ten.Info().Tx, *ten.ID, "tenant")
 }
 
 func (ten *TOTenant) SetLastUpdated(t tc.TimeNoMod) { ten.LastUpdated = &t }
@@ -62,7 +62,7 @@ func (ten *TOTenant) SelectMaxLastUpdatedQuery(where, orderBy, pagination, table
 }
 func (ten *TOTenant) NewReadObj() interface{} { return &tc.TenantNullable{} }
 func (ten *TOTenant) SelectQuery() string {
-	return selectQuery(ten.APIInfo().User.TenantID)
+	return selectQuery(ten.Info().User.TenantID)
 }
 func (ten *TOTenant) ParamColumns() map[string]dbhelpers.WhereColumnInfo {
 	return map[string]dbhelpers.WhereColumnInfo{
@@ -135,10 +135,10 @@ func (ten TOTenant) Validate() error {
 func (ten *TOTenant) Create() (error, error, int) { return api.GenericCreate(ten) }
 
 func (ten *TOTenant) Read(h http.Header, useIMS bool) ([]interface{}, error, error, int, *time.Time) {
-	if ten.APIInfo().User.TenantID == auth.TenantIDInvalid {
+	if ten.Info().User.TenantID == auth.TenantIDInvalid {
 		return nil, nil, nil, http.StatusOK, nil
 	}
-	api.DefaultSort(ten.APIInfo(), "name")
+	api.DefaultSort(ten.Info(), "name")
 	tenants, userErr, sysErr, errCode, maxTime := api.GenericRead(h, ten, useIMS)
 	if userErr != nil || sysErr != nil {
 		return nil, userErr, sysErr, errCode, nil
@@ -174,7 +174,7 @@ func (ten *TOTenant) IsTenantAuthorized(user *auth.CurrentUser) (bool, error) {
 
 	if ten.ID != nil && *ten.ID != 0 {
 		// modifying an existing tenant
-		ok, err = tenant.IsResourceAuthorizedToUserTx(*ten.ID, user, ten.APIInfo().Tx.Tx)
+		ok, err = tenant.IsResourceAuthorizedToUserTx(*ten.ID, user, ten.Info().Tx.Tx)
 		if !ok || err != nil {
 			return ok, err
 		}
@@ -186,7 +186,7 @@ func (ten *TOTenant) IsTenantAuthorized(user *auth.CurrentUser) (bool, error) {
 
 		// get current parentID to check if it's being changed
 		var parentID int
-		tx := ten.APIInfo().Tx.Tx
+		tx := ten.Info().Tx.Tx
 		// If it's the root tenant, don't check for parent
 		if ten.Name != nil && *ten.Name != rootName {
 			err = tx.QueryRow(`SELECT parent_id FROM tenant WHERE id = ` + strconv.Itoa(*ten.ID)).Scan(&parentID)
@@ -205,7 +205,7 @@ func (ten *TOTenant) IsTenantAuthorized(user *auth.CurrentUser) (bool, error) {
 		return false, err
 	}
 
-	return tenant.IsResourceAuthorizedToUserTx(*ten.ParentID, user, ten.APIInfo().Tx.Tx)
+	return tenant.IsResourceAuthorizedToUserTx(*ten.ParentID, user, ten.Info().Tx.Tx)
 }
 
 // Update wraps tenant validation and the generic API Update call into a single call.
@@ -231,7 +231,7 @@ func (ten *TOTenant) isUpdatable() (error, error, int) {
 	// Perform SelectQuery
 	vals := []tc.TenantNullable{}
 	query := selectQuery(*ten.ID)
-	rows, err := ten.APIInfo().Tx.Queryx(query)
+	rows, err := ten.Info().Tx.Queryx(query)
 	if err != nil {
 		return nil, errors.New("querying " + ten.GetType() + ": " + err.Error()), http.StatusInternalServerError
 	}
@@ -255,9 +255,9 @@ func (ten *TOTenant) isUpdatable() (error, error, int) {
 }
 
 func (ten *TOTenant) Delete() (error, error, int) {
-	result, err := ten.APIInfo().Tx.NamedExec(deleteQuery(), ten)
+	result, err := ten.Info().Tx.NamedExec(deleteQuery(), ten)
 	if err != nil {
-		return parseDeleteErr(err, *ten.ID, ten.APIInfo().Tx.Tx) // this is why we can't use api.GenericDelete
+		return parseDeleteErr(err, *ten.ID, ten.Info().Tx.Tx) // this is why we can't use api.GenericDelete
 	}
 
 	if rowsAffected, err := result.RowsAffected(); err != nil {

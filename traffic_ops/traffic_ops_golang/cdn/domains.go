@@ -21,10 +21,11 @@ package cdn
 
 import (
 	"fmt"
-	"github.com/apache/trafficcontrol/lib/go-log"
-	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/util/ims"
 	"net/http"
 	"time"
+
+	"github.com/apache/trafficcontrol/lib/go-log"
+	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/util/ims"
 
 	"github.com/apache/trafficcontrol/lib/go-tc"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/api"
@@ -82,7 +83,7 @@ func getDomainsList(useIMS bool, header http.Header, tx *sqlx.Tx) ([]tc.Domain, 
 
 func DomainsHandler(w http.ResponseWriter, r *http.Request) {
 	useIMS := false
-	inf, userErr, sysErr, errCode := api.NewInfo(r, nil, nil)
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, nil, nil)
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
 		return

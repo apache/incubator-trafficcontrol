@@ -19,20 +19,21 @@ package login
  * under the License.
  */
 
-import "bytes"
-import "database/sql"
-import "errors"
-import "fmt"
-import "html/template"
-import "net/http"
+import (
+	"bytes"
+	"database/sql"
+	"errors"
+	"fmt"
+	"html/template"
+	"net/http"
 
-import "github.com/apache/trafficcontrol/lib/go-log"
-import "github.com/apache/trafficcontrol/lib/go-rfc"
-import "github.com/apache/trafficcontrol/lib/go-tc"
-
-import "github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/api"
-import "github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/config"
-import "github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/dbhelpers"
+	"github.com/apache/trafficcontrol/lib/go-log"
+	"github.com/apache/trafficcontrol/lib/go-rfc"
+	"github.com/apache/trafficcontrol/lib/go-tc"
+	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/api"
+	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/config"
+	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/dbhelpers"
+)
 
 type registrationEmailFormatter struct {
 	From         rfc.EmailAddress
@@ -150,7 +151,7 @@ func createRegistrationMsg(addr rfc.EmailAddress, t string, tx *sql.Tx, c config
 
 // RegisterUser is the handler for /users/register. It sends registration through Email.
 func RegisterUser(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, nil, nil)
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, nil, nil)
 	var tx = inf.Tx.Tx
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, tx, errCode, userErr, sysErr)

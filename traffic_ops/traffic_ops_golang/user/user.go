@@ -36,12 +36,12 @@ import (
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/tenant"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/util/ims"
 
-	"github.com/go-ozzo/ozzo-validation"
+	validation "github.com/go-ozzo/ozzo-validation"
 	"github.com/go-ozzo/ozzo-validation/is"
 )
 
 type TOUser struct {
-	api.APIInfoImpl `json:"-"`
+	api.InfoerImpl `json:"-"`
 	tc.User
 }
 
@@ -178,7 +178,7 @@ func (user *TOUser) Create() (error, error, int) {
 func (this *TOUser) Read(h http.Header, useIMS bool) ([]interface{}, error, error, int, *time.Time) {
 	var maxTime time.Time
 	var runSecond bool
-	inf := this.APIInfo()
+	inf := this.Info()
 	api.DefaultSort(inf, "username")
 	where, orderBy, pagination, queryValues, errs := dbhelpers.BuildWhereAndOrderByAndPagination(inf.Params, this.ParamColumns())
 	if len(errs) > 0 {
@@ -192,7 +192,7 @@ func (this *TOUser) Read(h http.Header, useIMS bool) ([]interface{}, error, erro
 	where, queryValues = dbhelpers.AddTenancyCheck(where, queryValues, "u.tenant_id", tenantIDs)
 
 	if useIMS {
-		runSecond, maxTime = ims.TryIfModifiedSinceQuery(this.APIInfo().Tx, h, queryValues, selectMaxLastUpdatedQuery(where))
+		runSecond, maxTime = ims.TryIfModifiedSinceQuery(this.Info().Tx, h, queryValues, selectMaxLastUpdatedQuery(where))
 		if !runSecond {
 			log.Debugln("IMS HIT")
 			return []interface{}{}, nil, nil, http.StatusNotModified, &maxTime

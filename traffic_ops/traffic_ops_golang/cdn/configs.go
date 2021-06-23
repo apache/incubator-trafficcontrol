@@ -20,16 +20,17 @@ package cdn
  */
 
 import (
+	"net/http"
+	"time"
+
 	"github.com/apache/trafficcontrol/lib/go-tc"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/api"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/dbhelpers"
-	"net/http"
-	"time"
 )
 
 // TOCDNConf used as a type alias to define functions on to satisfy shared API REST interfaces.
 type TOCDNConf struct {
-	api.APIInfoImpl `json:"-"`
+	api.InfoerImpl `json:"-"`
 }
 
 func (v *TOCDNConf) NewReadObj() interface{} { return &tc.CDNConfig{} }

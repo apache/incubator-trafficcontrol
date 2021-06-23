@@ -31,7 +31,7 @@ import (
 )
 
 func GetHealth(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, nil, nil)
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, nil, nil)
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
 		return
@@ -48,7 +48,7 @@ func GetHealth(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetNameHealth(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"name"}, nil)
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, []string{"name"}, nil)
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
 		return

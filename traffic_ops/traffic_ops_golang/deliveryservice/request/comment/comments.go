@@ -31,17 +31,17 @@ import (
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/api"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/dbhelpers"
 
-	"github.com/go-ozzo/ozzo-validation"
+	validation "github.com/go-ozzo/ozzo-validation"
 )
 
 //we need a type alias to define functions on
 type TODeliveryServiceRequestComment struct {
-	api.APIInfoImpl `json:"-"`
+	api.InfoerImpl `json:"-"`
 	tc.DeliveryServiceRequestCommentNullable
 }
 
 func (v *TODeliveryServiceRequestComment) GetLastUpdated() (*time.Time, bool, error) {
-	return api.GetLastUpdated(v.APIInfo().Tx, *v.ID, "deliveryservice_request_comment")
+	return api.GetLastUpdated(v.Info().Tx, *v.ID, "deliveryservice_request_comment")
 }
 
 func (v *TODeliveryServiceRequestComment) SetLastUpdated(t tc.TimeNoMod) { v.LastUpdated = &t }
@@ -113,7 +113,7 @@ func (comment *TODeliveryServiceRequestComment) Create() (error, error, int) {
 }
 
 func (comment *TODeliveryServiceRequestComment) Read(h http.Header, useIMS bool) ([]interface{}, error, error, int, *time.Time) {
-	api.DefaultSort(comment.APIInfo(), "xmlId")
+	api.DefaultSort(comment.Info(), "xmlId")
 	return api.GenericRead(h, comment, useIMS)
 }
 

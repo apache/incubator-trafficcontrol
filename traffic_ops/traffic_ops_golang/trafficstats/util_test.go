@@ -41,7 +41,7 @@ func TestTSConfigFromRequest(t *testing.T) {
 		t.Fatalf("Failed to parse test end time: %v", err)
 	}
 
-	inf := api.APIInfo{
+	inf := api.Info{
 		Params: map[string]string{
 			"limit":      "10",
 			"offset":     "0",

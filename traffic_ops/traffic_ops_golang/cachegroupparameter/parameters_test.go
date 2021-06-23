@@ -194,7 +194,7 @@ func TestReadCacheGroupParameters(t *testing.T) {
 				}
 				mock.ExpectCommit()
 
-				reqInfo := api.APIInfo{Tx: db.MustBegin(), Params: testCase.params}
+				reqInfo := api.Info{Tx: db.MustBegin(), Params: testCase.params}
 				toParameterReader.SetInfo(&reqInfo)
 
 				parameters, userErr, sysErr, returnCode, _ := toParameterReader.Read(nil, false)

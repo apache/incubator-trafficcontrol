@@ -35,12 +35,12 @@ import (
 
 //we need a type alias to define functions on
 type TOPhysLocation struct {
-	api.APIInfoImpl `json:"-"`
+	api.InfoerImpl `json:"-"`
 	tc.PhysLocationNullable
 }
 
 func (v *TOPhysLocation) GetLastUpdated() (*time.Time, bool, error) {
-	return api.GetLastUpdated(v.APIInfo().Tx, *v.ID, "phys_location")
+	return api.GetLastUpdated(v.Info().Tx, *v.ID, "phys_location")
 }
 
 func (v *TOPhysLocation) SetLastUpdated(t tc.TimeNoMod) { v.LastUpdated = &t }
@@ -105,7 +105,7 @@ func (pl *TOPhysLocation) Validate() error {
 }
 
 func (pl *TOPhysLocation) Read(h http.Header, useIMS bool) ([]interface{}, error, error, int, *time.Time) {
-	api.DefaultSort(pl.APIInfo(), "name")
+	api.DefaultSort(pl.Info(), "name")
 	return api.GenericRead(h, pl, useIMS)
 }
 func (v *TOPhysLocation) SelectMaxLastUpdatedQuery(where, orderBy, pagination, tableName string) string {

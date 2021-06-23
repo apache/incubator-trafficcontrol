@@ -64,7 +64,7 @@ AND time < $end
 GROUP BY time(%s, %s), cdn%s`
 )
 
-func cacheConfigFromRequest(r *http.Request, i *api.APIInfo) (tc.TrafficCacheStatsConfig, int, error) {
+func cacheConfigFromRequest(r *http.Request, i *api.Info) (tc.TrafficCacheStatsConfig, int, error) {
 	c := tc.TrafficCacheStatsConfig{}
 	statsConfig, rc, e := tsConfigFromRequest(r, i)
 	if e != nil {
@@ -89,7 +89,7 @@ func cacheConfigFromRequest(r *http.Request, i *api.APIInfo) (tc.TrafficCacheSta
 // GetCacheStats handler for getting cache stats
 func GetCacheStats(w http.ResponseWriter, r *http.Request) {
 	// Perl didn't require "interval", but it would only return summary data if it was not given
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"metricType", "startDate", "endDate", "cdnName"}, nil)
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, []string{"metricType", "startDate", "endDate", "cdnName"}, nil)
 	tx := inf.Tx.Tx
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, tx, errCode, userErr, sysErr)

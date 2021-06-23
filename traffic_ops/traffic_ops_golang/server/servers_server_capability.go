@@ -48,7 +48,7 @@ const (
 
 type (
 	TOServerServerCapability struct {
-		api.APIInfoImpl `json:"-"`
+		api.InfoerImpl `json:"-"`
 		tc.ServerServerCapability
 	}
 
@@ -123,7 +123,7 @@ func (ssc TOServerServerCapability) Validate() error {
 }
 
 func (ssc *TOServerServerCapability) Read(h http.Header, useIMS bool) ([]interface{}, error, error, int, *time.Time) {
-	api.DefaultSort(ssc.APIInfo(), "serverHostName")
+	api.DefaultSort(ssc.Info(), "serverHostName")
 	return api.GenericRead(h, ssc, useIMS)
 }
 func (v *TOServerServerCapability) SelectMaxLastUpdatedQuery(where, orderBy, pagination, tableName string) string {
@@ -135,7 +135,7 @@ JOIN server s ON sc.server = s.id ` + where + orderBy + pagination +
 }
 
 func (ssc *TOServerServerCapability) Delete() (error, error, int) {
-	tenantIDs, err := tenant.GetUserTenantIDListTx(ssc.APIInfo().Tx.Tx, ssc.APIInfo().User.TenantID)
+	tenantIDs, err := tenant.GetUserTenantIDListTx(ssc.Info().Tx.Tx, ssc.Info().User.TenantID)
 	if err != nil {
 		return nil, fmt.Errorf("deleting servers_server_capability: %v", err), http.StatusInternalServerError
 	}
@@ -157,7 +157,7 @@ func (ssc *TOServerServerCapability) Delete() (error, error, int) {
 }
 
 func checkTopologyBasedDSRequiredCapabilities(ssc *TOServerServerCapability, accessibleTenants map[int]struct{}) (error, error, int) {
-	dsRows, err := ssc.APIInfo().Tx.Tx.Query(getTopologyBasedDSesReqCapQuery(), ssc.ServerID, ssc.ServerCapability)
+	dsRows, err := ssc.Info().Tx.Tx.Query(getTopologyBasedDSesReqCapQuery(), ssc.ServerID, ssc.ServerCapability)
 	if err != nil {
 		return nil, fmt.Errorf("querying topology-based DSes with the required capability %s: %v", *ssc.ServerCapability, err), http.StatusInternalServerError
 	}
@@ -182,7 +182,7 @@ func checkTopologyBasedDSRequiredCapabilities(ssc *TOServerServerCapability, acc
 		return nil, nil, http.StatusOK
 	}
 
-	serverRows, err := ssc.APIInfo().Tx.Tx.Query(getServerCapabilitiesOfCachegoupQuery(), ssc.ServerID, ssc.ServerCapability)
+	serverRows, err := ssc.Info().Tx.Tx.Query(getServerCapabilitiesOfCachegoupQuery(), ssc.ServerID, ssc.ServerCapability)
 	if err != nil {
 		return nil, fmt.Errorf("querying server capabilitites of server %d's cachegroup: %v", *ssc.ServerID, err), http.StatusInternalServerError
 	}
@@ -238,7 +238,7 @@ func checkDSRequiredCapabilities(ssc *TOServerServerCapability, accessibleTenant
 	// Ensure that the user is not removing a server capability from the server
 	// that is required by the delivery services the server is assigned to (if applicable)
 	dsIDs := []int64{}
-	if err := ssc.APIInfo().Tx.Tx.QueryRow(checkDSReqCapQuery(), ssc.ServerID, ssc.ServerCapability).Scan(pq.Array(&dsIDs)); err != nil {
+	if err := ssc.Info().Tx.Tx.QueryRow(checkDSReqCapQuery(), ssc.ServerID, ssc.ServerCapability).Scan(pq.Array(&dsIDs)); err != nil {
 		return nil, fmt.Errorf("checking removing server server capability would still suffice delivery service requried capabilites: %v", err), http.StatusInternalServerError
 	}
 
@@ -250,7 +250,7 @@ func checkDSRequiredCapabilities(ssc *TOServerServerCapability, accessibleTenant
 
 func (ssc *TOServerServerCapability) buildDSReqCapError(dsIDs []int64, accessibleTenants map[int]struct{}) (error, error, int) {
 
-	dsTenantIDs, err := getDSTenantIDsByIDs(ssc.APIInfo().Tx, dsIDs)
+	dsTenantIDs, err := getDSTenantIDsByIDs(ssc.Info().Tx, dsIDs)
 	if err != nil {
 		return nil, err, http.StatusInternalServerError
 	}
@@ -274,7 +274,7 @@ func (ssc *TOServerServerCapability) buildDSReqCapError(dsIDs []int64, accessibl
 }
 
 func (ssc *TOServerServerCapability) Create() (error, error, int) {
-	tx := ssc.APIInfo().Tx
+	tx := ssc.Info().Tx
 
 	// Check existence prior to checking type
 	_, exists, err := dbhelpers.GetServerNameFromID(tx.Tx, *ssc.ServerID)
@@ -356,7 +356,7 @@ SELECT ARRAY(
 	SELECT dsrc.deliveryservice_id
 	FROM deliveryservices_required_capability as dsrc
 	WHERE deliveryservice_id IN (
-		SELECT deliveryservice 
+		SELECT deliveryservice
 		FROM deliveryservice_server
 		WHERE server = $1)
 	AND dsrc.required_capability = $2)`

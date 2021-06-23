@@ -52,12 +52,12 @@ var (
 
 //we need a type alias to define functions on
 type TOParameter struct {
-	api.APIInfoImpl `json:"-"`
+	api.InfoerImpl `json:"-"`
 	tc.ParameterNullable
 }
 
 func (v *TOParameter) GetLastUpdated() (*time.Time, bool, error) {
-	return api.GetLastUpdated(v.APIInfo().Tx, *v.ID, "parameter")
+	return api.GetLastUpdated(v.Info().Tx, *v.ID, "parameter")
 }
 
 // AllowMultipleCreates indicates whether an array can be POSTed using the shared Create handler
@@ -148,12 +148,12 @@ func (param *TOParameter) Read(h http.Header, useIMS bool) ([]interface{}, error
 	var runSecond bool
 	code := http.StatusOK
 	queryParamsToQueryCols := param.ParamColumns()
-	where, orderBy, pagination, queryValues, errs := dbhelpers.BuildWhereAndOrderByAndPagination(param.APIInfo().Params, queryParamsToQueryCols)
+	where, orderBy, pagination, queryValues, errs := dbhelpers.BuildWhereAndOrderByAndPagination(param.Info().Params, queryParamsToQueryCols)
 	if len(errs) > 0 {
 		return nil, util.JoinErrs(errs), nil, http.StatusBadRequest, nil
 	}
 	if useIMS {
-		runSecond, maxTime = ims.TryIfModifiedSinceQuery(param.APIInfo().Tx, h, queryValues, param.SelectMaxLastUpdatedQuery(where, orderBy, pagination, "parameter"))
+		runSecond, maxTime = ims.TryIfModifiedSinceQuery(param.Info().Tx, h, queryValues, param.SelectMaxLastUpdatedQuery(where, orderBy, pagination, "parameter"))
 		if !runSecond {
 			log.Debugln("IMS HIT")
 			return []interface{}{}, nil, nil, http.StatusNotModified, &maxTime

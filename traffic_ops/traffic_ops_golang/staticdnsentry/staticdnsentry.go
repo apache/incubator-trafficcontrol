@@ -35,12 +35,12 @@ import (
 )
 
 type TOStaticDNSEntry struct {
-	api.APIInfoImpl `json:"-"`
+	api.InfoerImpl `json:"-"`
 	tc.StaticDNSEntryNullable
 }
 
 func (v *TOStaticDNSEntry) GetLastUpdated() (*time.Time, bool, error) {
-	return api.GetLastUpdated(v.APIInfo().Tx, *v.ID, "staticdnsentry")
+	return api.GetLastUpdated(v.Info().Tx, *v.ID, "staticdnsentry")
 }
 
 func (v *TOStaticDNSEntry) SetLastUpdated(t tc.TimeNoMod) { v.LastUpdated = &t }
@@ -138,7 +138,7 @@ func (staticDNSEntry TOStaticDNSEntry) Validate() error {
 }
 
 func (en *TOStaticDNSEntry) Read(h http.Header, useIMS bool) ([]interface{}, error, error, int, *time.Time) {
-	api.DefaultSort(en.APIInfo(), "host")
+	api.DefaultSort(en.Info(), "host")
 	return api.GenericRead(h, en, useIMS)
 }
 func (en *TOStaticDNSEntry) Create() (error, error, int) { return api.GenericCreate(en) }

@@ -31,12 +31,12 @@ import (
 
 //we need a type alias to define functions on
 type TORegion struct {
-	api.APIInfoImpl `json:"-"`
+	api.InfoerImpl `json:"-"`
 	tc.Region
 }
 
 func (v *TORegion) GetLastUpdated() (*time.Time, bool, error) {
-	return api.GetLastUpdated(v.APIInfo().Tx, v.ID, "region")
+	return api.GetLastUpdated(v.Info().Tx, v.ID, "region")
 }
 
 func (v *TORegion) SetLastUpdated(t tc.TimeNoMod) { v.LastUpdated = t }
@@ -104,7 +104,7 @@ func (region *TORegion) Validate() error {
 }
 
 func (rg *TORegion) Read(h http.Header, useIMS bool) ([]interface{}, error, error, int, *time.Time) {
-	api.DefaultSort(rg.APIInfo(), "name")
+	api.DefaultSort(rg.Info(), "name")
 	return api.GenericRead(h, rg, useIMS)
 }
 func (v *TORegion) SelectMaxLastUpdatedQuery(where, orderBy, pagination, tableName string) string {

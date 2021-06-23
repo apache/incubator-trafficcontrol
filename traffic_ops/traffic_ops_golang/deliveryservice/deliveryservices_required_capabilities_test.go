@@ -63,8 +63,8 @@ func TestCreateDeliveryServicesRequiredCapability(t *testing.T) {
 
 	mock.ExpectBegin()
 	rc := RequiredCapability{
-		api.APIInfoImpl{
-			ReqInfo: &api.APIInfo{
+		api.InfoerImpl{
+			ReqInfo: &api.Info{
 				Tx:   db.MustBegin(),
 				User: &auth.CurrentUser{PrivLevel: 30},
 			},
@@ -125,8 +125,8 @@ func TestUnauthorizedCreateDeliveryServicesRequiredCapability(t *testing.T) {
 
 	mock.ExpectBegin()
 	rc := RequiredCapability{
-		api.APIInfoImpl{
-			ReqInfo: &api.APIInfo{
+		api.InfoerImpl{
+			ReqInfo: &api.Info{
 				Tx:   db.MustBegin(),
 				User: &auth.CurrentUser{PrivLevel: 1},
 			},
@@ -177,8 +177,8 @@ func TestReadDeliveryServicesRequiredCapability(t *testing.T) {
 
 	mock.ExpectBegin()
 	rc := RequiredCapability{
-		api.APIInfoImpl{
-			ReqInfo: &api.APIInfo{
+		api.InfoerImpl{
+			ReqInfo: &api.Info{
 				Tx:   db.MustBegin(),
 				User: &auth.CurrentUser{PrivLevel: 30},
 			},
@@ -247,8 +247,8 @@ func TestDeleteDeliveryServicesRequiredCapability(t *testing.T) {
 	mock.ExpectExec("DELETE").WillReturnResult(sqlmock.NewResult(1, 1))
 
 	rc := RequiredCapability{
-		api.APIInfoImpl{
-			ReqInfo: &api.APIInfo{
+		api.InfoerImpl{
+			ReqInfo: &api.Info{
 				Tx:   db.MustBegin(),
 				User: &auth.CurrentUser{PrivLevel: 30},
 			},
@@ -288,8 +288,8 @@ func TestUnauthorizedDeleteDeliveryServicesRequiredCapability(t *testing.T) {
 
 	mock.ExpectBegin()
 	rc := RequiredCapability{
-		api.APIInfoImpl{
-			ReqInfo: &api.APIInfo{
+		api.InfoerImpl{
+			ReqInfo: &api.Info{
 				Tx:   db.MustBegin(),
 				User: &auth.CurrentUser{PrivLevel: 1},
 			},
@@ -349,8 +349,8 @@ func TestCreateDeliveryServicesRequiredCapabilityInvalidDSType(t *testing.T) {
 
 	mock.ExpectBegin()
 	rc := RequiredCapability{
-		api.APIInfoImpl{
-			ReqInfo: &api.APIInfo{
+		api.InfoerImpl{
+			ReqInfo: &api.Info{
 				Tx:   db.MustBegin(),
 				User: &auth.CurrentUser{PrivLevel: 30},
 			},

@@ -32,7 +32,7 @@ import (
 // Get handler for getting enabled TO Plugins.
 func Get(p plugin.Plugins) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		inf, sysErr, userErr, errCode := api.NewInfo(r, nil, nil)
+		inf, sysErr, userErr, errCode := api.NewInfo(w, r, nil, nil)
 		if sysErr != nil || userErr != nil {
 			api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
 			return

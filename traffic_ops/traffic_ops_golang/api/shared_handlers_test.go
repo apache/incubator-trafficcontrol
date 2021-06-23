@@ -40,11 +40,11 @@ import (
 )
 
 type tester struct {
-	ID          int
-	APIInfoImpl `json:"-"`
-	userErr     error //only for testing
-	sysErr      error //only for testing
-	errCode     int   //only for testing
+	ID         int
+	InfoerImpl `json:"-"`
+	userErr    error //only for testing
+	sysErr     error //only for testing
+	errCode    int   //only for testing
 }
 
 var cfg = config.Config{ConfigTrafficOpsGolang: config.ConfigTrafficOpsGolang{DBQueryTimeoutSeconds: 20}, UseIMS: true}

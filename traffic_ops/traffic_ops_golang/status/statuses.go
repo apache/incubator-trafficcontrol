@@ -37,13 +37,13 @@ import (
 
 //we need a type alias to define functions on
 type TOStatus struct {
-	api.APIInfoImpl `json:"-"`
+	api.InfoerImpl `json:"-"`
 	tc.StatusNullable
 	SQLDescription sql.NullString `json:"-" db:"description"`
 }
 
 func (v *TOStatus) GetLastUpdated() (*time.Time, bool, error) {
-	return api.GetLastUpdated(v.APIInfo().Tx, *v.ID, "status")
+	return api.GetLastUpdated(v.Info().Tx, *v.ID, "status")
 }
 
 func (v *TOStatus) SelectMaxLastUpdatedQuery(where, orderBy, pagination, tableName string) string {
@@ -105,7 +105,7 @@ func (status TOStatus) Validate() error {
 
 func (st *TOStatus) Read(h http.Header, useIMS bool) ([]interface{}, error, error, int, *time.Time) {
 	errCode := http.StatusOK
-	api.DefaultSort(st.APIInfo(), "name")
+	api.DefaultSort(st.Info(), "name")
 	readVals, userErr, sysErr, errCode, maxTime := api.GenericRead(h, st, useIMS)
 	if userErr != nil || sysErr != nil {
 		return nil, userErr, sysErr, errCode, nil

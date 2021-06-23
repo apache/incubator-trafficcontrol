@@ -49,7 +49,7 @@ const (
 )
 
 func CreateDNSSECKeys(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, nil, nil)
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, nil, nil)
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
 		return
@@ -127,7 +127,7 @@ func CreateDNSSECKeys(w http.ResponseWriter, r *http.Request) {
 const DefaultDSTTL = 60 * time.Second
 
 func GetDNSSECKeys(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"name"}, nil)
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, []string{"name"}, nil)
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
 		return
@@ -168,7 +168,7 @@ func GetDNSSECKeys(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetDNSSECKeysV11(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"name"}, nil)
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, []string{"name"}, nil)
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
 		return
@@ -427,7 +427,7 @@ func writeError(w http.ResponseWriter, r *http.Request, tx *sql.Tx, statusCode i
 }
 
 func deleteDNSSECKeys(w http.ResponseWriter, r *http.Request, deprecated bool) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"name"}, nil)
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, []string{"name"}, nil)
 	if userErr != nil || sysErr != nil {
 		writeError(w, r, inf.Tx.Tx, errCode, userErr, sysErr, deprecated)
 		return

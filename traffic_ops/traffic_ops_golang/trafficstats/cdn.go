@@ -43,7 +43,7 @@ SELECT last(value) FROM "%s"."monthly"."%s"
 
 // GetCurrentStats handler for getting current stats for CDNs
 func GetCurrentStats(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, nil, nil)
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, nil, nil)
 	tx := inf.Tx.Tx
 
 	if userErr != nil || sysErr != nil {

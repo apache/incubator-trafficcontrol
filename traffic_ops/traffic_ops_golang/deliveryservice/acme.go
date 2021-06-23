@@ -149,7 +149,7 @@ func (d *DNSProviderTrafficRouter) CleanUp(domain, token, keyAuth string) error 
 
 // GenerateAcmeCertificates gets and saves certificates using ACME protocol from a give ACME provider.
 func GenerateAcmeCertificates(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, nil, nil)
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, nil, nil)
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
 		return
@@ -225,7 +225,7 @@ func GenerateAcmeCertificates(w http.ResponseWriter, r *http.Request) {
 
 // GenerateLetsEncryptCertificates gets and saves new certificates from Let's Encrypt.
 func GenerateLetsEncryptCertificates(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, nil, nil)
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, nil, nil)
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
 		return

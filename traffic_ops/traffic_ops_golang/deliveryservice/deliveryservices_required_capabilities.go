@@ -49,7 +49,7 @@ const (
 
 // RequiredCapability provides a type to define methods on.
 type RequiredCapability struct {
-	api.APIInfoImpl `json:"-"`
+	api.InfoerImpl `json:"-"`
 	tc.DeliveryServicesRequiredCapability
 }
 
@@ -190,7 +190,7 @@ func (rc *RequiredCapability) Read(h http.Header, useIMS bool) ([]interface{}, e
 }
 
 func (rc *RequiredCapability) getTenantIDs() ([]int, error) {
-	tenantIDs, err := tenant.GetUserTenantIDListTx(rc.APIInfo().Tx.Tx, rc.APIInfo().User.TenantID)
+	tenantIDs, err := tenant.GetUserTenantIDListTx(rc.Info().Tx.Tx, rc.Info().User.TenantID)
 	if err != nil {
 		return nil, err
 	}
@@ -201,14 +201,14 @@ func (rc *RequiredCapability) getCapabilities(h http.Header, tenantIDs []int, us
 	var maxTime time.Time
 	var runSecond bool
 	var results []tc.DeliveryServicesRequiredCapability
-	where, orderBy, pagination, queryValues, errs := dbhelpers.BuildWhereAndOrderByAndPagination(rc.APIInfo().Params, rc.ParamColumns())
+	where, orderBy, pagination, queryValues, errs := dbhelpers.BuildWhereAndOrderByAndPagination(rc.Info().Params, rc.ParamColumns())
 	if len(errs) > 0 {
 		return nil, util.JoinErrs(errs), nil, http.StatusBadRequest, nil
 	}
 
 	where, queryValues = dbhelpers.AddTenancyCheck(where, queryValues, "ds.tenant_id", tenantIDs)
 	if useIMS {
-		runSecond, maxTime = ims.TryIfModifiedSinceQuery(rc.APIInfo().Tx, h, queryValues, selectMaxLastUpdatedQueryRC(where, orderBy, pagination))
+		runSecond, maxTime = ims.TryIfModifiedSinceQuery(rc.Info().Tx, h, queryValues, selectMaxLastUpdatedQueryRC(where, orderBy, pagination))
 		if !runSecond {
 			log.Debugln("IMS HIT")
 			return results, nil, nil, http.StatusNotModified, &maxTime
@@ -219,7 +219,7 @@ func (rc *RequiredCapability) getCapabilities(h http.Header, tenantIDs []int, us
 	}
 	query := rc.SelectQuery() + where + orderBy + pagination
 
-	rows, err := rc.APIInfo().Tx.NamedQuery(query, queryValues)
+	rows, err := rc.Info().Tx.NamedQuery(query, queryValues)
 	if err != nil {
 		return nil, nil, err, http.StatusInternalServerError, nil
 	}
@@ -266,7 +266,7 @@ func (rc *RequiredCapability) Create() (error, error, int) {
 	}
 
 	// Ensure DS type is only of HTTP*, DNS* types
-	dsType, reqCaps, topology, dsExists, err := dbhelpers.GetDeliveryServiceTypeRequiredCapabilitiesAndTopology(*rc.DeliveryServiceID, rc.APIInfo().Tx.Tx)
+	dsType, reqCaps, topology, dsExists, err := dbhelpers.GetDeliveryServiceTypeRequiredCapabilitiesAndTopology(*rc.DeliveryServiceID, rc.Info().Tx.Tx)
 	if err != nil {
 		return nil, err, http.StatusInternalServerError
 	}
@@ -290,7 +290,7 @@ func (rc *RequiredCapability) Create() (error, error, int) {
 		}
 	} else {
 		newReqCaps := append(reqCaps, *rc.RequiredCapability)
-		usrErr, sysErr, rCode = EnsureTopologyBasedRequiredCapabilities(rc.APIInfo().Tx.Tx, *rc.DeliveryServiceID, *topology, newReqCaps)
+		usrErr, sysErr, rCode = EnsureTopologyBasedRequiredCapabilities(rc.Info().Tx.Tx, *rc.DeliveryServiceID, *topology, newReqCaps)
 		if usrErr != nil {
 			return fmt.Errorf("cannot add required capability: %v", usrErr), sysErr, rCode
 		}
@@ -299,7 +299,7 @@ func (rc *RequiredCapability) Create() (error, error, int) {
 		}
 	}
 
-	rows, err := rc.APIInfo().Tx.NamedQuery(rcInsertQuery(), rc)
+	rows, err := rc.Info().Tx.NamedQuery(rcInsertQuery(), rc)
 	if err != nil {
 		return api.ParseDBError(err)
 	}
@@ -322,13 +322,13 @@ func (rc *RequiredCapability) Create() (error, error, int) {
 }
 
 func (rc *RequiredCapability) checkServerCap() (error, error, int) {
-	tx := rc.APIInfo().Tx
+	tx := rc.Info().Tx
 
 	// Get server capability name
 	name := ""
 	if err := tx.QueryRow(`
-		SELECT name 
-		FROM server_capability 
+		SELECT name
+		FROM server_capability
 		WHERE name = $1`, rc.RequiredCapability).Scan(&name); err != nil && err != sql.ErrNoRows {
 		return nil, fmt.Errorf("querying server capability for name '%v': %v", rc.RequiredCapability, err), http.StatusInternalServerError
 	}
@@ -413,13 +413,13 @@ func GetInvalidCachegroupsForRequiredCapabilities(
 }
 
 func (rc *RequiredCapability) ensureDSServerCap() (error, error, int) {
-	tx := rc.APIInfo().Tx
+	tx := rc.Info().Tx
 
 	// Get assigned DS server IDs
 	dsServerIDs := []int64{}
 	if err := tx.Tx.QueryRow(`
 	SELECT ARRAY(
-		SELECT ds.server 
+		SELECT ds.server
 		FROM deliveryservice_server ds
 		JOIN server s ON ds.server = s.id
 		JOIN type t ON s.type = t.id
@@ -438,7 +438,7 @@ func (rc *RequiredCapability) ensureDSServerCap() (error, error, int) {
 	if err := tx.QueryRow(`
 	SELECT ARRAY(
 		SELECT server
-		FROM server_server_capability 
+		FROM server_server_capability
 		WHERE server = ANY($1)
 		AND server_capability=$2
 	)`, pq.Array(dsServerIDs), rc.RequiredCapability).Scan(pq.Array(&capServerIDs)); err != nil && err != sql.ErrNoRows {
@@ -477,19 +477,19 @@ func (rc *RequiredCapability) isTenantAuthorized() (bool, error) {
 
 	switch {
 	case rc.DeliveryServiceID != nil:
-		existingID, _, err = getDSTenantIDByID(rc.APIInfo().Tx.Tx, *rc.DeliveryServiceID)
+		existingID, _, err = getDSTenantIDByID(rc.Info().Tx.Tx, *rc.DeliveryServiceID)
 		if err != nil {
 			return false, err
 		}
 	case rc.XMLID != nil:
-		existingID, _, err = getDSTenantIDByName(rc.APIInfo().Tx.Tx, tc.DeliveryServiceName(*rc.XMLID))
+		existingID, _, err = getDSTenantIDByName(rc.Info().Tx.Tx, tc.DeliveryServiceName(*rc.XMLID))
 		if err != nil {
 			return false, err
 		}
 	}
 
 	if existingID != nil {
-		authorized, err := tenant.IsResourceAuthorizedToUserTx(*existingID, rc.APIInfo().User, rc.APIInfo().Tx.Tx)
+		authorized, err := tenant.IsResourceAuthorizedToUserTx(*existingID, rc.Info().User, rc.Info().Tx.Tx)
 		if !authorized {
 			return false, errors.New("not authorized on this tenant")
 		} else if err != nil {

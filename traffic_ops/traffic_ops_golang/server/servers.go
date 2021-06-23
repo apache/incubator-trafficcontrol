@@ -40,7 +40,6 @@ import (
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/auth"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/dbhelpers"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/deliveryservice"
-	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/routing/middleware"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/tenant"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/topology/topology_validation"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/util/ims"
@@ -483,9 +482,9 @@ RETURNING
 `
 
 const originServerQuery = `
-JOIN deliveryservice_server dsorg 
-ON dsorg.server = s.id 
-WHERE t.name = '` + tc.OriginTypeName + `' 
+JOIN deliveryservice_server dsorg
+ON dsorg.server = s.id
+WHERE t.name = '` + tc.OriginTypeName + `'
 AND dsorg.deliveryservice=:dsId
 `
 const deleteServerQuery = `DELETE FROM server WHERE id=$1`
@@ -823,20 +822,13 @@ and p.id = $1
 // Read is the handler for GET requests to /servers.
 func Read(w http.ResponseWriter, r *http.Request) {
 	var maxTime *time.Time
-	inf, userErr, sysErr, errCode := api.NewInfo(r, nil, nil)
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, nil, nil)
 	tx := inf.Tx.Tx
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, tx, errCode, userErr, sysErr)
 		return
 	}
 	defer inf.Close()
-
-	// Middleware should've already handled this, so idk why this is a pointer at all tbh
-	version := inf.Version
-	if version == nil {
-		middleware.NotImplementedHandler().ServeHTTP(w, r)
-		return
-	}
 
 	servers := []tc.ServerV40{}
 	var serverCount uint64
@@ -848,7 +840,8 @@ func Read(w http.ResponseWriter, r *http.Request) {
 		log.Warnf("Couldn't get config %v", e)
 	}
 
-	servers, serverCount, userErr, sysErr, errCode, maxTime = getServers(r.Header, inf.Params, inf.Tx, inf.User, useIMS, *version)
+	version := inf.Version
+	servers, serverCount, userErr, sysErr, errCode, maxTime = getServers(r.Header, inf.Params, inf.Tx, inf.User, useIMS, version)
 	if maxTime != nil && api.SetLastModifiedHeader(r, useIMS) {
 		api.AddLastModifiedHdr(w, *maxTime)
 	}
@@ -909,20 +902,13 @@ func Read(w http.ResponseWriter, r *http.Request) {
 // ReadID is the handler for GET requests to /servers/{{ID}}.
 func ReadID(w http.ResponseWriter, r *http.Request) {
 	alternative := "GET /servers with query parameter id"
-	inf, userErr, sysErr, errCode := api.NewInfo(r, nil, []string{"id"})
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, nil, []string{"id"})
 	tx := inf.Tx.Tx
 	if userErr != nil || sysErr != nil {
 		api.HandleDeprecatedErr(w, r, tx, errCode, userErr, sysErr, &alternative)
 		return
 	}
 	defer inf.Close()
-
-	// Middleware should've already handled this, so idk why this is a pointer at all tbh
-	version := inf.Version
-	if version == nil {
-		middleware.NotImplementedHandler().ServeHTTP(w, r)
-		return
-	}
 
 	servers := []tc.ServerV40{}
 	cfg, e := api.GetConfig(r.Context())
@@ -932,7 +918,8 @@ func ReadID(w http.ResponseWriter, r *http.Request) {
 	} else {
 		log.Warnf("Couldn't get config %v", e)
 	}
-	servers, _, userErr, sysErr, errCode, _ = getServers(r.Header, inf.Params, inf.Tx, inf.User, useIMS, *version)
+	version := inf.Version
+	servers, _, userErr, sysErr, errCode, _ = getServers(r.Header, inf.Params, inf.Tx, inf.User, useIMS, version)
 	if len(servers) > 1 {
 		api.HandleDeprecatedErr(w, r, tx, http.StatusInternalServerError, nil, fmt.Errorf("ID '%d' matched more than one server (%d total)", inf.IntParams["id"], len(servers)), &alternative)
 		return
@@ -1426,7 +1413,7 @@ func deleteInterfaces(id int, tx *sql.Tx) (error, error, int) {
 
 // Update is the handler for PUT requests to /servers.
 func Update(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"id"}, []string{"id"})
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, []string{"id"}, []string{"id"})
 	tx := inf.Tx.Tx
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
@@ -1434,17 +1421,11 @@ func Update(w http.ResponseWriter, r *http.Request) {
 	}
 	defer inf.Close()
 
-	// Middleware should've already handled this, so idk why this is a pointer at all tbh
 	version := inf.Version
-	if version == nil {
-		middleware.NotImplementedHandler().ServeHTTP(w, r)
-		return
-	}
-
 	id := inf.IntParams["id"]
 
 	// Get original server
-	originals, _, userErr, sysErr, errCode, _ := getServers(r.Header, inf.Params, inf.Tx, inf.User, false, *version)
+	originals, _, userErr, sysErr, errCode, _ := getServers(r.Header, inf.Params, inf.Tx, inf.User, false, version)
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, tx, errCode, userErr, sysErr)
 		return
@@ -1710,7 +1691,7 @@ func Update(w http.ResponseWriter, r *http.Request) {
 	api.CreateChangeLogRawTx(api.ApiChange, changeLogMsg, inf.User, tx)
 }
 
-func createV1(inf *api.APIInfo, w http.ResponseWriter, r *http.Request) {
+func createV1(inf *api.Info, w http.ResponseWriter, r *http.Request) {
 	var server tc.ServerNullableV11
 
 	tx := inf.Tx.Tx
@@ -1779,7 +1760,7 @@ func createV1(inf *api.APIInfo, w http.ResponseWriter, r *http.Request) {
 	api.CreateChangeLogRawTx(api.ApiChange, changeLogMsg, inf.User, tx)
 }
 
-func createV2(inf *api.APIInfo, w http.ResponseWriter, r *http.Request) {
+func createV2(inf *api.Info, w http.ResponseWriter, r *http.Request) {
 	var server tc.ServerNullableV2
 
 	tx := inf.Tx.Tx
@@ -1849,7 +1830,7 @@ func createV2(inf *api.APIInfo, w http.ResponseWriter, r *http.Request) {
 	api.CreateChangeLogRawTx(api.ApiChange, changeLogMsg, inf.User, tx)
 }
 
-func createV3(inf *api.APIInfo, w http.ResponseWriter, r *http.Request) {
+func createV3(inf *api.Info, w http.ResponseWriter, r *http.Request) {
 	var server tc.ServerV30
 
 	tx := inf.Tx.Tx
@@ -1923,7 +1904,7 @@ func createV3(inf *api.APIInfo, w http.ResponseWriter, r *http.Request) {
 	api.CreateChangeLogRawTx(api.ApiChange, changeLogMsg, inf.User, tx)
 }
 
-func createV4(inf *api.APIInfo, w http.ResponseWriter, r *http.Request) {
+func createV4(inf *api.Info, w http.ResponseWriter, r *http.Request) {
 	var server tc.ServerV40
 
 	tx := inf.Tx.Tx
@@ -1995,7 +1976,7 @@ func createV4(inf *api.APIInfo, w http.ResponseWriter, r *http.Request) {
 
 // Create is the handler for POST requests to /servers.
 func Create(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, nil, nil)
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, nil, nil)
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
 		return
@@ -2055,7 +2036,7 @@ func getActiveDeliveryServicesThatOnlyHaveThisServerAssigned(id int, tx *sql.Tx)
 
 // Delete is the handler for DELETE requests to the /servers API endpoint.
 func Delete(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"id"}, []string{"id"})
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, []string{"id"}, []string{"id"})
 	tx := inf.Tx.Tx
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, tx, errCode, userErr, sysErr)
@@ -2063,13 +2044,7 @@ func Delete(w http.ResponseWriter, r *http.Request) {
 	}
 	defer inf.Close()
 
-	// Middleware should've already handled this, so idk why this is a pointer at all tbh
 	version := inf.Version
-	if version == nil {
-		middleware.NotImplementedHandler().ServeHTTP(w, r)
-		return
-	}
-
 	id := inf.IntParams["id"]
 
 	if dsIDs, err := getActiveDeliveryServicesThatOnlyHaveThisServerAssigned(id, tx); err != nil {
@@ -2096,7 +2071,7 @@ func Delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var servers []tc.ServerV40
-	servers, _, userErr, sysErr, errCode, _ = getServers(r.Header, map[string]string{"id": inf.Params["id"]}, inf.Tx, inf.User, false, *version)
+	servers, _, userErr, sysErr, errCode, _ = getServers(r.Header, map[string]string{"id": inf.Params["id"]}, inf.Tx, inf.User, false, version)
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, tx, errCode, userErr, sysErr)
 		return

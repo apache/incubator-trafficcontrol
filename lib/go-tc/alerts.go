@@ -20,14 +20,7 @@ package tc
  */
 
 import (
-	"context"
-	"encoding/json"
-	"fmt"
-	"net/http"
 	"strings"
-
-	"github.com/apache/trafficcontrol/lib/go-log"
-	"github.com/apache/trafficcontrol/lib/go-rfc"
 )
 
 // Alert represents an informational message, typically returned through the Traffic Ops API.
@@ -39,10 +32,19 @@ type Alert struct {
 	Level string `json:"level"`
 }
 
+// NewAlert constructs and returns an Alert of the given level with the given
+// text.
+func NewAlert(level AlertLevel, text string) Alert {
+	return Alert{
+		Level: level.String(),
+		Text:  text,
+	}
+}
+
 // Alerts is merely a collection of arbitrary "Alert"s for ease of use in other structures, most
 // notably those used in Traffic Ops API responses.
 type Alerts struct {
-	Alerts []Alert `json:"alerts"`
+	Alerts []Alert `json:"alerts,omitempty"`
 }
 
 // CreateErrorAlerts creates and returns an Alerts structure filled with ErrorLevel-level "Alert"s
@@ -51,7 +53,7 @@ func CreateErrorAlerts(errs ...error) Alerts {
 	alerts := []Alert{}
 	for _, err := range errs {
 		if err != nil {
-			alerts = append(alerts, Alert{err.Error(), ErrorLevel.String()})
+			alerts = append(alerts, NewAlert(ErrorLevel, err.Error()))
 		}
 	}
 	return Alerts{alerts}
@@ -62,35 +64,9 @@ func CreateErrorAlerts(errs ...error) Alerts {
 func CreateAlerts(level AlertLevel, messages ...string) Alerts {
 	alerts := []Alert{}
 	for _, message := range messages {
-		alerts = append(alerts, Alert{message, level.String()})
+		alerts = append(alerts, NewAlert(level, message))
 	}
 	return Alerts{alerts}
-}
-
-// GetHandleErrorsFunc is used to provide an error-handling function. The error handler provides a
-// response to an HTTP request made to the Traffic Ops API and accepts a response code and a set of
-// errors to display as alerts.
-//
-// Deprecated: Traffic Ops API handlers should use
-// github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/api.HandleErr instead.
-func GetHandleErrorsFunc(w http.ResponseWriter, r *http.Request) func(status int, errs ...error) {
-	return func(status int, errs ...error) {
-		log.Errorf("%v %v\n", r.RemoteAddr, errs)
-		errBytes, jsonErr := json.Marshal(CreateErrorAlerts(errs...))
-		if jsonErr != nil {
-			log.Errorf("failed to marshal error: %s\n", jsonErr)
-			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprintf(w, http.StatusText(http.StatusInternalServerError))
-			return
-		}
-		w.Header().Set(rfc.ContentType, rfc.ApplicationJSON)
-
-		ctx := r.Context()
-		ctx = context.WithValue(ctx, StatusKey, status)
-		*r = *r.WithContext(ctx)
-
-		fmt.Fprintf(w, "%s", errBytes)
-	}
 }
 
 // ToStrings converts Alerts to a slice of strings that are their messages. Note that this return

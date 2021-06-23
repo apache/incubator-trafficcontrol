@@ -24,13 +24,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/apache/trafficcontrol/lib/go-log"
-	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/util/ims"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/apache/trafficcontrol/lib/go-log"
+	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/util/ims"
 
 	"github.com/jmoiron/sqlx"
 
@@ -50,7 +51,7 @@ const (
 
 // TOCacheGroupParameter is a type alias that is used to define CRUD functions on.
 type TOCacheGroupParameter struct {
-	api.APIInfoImpl `json:"-"`
+	api.InfoerImpl `json:"-"`
 	tc.CacheGroupParameterNullable
 	CacheGroupID int `json:"-" db:"cachegroup_id"`
 }
@@ -70,7 +71,7 @@ func (cgparam *TOCacheGroupParameter) Read(h http.Header, useIMS bool) ([]interf
 	var maxTime time.Time
 	var runSecond bool
 	queryParamsToQueryCols := cgparam.ParamColumns()
-	parameters := cgparam.APIInfo().Params
+	parameters := cgparam.Info().Params
 	where, orderBy, pagination, queryValues, errs := dbhelpers.BuildWhereAndOrderByAndPagination(parameters, queryParamsToQueryCols)
 	if len(errs) > 0 {
 		return nil, util.JoinErrs(errs), nil, http.StatusBadRequest, nil
@@ -212,7 +213,7 @@ func (cgparam *TOCacheGroupParameter) Delete() (error, error, int) {
 
 // ReadAllCacheGroupParameters reads all cachegroup parameter associations.
 func ReadAllCacheGroupParameters(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, nil, nil)
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, nil, nil)
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
 		return
@@ -267,7 +268,7 @@ func GetAllCacheGroupParameters(tx *sqlx.Tx, parameters map[string]string) (tc.C
 // AddCacheGroupParameters performs a Create for cachegroup parameter associations.
 // AddCacheGroupParameters accepts data as a single association or an array of multiple.
 func AddCacheGroupParameters(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, nil, nil)
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, nil, nil)
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
 		return
@@ -340,14 +341,14 @@ func AddCacheGroupParameters(w http.ResponseWriter, r *http.Request) {
 }
 
 func selectAllQuery() string {
-	return `SELECT cgp.cachegroup, cgp.parameter, cgp.last_updated, cg.name 
-				FROM cachegroup_parameter AS cgp 
+	return `SELECT cgp.cachegroup, cgp.parameter, cgp.last_updated, cg.name
+				FROM cachegroup_parameter AS cgp
 				JOIN cachegroup AS cg ON cg.id = cachegroup`
 }
 
 func insertQuery() string {
-	return `INSERT INTO cachegroup_parameter 
-		(cachegroup, 
-		parameter) 
+	return `INSERT INTO cachegroup_parameter
+		(cachegroup,
+		parameter)
 		VALUES `
 }

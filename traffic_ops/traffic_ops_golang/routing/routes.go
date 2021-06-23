@@ -139,14 +139,14 @@ func Routes(d ServerData) ([]Route, []RawRoute, http.Handler, error) {
 		{api.Version{Major: 4, Minor: 0}, http.MethodPost, `cdn_locks/?$`, cdn_lock.Create, auth.PrivLevelOperations, Authenticated, nil, 4134390562},
 		{api.Version{Major: 4, Minor: 0}, http.MethodDelete, `cdn_locks/?$`, cdn_lock.Delete, auth.PrivLevelOperations, Authenticated, nil, 4134390564},
 
-		{api.Version{Major: 4, Minor: 0}, http.MethodGet, `acme_accounts/providers?$`, acme.ReadProviders, auth.PrivLevelOperations, Authenticated, nil, 4034390565},
+		{api.Version{Major: 4, Minor: 0}, http.MethodGet, `acme_accounts/providers/?$`, acme.ReadProviders, auth.PrivLevelOperations, Authenticated, nil, 4034390565},
 		{api.Version{Major: 4, Minor: 0}, http.MethodPost, `deliveryservices/sslkeys/generate/acme/?$`, deliveryservice.GenerateAcmeCertificates, auth.PrivLevelOperations, Authenticated, nil, 2534390576},
 
 		// ACME account information
 		{api.Version{Major: 4, Minor: 0}, http.MethodGet, `acme_accounts/?$`, acme.Read, auth.PrivLevelAdmin, Authenticated, nil, 4034390561},
 		{api.Version{Major: 4, Minor: 0}, http.MethodPost, `acme_accounts/?$`, acme.Create, auth.PrivLevelAdmin, Authenticated, nil, 4034390562},
 		{api.Version{Major: 4, Minor: 0}, http.MethodPut, `acme_accounts/?$`, acme.Update, auth.PrivLevelAdmin, Authenticated, nil, 4034390563},
-		{api.Version{Major: 4, Minor: 0}, http.MethodDelete, `acme_accounts/{provider}/{email}?$`, acme.Delete, auth.PrivLevelAdmin, Authenticated, nil, 4034390564},
+		{api.Version{Major: 4, Minor: 0}, http.MethodDelete, `acme_accounts/{provider}/{email}/?$`, acme.Delete, auth.PrivLevelAdmin, Authenticated, nil, 4034390564},
 
 		//Delivery service ACME
 		{api.Version{Major: 4, Minor: 0}, http.MethodPost, `deliveryservices/xmlId/{xmlid}/sslkeys/renew$`, deliveryservice.RenewAcmeCertificate, auth.PrivLevelOperations, Authenticated, nil, 2534390573},
@@ -1794,14 +1794,13 @@ func Routes(d ServerData) ([]Route, []RawRoute, http.Handler, error) {
 
 func MemoryStatsHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		handleErrs := tc.GetHandleErrorsFunc(w, r)
 		stats := runtime.MemStats{}
 		runtime.ReadMemStats(&stats)
 
 		bytes, err := json.Marshal(stats)
 		if err != nil {
-			log.Errorln("unable to marshal stats: " + err.Error())
-			handleErrs(http.StatusInternalServerError, errors.New("marshalling error"))
+			err = fmt.Errorf("unable to marshal stats: %w", err)
+			api.HandleErr(w, r, nil, http.StatusInternalServerError, errors.New("marshalling error"), err)
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
@@ -1811,13 +1810,12 @@ func MemoryStatsHandler() http.HandlerFunc {
 
 func DBStatsHandler(db *sqlx.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		handleErrs := tc.GetHandleErrorsFunc(w, r)
 		stats := db.DB.Stats()
 
 		bytes, err := json.Marshal(stats)
 		if err != nil {
-			log.Errorln("unable to marshal stats: " + err.Error())
-			handleErrs(http.StatusInternalServerError, errors.New("marshalling error"))
+			err = fmt.Errorf("unable to marshal stats: %v", err)
+			api.HandleErr(w, r, nil, http.StatusInternalServerError, errors.New("marshalling error"), err)
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")

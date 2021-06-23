@@ -100,7 +100,7 @@ func TestCopyProfileInvalidExistingProfile(t *testing.T) {
 			mockFindProfile(t, mock, c.profile.Response.Name, c.mockProfileExists)
 			mockReadProfile(t, mock, c.existingProfile, c.mockReadProfile)
 
-			inf := api.APIInfo{
+			inf := api.Info{
 				Tx: db.MustBegin(),
 				Params: map[string]string{
 					"existing_profile": c.profile.Response.ExistingName,
@@ -155,7 +155,7 @@ func TestCopyNewProfileExists(t *testing.T) {
 
 	mockFindProfile(t, mock, profile.Response.Name, 1)
 
-	inf := api.APIInfo{
+	inf := api.Info{
 		Tx: db.MustBegin(),
 		Params: map[string]string{
 			"existing_profile": profile.Response.ExistingName,

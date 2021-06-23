@@ -41,7 +41,7 @@ func GetProfileName(w http.ResponseWriter, r *http.Request) {
 
 func getProfileName(w http.ResponseWriter, r *http.Request, deprecated bool) {
 	deprecation := util.StrPtr(API_PROFILES_NAME_NAME_PARAMETERS)
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"name"}, nil)
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, []string{"name"}, nil)
 	if userErr != nil || sysErr != nil {
 		api.HandleErrOptionalDeprecation(w, r, inf.Tx.Tx, errCode, userErr, sysErr, deprecated, deprecation)
 		return

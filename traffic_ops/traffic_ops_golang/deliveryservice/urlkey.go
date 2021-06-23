@@ -35,7 +35,7 @@ import (
 
 // GetURLKeysByID returns the URL sig keys for a delivery service identified by the id in the path parameter.
 func GetURLKeysByID(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"id"}, []string{"id"})
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, []string{"id"}, []string{"id"})
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
 		return
@@ -88,7 +88,7 @@ func GetURLKeysByID(w http.ResponseWriter, r *http.Request) {
 
 // GetURLKeysByName returns the URL sig keys for a delivery service identified by the xmlId in the path parameter.
 func GetURLKeysByName(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"name"}, nil)
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, []string{"name"}, nil)
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
 		return
@@ -134,7 +134,7 @@ func GetURLKeysByName(w http.ResponseWriter, r *http.Request) {
 // CopyURLKeys copies the URL sig keys from a delivery service in the 'copy-name' path parameter
 // to the delivery service in the 'name' path parameter.
 func CopyURLKeys(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"name", "copy-name"}, nil)
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, []string{"name", "copy-name"}, nil)
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
 		return
@@ -214,7 +214,7 @@ func CopyURLKeys(w http.ResponseWriter, r *http.Request) {
 
 // GenerateURLKeys generates new URL sig keys for the delivery service identified by the xmlId in the path parameter.
 func GenerateURLKeys(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"name"}, nil)
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, []string{"name"}, nil)
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
 		return
@@ -298,7 +298,7 @@ func GenerateURLSigKeys() (tc.URLSigKeys, error) {
 
 // DeleteURLKeysByID deletes the URL sig keys for the delivery service identified by the id in the path parameter.
 func DeleteURLKeysByID(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"id"}, []string{"id"})
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, []string{"id"}, []string{"id"})
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
 		return
@@ -349,7 +349,7 @@ func DeleteURLKeysByID(w http.ResponseWriter, r *http.Request) {
 
 // DeleteURLKeysByName deletes the URL sig keys for the delivery service identified by the xmlId in the path parameter.
 func DeleteURLKeysByName(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"name"}, nil)
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, []string{"name"}, nil)
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
 		return

@@ -40,7 +40,7 @@ import (
 // Handler creates and serves the CRConfig from the raw SQL data.
 // This MUST only be used for debugging or previewing, the raw un-snapshotted data MUST NOT be used by any component of the CDN.
 func Handler(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"cdn"}, nil)
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, []string{"cdn"}, nil)
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
 		return
@@ -60,7 +60,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 // SnapshotGetHandler gets and serves the CRConfig from the snapshot table.
 func SnapshotGetHandler(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"cdn"}, nil)
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, []string{"cdn"}, nil)
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
 		return
@@ -90,7 +90,7 @@ func SnapshotGetHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func SnapshotGetMonitoringLegacyHandler(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"cdn"}, nil)
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, []string{"cdn"}, nil)
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
 		return
@@ -117,7 +117,7 @@ func SnapshotGetMonitoringLegacyHandler(w http.ResponseWriter, r *http.Request) 
 
 // SnapshotGetMonitoringHandler gets and serves the CRConfig from the snapshot table.
 func SnapshotGetMonitoringHandler(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"cdn"}, nil)
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, []string{"cdn"}, nil)
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
 		return
@@ -139,7 +139,7 @@ func SnapshotGetMonitoringHandler(w http.ResponseWriter, r *http.Request) {
 
 // SnapshotOldGetHandler gets and serves the CRConfig from the snapshot table, not wrapped in response to match the old non-API CRConfig-Snapshots endpoint
 func SnapshotOldGetHandler(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"cdn"}, nil)
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, []string{"cdn"}, nil)
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
 		return
@@ -172,7 +172,7 @@ func SnapshotHandlerDeprecated(w http.ResponseWriter, r *http.Request) {
 // SnapshotHandler creates the CRConfig JSON and writes it to the snapshot table in the database.
 func snapshotHandler(w http.ResponseWriter, r *http.Request, deprecated bool) {
 	alt := "PUT /snapshots with either the query parameter cdn or cdnID"
-	inf, userErr, sysErr, errCode := api.NewInfo(r, nil, []string{"id", "cdnID"})
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, nil, []string{"id", "cdnID"})
 	if userErr != nil || sysErr != nil {
 		api.HandleErrOptionalDeprecation(w, r, inf.Tx.Tx, errCode, userErr, sysErr, deprecated, &alt)
 		return
@@ -256,7 +256,7 @@ func snapshotHandler(w http.ResponseWriter, r *http.Request, deprecated bool) {
 
 // SnapshotOldGUIHandler creates the CRConfig JSON and writes it to the snapshot table in the database. The response emulates the old Perl UI function. This should go away when the old Perl UI ceases to exist.
 func SnapshotOldGUIHandler(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"cdn"}, nil)
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, []string{"cdn"}, nil)
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, errors.New(r.RemoteAddr+" unable to get info from request: "+sysErr.Error()))
 		return

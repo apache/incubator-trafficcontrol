@@ -44,7 +44,7 @@ RETURNING id
 //
 // The only fields which are "safe" to modify are the displayName, infoURL, longDesc, and longDesc1.
 func UpdateSafe(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"id"}, []string{"id"})
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, []string{"id"}, []string{"id"})
 	tx := inf.Tx.Tx
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, tx, errCode, userErr, sysErr)
@@ -94,7 +94,7 @@ func UpdateSafe(w http.ResponseWriter, r *http.Request) {
 	ds := dses[0]
 
 	alertMsg := "Delivery Service safe update successful."
-	if inf.Version != nil && inf.Version.Major == 1 && inf.Version.Minor < 5 {
+	if inf.Version.LessThan(api.Version{Major: 1, Minor: 5}) {
 		switch inf.Version.Minor {
 		case 4:
 			api.WriteRespAlertObj(w, r, tc.SuccessLevel, alertMsg, []tc.DeliveryServiceNullableV14{ds.DowngradeToV3().DeliveryServiceNullableV14})

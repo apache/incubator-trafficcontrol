@@ -28,13 +28,12 @@ import (
 	"github.com/apache/trafficcontrol/lib/go-tc"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/api"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/deliveryservice"
-	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/routing/middleware"
 )
 
 // GetStatus is the handler for GET requests to
 // /deliveryservice_requests/{{ID}}/status.
 func GetStatus(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"id"}, []string{"id"})
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, []string{"id"}, []string{"id"})
 	tx := inf.Tx.Tx
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, tx, errCode, userErr, sysErr)
@@ -42,15 +41,8 @@ func GetStatus(w http.ResponseWriter, r *http.Request) {
 	}
 	defer inf.Close()
 
-	// Middleware should've already handled this, so idk why this is a pointer at all tbh
-	version := inf.Version
-	if version == nil {
-		middleware.NotImplementedHandler().ServeHTTP(w, r)
-		return
-	}
-
 	// This should never happen because a route doesn't exist for it
-	if version.Major < 4 {
+	if inf.Version.Major < 4 {
 		w.Header().Set("Allow", http.MethodPut)
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		api.WriteRespAlert(w, r, tc.ErrorLevel, http.StatusText(http.StatusMethodNotAllowed))
@@ -102,20 +94,13 @@ RETURNING last_updated
 // PutStatus is the handler for PUT requests to
 // /deliveryservice_requests/{{ID}}/status.
 func PutStatus(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"id"}, []string{"id"})
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, []string{"id"}, []string{"id"})
 	tx := inf.Tx.Tx
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, tx, errCode, userErr, sysErr)
 		return
 	}
 	defer inf.Close()
-
-	// Middleware should've already handled this, so idk why this is a pointer at all tbh
-	version := inf.Version
-	if version == nil {
-		middleware.NotImplementedHandler().ServeHTTP(w, r)
-		return
-	}
 
 	if inf.User == nil {
 		sysErr = errors.New("got api info with no user")

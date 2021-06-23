@@ -41,7 +41,7 @@ const deleteAdminQuery = `DELETE FROM cdn_lock WHERE cdn=$1 RETURNING username, 
 
 // Read is the handler for GET requests to /cdn_locks.
 func Read(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, nil, nil)
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, nil, nil)
 	tx := inf.Tx.Tx
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, tx, errCode, userErr, sysErr)
@@ -85,7 +85,7 @@ func Read(w http.ResponseWriter, r *http.Request) {
 
 // Create is the handler for POST requests to /cdn_locks.
 func Create(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, nil, nil)
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, nil, nil)
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
 		return
@@ -138,7 +138,7 @@ func Create(w http.ResponseWriter, r *http.Request) {
 
 // Delete is the handler for DELETE requests to /cdn_locks.
 func Delete(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"cdn"}, nil)
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, []string{"cdn"}, nil)
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
 		return

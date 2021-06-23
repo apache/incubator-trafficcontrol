@@ -39,12 +39,12 @@ const ASNsPrivLevel = 10
 
 //we need a type alias to define functions on
 type TOASNV11 struct {
-	api.APIInfoImpl `json:"-"`
+	api.InfoerImpl `json:"-"`
 	tc.ASNNullable
 }
 
 func (v *TOASNV11) GetLastUpdated() (*time.Time, bool, error) {
-	return api.GetLastUpdated(v.APIInfo().Tx, *v.ID, "asn")
+	return api.GetLastUpdated(v.Info().Tx, *v.ID, "asn")
 }
 
 func (v *TOASNV11) SetLastUpdated(t tc.TimeNoMod) { v.LastUpdated = &t }
@@ -111,7 +111,7 @@ func (as *TOASNV11) Create() (error, error, int) {
 	return api.GenericCreate(as)
 }
 func (as *TOASNV11) Read(h http.Header, useIMS bool) ([]interface{}, error, error, int, *time.Time) {
-	api.DefaultSort(as.APIInfo(), "asn")
+	api.DefaultSort(as.Info(), "asn")
 	return api.GenericRead(h, as, useIMS)
 }
 func (v *TOASNV11) SelectMaxLastUpdatedQuery(where, orderBy, pagination, tableName string) string {
@@ -133,14 +133,14 @@ func (as *TOASNV11) Update(h http.Header) (error, error, int) {
 func (as *TOASNV11) Delete() (error, error, int) { return api.GenericDelete(as) }
 
 func (asn TOASNV11) ASNExists(create bool) error {
-	if asn.APIInfo() == nil || asn.APIInfo().Tx == nil {
+	if asn.Info().Tx == nil {
 		return errors.New("couldn't perform check to see if asn number exists already")
 	}
 	if asn.ASN == nil || asn.CachegroupID == nil {
 		return errors.New("no asn or cachegroup ID specified")
 	}
 	query := `SELECT id from asn where asn=$1`
-	rows, err := asn.APIInfo().Tx.Query(query, *asn.ASN)
+	rows, err := asn.Info().Tx.Query(query, *asn.ASN)
 	if err != nil {
 		return errors.New("selecting asns: " + err.Error())
 	}
@@ -164,7 +164,7 @@ func (asn TOASNV11) ASNExists(create bool) error {
 
 // V11ReadAll implements the asns 1.1 route, which is different from the 1.1 route for a single ASN and from 1.2+ routes, in that it wraps the content in an additional "asns" object.
 func V11ReadAll(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, nil, nil)
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, nil, nil)
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
 		return

@@ -62,7 +62,7 @@ func InvalidStatusForDeliveryServicesAlertText(status string, dsIDs []int) strin
 
 // UpdateStatusHandler is the handler for PUT requests to the /servers/{{ID}}/status API endpoint.
 func UpdateStatusHandler(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"id"}, []string{"id"})
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, []string{"id"}, []string{"id"})
 	tx := inf.Tx.Tx
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, tx, errCode, userErr, sysErr)

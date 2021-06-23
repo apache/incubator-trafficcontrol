@@ -48,7 +48,7 @@ import (
 
 // TODeliveryServiceRequest provides a type alias to define functions on
 type TODeliveryServiceServer struct {
-	api.APIInfoImpl `json:"-"`
+	api.InfoerImpl `json:"-"`
 	tc.DeliveryServiceServer
 	TenantIDs          pq.Int64Array `json:"-" db:"accessibleTenants"`
 	DeliveryServiceIDs pq.Int64Array `json:"-" db:"dsids"`
@@ -116,7 +116,7 @@ func ReadDSSHandler(w http.ResponseWriter, r *http.Request) {
 	if cfg != nil {
 		useIMS = cfg.UseIMS
 	}
-	inf, userErr, sysErr, errCode := api.NewInfo(r, nil, []string{"limit", "page"})
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, nil, []string{"limit", "page"})
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
 		return
@@ -144,7 +144,7 @@ func ReadDSSHandler(w http.ResponseWriter, r *http.Request) {
 
 // ReadDSSHandler list all of the Deliveryservice Servers in response to requests to api/1.1/deliveryserviceserver$
 func ReadDSSHandlerV14(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, nil, []string{"limit", "page"})
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, nil, []string{"limit", "page"})
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
 		return
@@ -401,7 +401,7 @@ func verifyAtLeastOneAvailableServer(ids []int, tx *sql.Tx) (bool, error) {
 
 // GetReplaceHandler is the handler for POST requests to the /deliveryserviceserver API endpoint.
 func GetReplaceHandler(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, nil, []string{"limit", "page"})
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, nil, []string{"limit", "page"})
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
 		return
@@ -490,7 +490,7 @@ type TODeliveryServiceServers tc.DeliveryServiceServers
 
 // GetCreateHandler assigns an existing Server to and existing Deliveryservice in response to api/1.1/deliveryservices/{xml_id}/servers
 func GetCreateHandler(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"xml_id"}, nil)
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, []string{"xml_id"}, nil)
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
 		return
@@ -711,7 +711,7 @@ func GetReadUnassigned(w http.ResponseWriter, r *http.Request) {
 }
 
 func getRead(w http.ResponseWriter, r *http.Request, unassigned bool, alerts tc.Alerts) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"id"}, []string{"id"})
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, []string{"id"}, []string{"id"})
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
 		return
@@ -913,7 +913,7 @@ JOIN type t ON s.type = t.id `
 }
 
 type TODSSDeliveryService struct {
-	api.APIInfoImpl `json:"-"`
+	api.InfoerImpl `json:"-"`
 	tc.DeliveryServiceNullable
 }
 
@@ -922,9 +922,9 @@ func (dss *TODSSDeliveryService) Read(h http.Header, useIMS bool) ([]interface{}
 	var maxTime time.Time
 	var runSecond bool
 	returnable := []interface{}{}
-	params := dss.APIInfo().Params
-	tx := dss.APIInfo().Tx.Tx
-	user := dss.APIInfo().User
+	params := dss.Info().Params
+	tx := dss.Info().Tx.Tx
+	user := dss.Info().User
 
 	if err := api.IsInt(params["id"]); err != nil {
 		return nil, err, nil, http.StatusBadRequest, nil
@@ -959,10 +959,10 @@ func (dss *TODSSDeliveryService) Read(h http.Header, useIMS bool) ([]interface{}
 	}
 	where, queryValues = dbhelpers.AddTenancyCheck(where, queryValues, "ds.tenant_id", tenantIDs)
 	query := deliveryservice.SelectDeliveryServicesQuery + where + orderBy + pagination
-	queryValues["server"] = dss.APIInfo().Params["id"]
+	queryValues["server"] = dss.Info().Params["id"]
 
 	if useIMS {
-		runSecond, maxTime = ims.TryIfModifiedSinceQuery(dss.APIInfo().Tx, h, queryValues, selectMaxLastUpdatedQuery(where))
+		runSecond, maxTime = ims.TryIfModifiedSinceQuery(dss.Info().Tx, h, queryValues, selectMaxLastUpdatedQuery(where))
 		if !runSecond {
 			log.Debugln("IMS HIT")
 			return returnable, nil, nil, http.StatusNotModified, &maxTime
@@ -974,7 +974,7 @@ func (dss *TODSSDeliveryService) Read(h http.Header, useIMS bool) ([]interface{}
 	log.Debugln("generated deliveryServices query: " + query)
 	log.Debugf("executing with values: %++v\n", queryValues)
 
-	dses, userErr, sysErr, _ := deliveryservice.GetDeliveryServices(query, queryValues, dss.APIInfo().Tx)
+	dses, userErr, sysErr, _ := deliveryservice.GetDeliveryServices(query, queryValues, dss.Info().Tx)
 	if sysErr != nil {
 		sysErr = fmt.Errorf("reading server dses: %v ", sysErr)
 	}

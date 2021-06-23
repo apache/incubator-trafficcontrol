@@ -21,10 +21,11 @@ package profile
 
 import (
 	"errors"
-	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/util/ims"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/util/ims"
 
 	"github.com/apache/trafficcontrol/lib/go-log"
 	"github.com/apache/trafficcontrol/lib/go-tc"
@@ -50,12 +51,12 @@ const (
 
 //we need a type alias to define functions on
 type TOProfile struct {
-	api.APIInfoImpl `json:"-"`
+	api.InfoerImpl `json:"-"`
 	tc.ProfileNullable
 }
 
 func (v *TOProfile) GetLastUpdated() (*time.Time, bool, error) {
-	return api.GetLastUpdated(v.APIInfo().Tx, *v.ID, "profile")
+	return api.GetLastUpdated(v.Info().Tx, *v.ID, "profile")
 }
 
 func (v *TOProfile) SetLastUpdated(t tc.TimeNoMod) { v.LastUpdated = &t }
@@ -117,12 +118,12 @@ func (prof *TOProfile) Read(h http.Header, useIMS bool) ([]interface{}, error, e
 		NameQueryParam: dbhelpers.WhereColumnInfo{Column: "prof.name"},
 		IDQueryParam:   dbhelpers.WhereColumnInfo{Column: "prof.id", Checker: api.IsInt},
 	}
-	where, orderBy, pagination, queryValues, errs := dbhelpers.BuildWhereAndOrderByAndPagination(prof.APIInfo().Params, queryParamsToQueryCols)
+	where, orderBy, pagination, queryValues, errs := dbhelpers.BuildWhereAndOrderByAndPagination(prof.Info().Params, queryParamsToQueryCols)
 
 	// Narrow down if the query parameter is 'param'
 
 	// TODO add generic where clause to api.GenericRead
-	if paramValue, ok := prof.APIInfo().Params[ParamQueryParam]; ok {
+	if paramValue, ok := prof.Info().Params[ParamQueryParam]; ok {
 		queryValues["parameter_id"] = paramValue
 		if len(paramValue) > 0 {
 			where += " LEFT JOIN profile_parameter pp ON prof.id  = pp.profile where pp.parameter=:parameter_id"
@@ -134,7 +135,7 @@ func (prof *TOProfile) Read(h http.Header, useIMS bool) ([]interface{}, error, e
 	}
 
 	if useIMS {
-		runSecond, maxTime = ims.TryIfModifiedSinceQuery(prof.APIInfo().Tx, h, queryValues, selectMaxLastUpdatedQuery(where))
+		runSecond, maxTime = ims.TryIfModifiedSinceQuery(prof.Info().Tx, h, queryValues, selectMaxLastUpdatedQuery(where))
 		if !runSecond {
 			log.Debugln("IMS HIT")
 			return []interface{}{}, nil, nil, http.StatusNotModified, &maxTime
@@ -166,8 +167,8 @@ func (prof *TOProfile) Read(h http.Header, useIMS bool) ([]interface{}, error, e
 	profileInterfaces := []interface{}{}
 	for _, profile := range profiles {
 		// Attach Parameters if the 'id' parameter is sent
-		if _, ok := prof.APIInfo().Params[IDQueryParam]; ok {
-			profile.Parameters, err = ReadParameters(prof.ReqInfo.Tx, prof.APIInfo().Params, prof.ReqInfo.User, profile)
+		if _, ok := prof.Info().Params[IDQueryParam]; ok {
+			profile.Parameters, err = ReadParameters(prof.ReqInfo.Tx, prof.Info().Params, prof.ReqInfo.User, profile)
 			if err != nil {
 				return nil, nil, errors.New("profile read reading parameters: " + err.Error()), http.StatusInternalServerError, nil
 			}

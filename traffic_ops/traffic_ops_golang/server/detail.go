@@ -38,14 +38,14 @@ import (
 
 func GetDetailHandler(w http.ResponseWriter, r *http.Request) {
 	alt := "GET servers/details with query parameters hostName"
-	inf, userErr, sysErr, errCode := api.NewInfo(r, nil, nil)
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, nil, nil)
 	if userErr != nil || sysErr != nil {
 		api.HandleDeprecatedErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr, &alt)
 		return
 	}
 	defer inf.Close()
 
-	servers, err := getDetailServers(inf.Tx.Tx, inf.User, inf.Params["hostName"], -1, "", 0, *inf.Version)
+	servers, err := getDetailServers(inf.Tx.Tx, inf.User, inf.Params["hostName"], -1, "", 0, inf.Version)
 	if err != nil {
 		api.HandleDeprecatedErr(w, r, inf.Tx.Tx, http.StatusInternalServerError, nil, errors.New("getting detail servers: "+err.Error()), &alt)
 		return
@@ -107,7 +107,7 @@ func GetDetailHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetDetailParamHandler(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, nil, nil)
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, nil, nil)
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
 		return
@@ -142,7 +142,7 @@ func GetDetailParamHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	servers, err := getDetailServers(inf.Tx.Tx, inf.User, hostName, physLocationID, util.CamelToSnakeCase(orderBy), limit, *inf.Version)
+	servers, err := getDetailServers(inf.Tx.Tx, inf.User, hostName, physLocationID, util.CamelToSnakeCase(orderBy), limit, inf.Version)
 	respVals := map[string]interface{}{
 		"orderby": orderBy,
 		"limit":   limit,

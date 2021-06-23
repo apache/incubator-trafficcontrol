@@ -117,7 +117,7 @@ func checkIfOptionsDeleter(obj interface{}, params map[string]string) (bool, err
 		return false, nil, nil, http.StatusOK
 	}
 	options := optionsDeleter.DeleteKeyOptions()
-	for key, _ := range options {
+	for key := range options {
 		if params[key] != "" {
 			return true, nil, nil, http.StatusOK
 		}
@@ -146,7 +146,7 @@ func SetLastModifiedHeader(r *http.Request, useIMS bool) bool {
 func ReadHandler(reader Reader) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		useIMS := false
-		inf, userErr, sysErr, errCode := NewInfo(r, nil, nil)
+		inf, userErr, sysErr, errCode := NewInfo(w, r, nil, nil)
 		if userErr != nil || sysErr != nil {
 			HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
 			return
@@ -189,7 +189,7 @@ func DeprecatedReadHandler(reader Reader, alternative *string) http.HandlerFunc 
 	return func(w http.ResponseWriter, r *http.Request) {
 		alerts := CreateDeprecationAlerts(alternative)
 
-		inf, userErr, sysErr, errCode := NewInfo(r, nil, nil)
+		inf, userErr, sysErr, errCode := NewInfo(w, r, nil, nil)
 		if userErr != nil || sysErr != nil {
 			userErr = LogErr(r, http.StatusInternalServerError, userErr, sysErr)
 			alerts.AddAlerts(tc.CreateErrorAlerts(userErr))
@@ -229,7 +229,7 @@ func DeprecatedReadHandler(reader Reader, alternative *string) http.HandlerFunc 
 //   *forming and writing the body over the wire
 func UpdateHandler(updater Updater) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		inf, userErr, sysErr, errCode := NewInfo(r, nil, nil)
+		inf, userErr, sysErr, errCode := NewInfo(w, r, nil, nil)
 		if userErr != nil || sysErr != nil {
 			HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
 			return
@@ -320,7 +320,7 @@ func UpdateHandler(updater Updater) http.HandlerFunc {
 //   *forming and writing the body over the wire
 func DeleteHandler(deleter Deleter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		inf, userErr, sysErr, errCode := NewInfo(r, nil, nil)
+		inf, userErr, sysErr, errCode := NewInfo(w, r, nil, nil)
 		if userErr != nil || sysErr != nil {
 			HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
 			return
@@ -426,7 +426,7 @@ func DeleteHandler(deleter Deleter) http.HandlerFunc {
 //   *forming and writing the body over the wire
 func DeprecatedDeleteHandler(deleter Deleter, alternative *string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		inf, userErr, sysErr, errCode := NewInfo(r, nil, nil)
+		inf, userErr, sysErr, errCode := NewInfo(w, r, nil, nil)
 		if userErr != nil || sysErr != nil {
 			HandleDeprecatedErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr, alternative)
 			return
@@ -536,7 +536,7 @@ func DeprecatedDeleteHandler(deleter Deleter, alternative *string) http.HandlerF
 //   *forming and writing the body over the wire
 func CreateHandler(creator Creator) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		inf, userErr, sysErr, errCode := NewInfo(r, nil, nil)
+		inf, userErr, sysErr, errCode := NewInfo(w, r, nil, nil)
 		if userErr != nil || sysErr != nil {
 			HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
 			return
@@ -657,7 +657,7 @@ func CreateHandler(creator Creator) http.HandlerFunc {
 	}
 }
 
-func parseMultipleCreates(data []byte, desiredType reflect.Type, inf *APIInfo) ([]Creator, error) {
+func parseMultipleCreates(data []byte, desiredType reflect.Type, inf *Info) ([]Creator, error) {
 	buf := ioutil.NopCloser(bytes.NewReader(data))
 
 	var genericInt interface{}

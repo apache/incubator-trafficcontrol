@@ -36,7 +36,7 @@ import (
 
 //we need a type alias to define functions on
 type TOCoordinate struct {
-	api.APIInfoImpl `json:"-"`
+	api.InfoerImpl `json:"-"`
 	tc.CoordinateNullable
 }
 
@@ -52,7 +52,7 @@ func (v *TOCoordinate) ParamColumns() map[string]dbhelpers.WhereColumnInfo {
 }
 
 func (v *TOCoordinate) GetLastUpdated() (*time.Time, bool, error) {
-	return api.GetLastUpdated(v.APIInfo().Tx, *v.ID, "coordinate")
+	return api.GetLastUpdated(v.Info().Tx, *v.ID, "coordinate")
 }
 
 func (v *TOCoordinate) UpdateQuery() string { return updateQuery() }
@@ -125,7 +125,7 @@ func (coordinate TOCoordinate) Validate() error {
 
 func (coord *TOCoordinate) Create() (error, error, int) { return api.GenericCreate(coord) }
 func (coord *TOCoordinate) Read(h http.Header, useIMS bool) ([]interface{}, error, error, int, *time.Time) {
-	api.DefaultSort(coord.APIInfo(), "name")
+	api.DefaultSort(coord.Info(), "name")
 	return api.GenericRead(h, coord, useIMS)
 }
 func (v *TOCoordinate) SelectMaxLastUpdatedQuery(where, orderBy, pagination, tableName string) string {

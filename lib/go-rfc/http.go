@@ -39,6 +39,7 @@ const (
 	PermissionsPolicy  = "Permissions-Policy"  // W3C "Permissions Policy"
 	Server             = "Server"              // RFC7231§7.4.2
 	UserAgent          = "User-Agent"          // RFC7231§5.5.3
+	Location           = "Location"            // RFC7231§6.3.2
 	Vary               = "Vary"                // RFC7231§7.1.4
 )
 

@@ -50,7 +50,7 @@ JOIN server s ON s.id = h.serverid
 
 // Get handles GET requests to /hwinfo
 func Get(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, nil, nil)
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, nil, nil)
 	tx := inf.Tx
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, tx.Tx, errCode, userErr, sysErr)

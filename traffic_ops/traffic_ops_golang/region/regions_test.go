@@ -74,9 +74,9 @@ func TestReadRegions(t *testing.T) {
 	mock.ExpectQuery("SELECT").WillReturnRows(rows)
 	mock.ExpectCommit()
 
-	reqInfo := api.APIInfo{Tx: db.MustBegin(), Params: map[string]string{"id": "1"}}
+	reqInfo := api.Info{Tx: db.MustBegin(), Params: map[string]string{"id": "1"}}
 	obj := TORegion{
-		api.APIInfoImpl{ReqInfo: &reqInfo},
+		api.InfoerImpl{ReqInfo: &reqInfo},
 		tc.Region{},
 	}
 	regions, userErr, sysErr, _, _ := obj.Read(nil, false)

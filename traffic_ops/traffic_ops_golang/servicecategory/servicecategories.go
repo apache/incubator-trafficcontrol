@@ -31,16 +31,16 @@ import (
 	"github.com/apache/trafficcontrol/lib/go-util"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/api"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/dbhelpers"
-	"github.com/go-ozzo/ozzo-validation"
+	validation "github.com/go-ozzo/ozzo-validation"
 )
 
 type TOServiceCategory struct {
-	api.APIInfoImpl `json:"-"`
+	api.InfoerImpl `json:"-"`
 	tc.ServiceCategory
 }
 
 func (v *TOServiceCategory) GetLastUpdated() (*time.Time, bool, error) {
-	return api.GetLastUpdatedByName(v.APIInfo().Tx, v.Name, "service_category")
+	return api.GetLastUpdatedByName(v.Info().Tx, v.Name, "service_category")
 }
 
 func (v *TOServiceCategory) SetLastUpdated(t tc.TimeNoMod) { v.LastUpdated = t }
@@ -104,7 +104,7 @@ func (serviceCategory *TOServiceCategory) Create() (error, error, int) {
 }
 
 func (serviceCategory *TOServiceCategory) Read(h http.Header, useIMS bool) ([]interface{}, error, error, int, *time.Time) {
-	api.DefaultSort(serviceCategory.APIInfo(), "name")
+	api.DefaultSort(serviceCategory.Info(), "name")
 	serviceCategories, userErr, sysErr, errCode, maxTime := api.GenericRead(h, serviceCategory, useIMS)
 	if userErr != nil || sysErr != nil {
 		return nil, userErr, sysErr, errCode, nil
@@ -114,7 +114,7 @@ func (serviceCategory *TOServiceCategory) Read(h http.Header, useIMS bool) ([]in
 }
 
 func Update(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"name"}, nil)
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, []string{"name"}, nil)
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
 		return

@@ -36,7 +36,7 @@ WHERE ffr.federation = $1
 
 // GetFederationFederationResolversHandler returns a subset of federation_resolvers belonging to the federation ID supplied.
 func GetFederationFederationResolversHandler(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"id"}, []string{"id"})
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, []string{"id"}, []string{"id"})
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
 		return
@@ -56,7 +56,7 @@ func GetFederationFederationResolversHandler(w http.ResponseWriter, r *http.Requ
 
 // AssignFederationResolversToFederationHandler associates one or more federation_resolver to the federation ID supplied.
 func AssignFederationResolversToFederationHandler(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"id"}, []string{"id"})
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, []string{"id"}, []string{"id"})
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
 		return

@@ -33,7 +33,7 @@ import (
 
 func GetAll(w http.ResponseWriter, r *http.Request) {
 	var maxTime *time.Time
-	inf, userErr, sysErr, errCode := api.NewInfo(r, nil, nil)
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, nil, nil)
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
 		return

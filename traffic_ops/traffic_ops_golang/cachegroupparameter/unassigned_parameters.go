@@ -22,11 +22,12 @@ package cachegroupparameter
 import (
 	"errors"
 	"fmt"
-	"github.com/apache/trafficcontrol/lib/go-log"
-	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/util/ims"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/apache/trafficcontrol/lib/go-log"
+	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/util/ims"
 
 	"github.com/apache/trafficcontrol/lib/go-tc"
 	"github.com/apache/trafficcontrol/lib/go-util"
@@ -38,7 +39,7 @@ import (
 
 // TOCacheGroupUnassignedParameter Unassigned Parameter TO request
 type TOCacheGroupUnassignedParameter struct {
-	api.APIInfoImpl `json:"-"`
+	api.InfoerImpl `json:"-"`
 	tc.CacheGroupParameterNullable
 }
 
@@ -58,14 +59,14 @@ func (cgunparam *TOCacheGroupUnassignedParameter) Read(h http.Header, useIMS boo
 	var maxTime time.Time
 	var runSecond bool
 	queryParamsToQueryCols := cgunparam.ParamColumns()
-	parameters := cgunparam.APIInfo().Params
+	parameters := cgunparam.Info().Params
 	where, orderBy, pagination, queryValues, errs := dbhelpers.BuildWhereAndOrderByAndPagination(parameters, queryParamsToQueryCols)
 	if len(errs) > 0 {
 		return nil, util.JoinErrs(errs), nil, http.StatusBadRequest, nil
 	}
 
 	if useIMS {
-		runSecond, maxTime = ims.TryIfModifiedSinceQuery(cgunparam.APIInfo().Tx, h, queryValues, selectMaxLastUpdatedQuery(where))
+		runSecond, maxTime = ims.TryIfModifiedSinceQuery(cgunparam.Info().Tx, h, queryValues, selectMaxLastUpdatedQuery(where))
 		if !runSecond {
 			log.Debugln("IMS HIT")
 			return []interface{}{}, nil, nil, http.StatusNotModified, &maxTime

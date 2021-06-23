@@ -34,7 +34,7 @@ func GetBucketKeyDeprecated(w http.ResponseWriter, r *http.Request) {
 }
 
 func getBucketKey(w http.ResponseWriter, r *http.Request, a tc.Alerts) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"bucket", "key"}, nil)
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, []string{"bucket", "key"}, nil)
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
 		return

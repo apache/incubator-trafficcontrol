@@ -75,7 +75,7 @@ const (
 		GROUP BY time(%s, %s), cachegroup%s`
 )
 
-func dsConfigFromRequest(r *http.Request, i *api.APIInfo) (tc.TrafficDSStatsConfig, int, error) {
+func dsConfigFromRequest(r *http.Request, i *api.Info) (tc.TrafficDSStatsConfig, int, error) {
 	c := tc.TrafficDSStatsConfig{}
 	statsConfig, rc, e := tsConfigFromRequest(r, i)
 	if e != nil {
@@ -116,7 +116,7 @@ func dsConfigFromRequest(r *http.Request, i *api.APIInfo) (tc.TrafficDSStatsConf
 // GetDSStats handler for getting deliveryservice stats
 func GetDSStats(w http.ResponseWriter, r *http.Request) {
 	// Perl didn't require "interval", but it would only return summary data if it was not given
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"metricType", "startDate", "endDate"}, nil)
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, []string{"metricType", "startDate", "endDate"}, nil)
 	tx := inf.Tx.Tx
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, tx, errCode, userErr, sysErr)
@@ -182,7 +182,7 @@ func GetDSStats(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func handleRequest(w http.ResponseWriter, r *http.Request, client *influx.Client, cfg tc.TrafficDSStatsConfig, inf *api.APIInfo) {
+func handleRequest(w http.ResponseWriter, r *http.Request, client *influx.Client, cfg tc.TrafficDSStatsConfig, inf *api.Info) {
 	// TODO: as above, this could be done on TO itself, thus sending only one synchronous request
 	// per hit on this endpoint, rather than the current two. Not sure if that's worth it for large
 	// data sets, though.
@@ -250,7 +250,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request, client *influx.Client
 	w.Write(append(respBts, '\n'))
 }
 
-func handleLegacyRequest(w http.ResponseWriter, r *http.Request, client *influx.Client, cfg tc.TrafficDSStatsConfig, inf *api.APIInfo) {
+func handleLegacyRequest(w http.ResponseWriter, r *http.Request, client *influx.Client, cfg tc.TrafficDSStatsConfig, inf *api.Info) {
 	// TODO: as above, this could be done on TO itself, thus sending only one synchronous request
 	// per hit on this endpoint, rather than the current two. Not sure if that's worth it for large
 	// data sets, though.

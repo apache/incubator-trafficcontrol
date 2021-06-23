@@ -43,7 +43,7 @@ import (
 )
 
 type InvalidationJob struct {
-	api.APIInfoImpl `json:"-"`
+	api.InfoerImpl `json:"-"`
 	tc.InvalidationJob
 }
 
@@ -219,12 +219,12 @@ func (job *InvalidationJob) Read(h http.Header, useIMS bool) ([]interface{}, err
 		"dsId":            dbhelpers.WhereColumnInfo{Column: "job.job_deliveryservice", Checker: api.IsInt},
 	}
 
-	where, orderBy, pagination, queryValues, errs := dbhelpers.BuildWhereAndOrderByAndPagination(job.APIInfo().Params, queryParamsToSQLCols)
+	where, orderBy, pagination, queryValues, errs := dbhelpers.BuildWhereAndOrderByAndPagination(job.Info().Params, queryParamsToSQLCols)
 	if len(errs) > 0 {
 		return nil, util.JoinErrs(errs), nil, http.StatusBadRequest, nil
 	}
 
-	accessibleTenants, err := tenant.GetUserTenantIDListTx(job.APIInfo().Tx.Tx, job.APIInfo().User.TenantID)
+	accessibleTenants, err := tenant.GetUserTenantIDListTx(job.Info().Tx.Tx, job.Info().User.TenantID)
 	if err != nil {
 		return nil, nil, fmt.Errorf("getting accessible tenants for user - %v", err), http.StatusInternalServerError, nil
 	}
@@ -236,7 +236,7 @@ func (job *InvalidationJob) Read(h http.Header, useIMS bool) ([]interface{}, err
 	queryValues["tenants"] = pq.Array(accessibleTenants)
 
 	if useIMS {
-		runSecond, maxTime = ims.TryIfModifiedSinceQuery(job.APIInfo().Tx, h, queryValues, selectMaxLastUpdatedQuery(where))
+		runSecond, maxTime = ims.TryIfModifiedSinceQuery(job.Info().Tx, h, queryValues, selectMaxLastUpdatedQuery(where))
 		if !runSecond {
 			log.Debugln("IMS HIT")
 			return []interface{}{}, nil, nil, http.StatusNotModified, &maxTime
@@ -251,7 +251,7 @@ func (job *InvalidationJob) Read(h http.Header, useIMS bool) ([]interface{}, err
 	log.Debugf("executing with values: %++v\n", queryValues)
 
 	returnable := []interface{}{}
-	rows, err := job.APIInfo().Tx.NamedQuery(query, queryValues)
+	rows, err := job.Info().Tx.NamedQuery(query, queryValues)
 	if err != nil {
 		return nil, nil, fmt.Errorf("querying: %v", err), http.StatusInternalServerError, nil
 	}
@@ -283,7 +283,7 @@ func (job *InvalidationJob) Read(h http.Header, useIMS bool) ([]interface{}, err
 // Used by POST requests to `/jobs`, creates a new content invalidation job
 // from the provided request body.
 func Create(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, nil, nil)
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, nil, nil)
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
 		return
@@ -415,7 +415,7 @@ func Create(w http.ResponseWriter, r *http.Request) {
 // Used by PUT requests to `/jobs`, replaces an existing content invalidation job
 // with the provided request body.
 func Update(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, nil, nil)
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, nil, nil)
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
 		return
@@ -581,7 +581,7 @@ func Update(w http.ResponseWriter, r *http.Request) {
 
 // Used by DELETE requests to `/jobs`, deletes an existing content invalidation job
 func Delete(w http.ResponseWriter, r *http.Request) {
-	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"id"}, []string{"id"})
+	inf, userErr, sysErr, errCode := api.NewInfo(w, r, []string{"id"}, []string{"id"})
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
 		return
@@ -697,7 +697,7 @@ func setRevalFlags(d interface{}, tx *sql.Tx) error {
 	return nil
 }
 
-// Checks if the current user's (identified in the APIInfo) tenant has permissions to
+// Checks if the current user's (identified in the Info) tenant has permissions to
 // edit a Delivery Service. `ds` is expected to be the integral, unique identifer of the
 // Delivery Service in question.
 //
@@ -708,7 +708,7 @@ func setRevalFlags(d interface{}, tx *sql.Tx) error {
 //
 // Note: If no such delivery service exists, the return values shall indicate that the
 // user isn't authorized.
-func IsUserAuthorizedToModifyDSID(inf *api.APIInfo, ds uint) (bool, error) {
+func IsUserAuthorizedToModifyDSID(inf *api.Info, ds uint) (bool, error) {
 	var t uint
 	row := inf.Tx.Tx.QueryRow(`SELECT tenant_id FROM deliveryservice where id=$1`, ds)
 	if err := row.Scan(&t); err != nil {
@@ -721,7 +721,7 @@ func IsUserAuthorizedToModifyDSID(inf *api.APIInfo, ds uint) (bool, error) {
 	return tenant.IsResourceAuthorizedToUserTx(int(t), inf.User, inf.Tx.Tx)
 }
 
-// Checks if the current user's (identified in the APIInfo) tenant has permissions to
+// Checks if the current user's (identified in the Info) tenant has permissions to
 // edit a Delivery Service. `ds` is expected to be the "xml_id" of the
 // Delivery Service in question.
 //
@@ -732,7 +732,7 @@ func IsUserAuthorizedToModifyDSID(inf *api.APIInfo, ds uint) (bool, error) {
 //
 // Note: If no such delivery service exists, the return values shall indicate that the
 // user isn't authorized.
-func IsUserAuthorizedToModifyDSXMLID(inf *api.APIInfo, ds string) (bool, error) {
+func IsUserAuthorizedToModifyDSXMLID(inf *api.Info, ds string) (bool, error) {
 	var t uint
 	row := inf.Tx.Tx.QueryRow(`SELECT tenant_id FROM deliveryservice where xml_id=$1`, ds)
 	if err := row.Scan(&t); err != nil {
@@ -745,7 +745,7 @@ func IsUserAuthorizedToModifyDSXMLID(inf *api.APIInfo, ds string) (bool, error) 
 	return tenant.IsResourceAuthorizedToUserTx(int(t), inf.User, inf.Tx.Tx)
 }
 
-// Checks if the current user's (identified in the APIInfo) tenant has permissions to
+// Checks if the current user's (identified in the Info) tenant has permissions to
 // edit on par with the user identified by `u`. `u` is expected to be the integral,
 // unique identifer of the user in question (not the current, requesting user).
 //
@@ -756,7 +756,7 @@ func IsUserAuthorizedToModifyDSXMLID(inf *api.APIInfo, ds string) (bool, error) 
 //
 // Note: If no such delivery service exists, the return values shall indicate that the
 // user isn't authorized.
-func IsUserAuthorizedToModifyJobsMadeByUserID(inf *api.APIInfo, u uint) (bool, error) {
+func IsUserAuthorizedToModifyJobsMadeByUserID(inf *api.Info, u uint) (bool, error) {
 	var t uint
 	row := inf.Tx.Tx.QueryRow(`SELECT tenant_id FROM tm_user where id=$1`, u)
 	if err := row.Scan(&t); err != nil {
@@ -769,7 +769,7 @@ func IsUserAuthorizedToModifyJobsMadeByUserID(inf *api.APIInfo, u uint) (bool, e
 	return tenant.IsResourceAuthorizedToUserTx(int(t), inf.User, inf.Tx.Tx)
 }
 
-// Checks if the current user's (identified in the APIInfo) tenant has permissions to
+// Checks if the current user's (identified in the Info) tenant has permissions to
 // edit on par with the user identified by `u`. `u` is expected to be the username of
 // the user in question (not the current, requesting user).
 //
@@ -780,7 +780,7 @@ func IsUserAuthorizedToModifyJobsMadeByUserID(inf *api.APIInfo, u uint) (bool, e
 //
 // Note: If no such delivery service exists, the return values shall indicate that the
 // user isn't authorized.
-func IsUserAuthorizedToModifyJobsMadeByUsername(inf *api.APIInfo, u string) (bool, error) {
+func IsUserAuthorizedToModifyJobsMadeByUsername(inf *api.Info, u string) (bool, error) {
 	var t uint
 	row := inf.Tx.Tx.QueryRow(`SELECT tenant_id FROM tm_user where username=$1`, u)
 	if err := row.Scan(&t); err != nil {

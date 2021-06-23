@@ -81,10 +81,10 @@ func TestGetASNs(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT").WillReturnRows(rows)
 	mock.ExpectCommit()
-	reqInfo := api.APIInfo{Tx: db.MustBegin(), Params: map[string]string{"dsId": "1"}}
+	reqInfo := api.Info{Tx: db.MustBegin(), Params: map[string]string{"dsId": "1"}}
 
 	obj := TOASNV11{
-		api.APIInfoImpl{ReqInfo: &reqInfo},
+		api.InfoerImpl{ReqInfo: &reqInfo},
 		tc.ASNNullable{},
 	}
 	asns, userErr, sysErr, _, _ := obj.Read(nil, false)
@@ -122,7 +122,7 @@ func TestInterfaces(t *testing.T) {
 func TestValidate(t *testing.T) {
 	i := -99
 	asn := TOASNV11{
-		api.APIInfoImpl{},
+		api.InfoerImpl{},
 		tc.ASNNullable{ASN: &i, CachegroupID: &i},
 	}
 	errs := util.JoinErrsStr(test.SortErrors(test.SplitErrors(asn.Validate())))
@@ -155,12 +155,12 @@ func TestCheckNumberForUpdate(t *testing.T) {
 	mock.ExpectQuery("SELECT").WillReturnRows(rows)
 	mock.ExpectCommit()
 
-	reqInfo := api.APIInfo{Tx: db.MustBegin()}
+	reqInfo := api.Info{Tx: db.MustBegin()}
 	asnNum := 2
 	cachegroupID := 10
 	id := 1
 	asn := TOASNV11{
-		api.APIInfoImpl{ReqInfo: &reqInfo},
+		api.InfoerImpl{ReqInfo: &reqInfo},
 		tc.ASNNullable{ASN: &asnNum, CachegroupID: &cachegroupID, ID: &id},
 	}
 	err = asn.ASNExists(false)
@@ -193,12 +193,12 @@ func TestASNExistsForUpdateFailure(t *testing.T) {
 	mock.ExpectQuery("SELECT").WillReturnRows(rows)
 	mock.ExpectCommit()
 
-	reqInfo := api.APIInfo{Tx: db.MustBegin()}
+	reqInfo := api.Info{Tx: db.MustBegin()}
 	asnNum := 2
 	cachegroupID := 10
 	id := 1
 	asn := TOASNV11{
-		api.APIInfoImpl{ReqInfo: &reqInfo},
+		api.InfoerImpl{ReqInfo: &reqInfo},
 		tc.ASNNullable{ASN: &asnNum, CachegroupID: &cachegroupID, ID: &id},
 	}
 	err = asn.ASNExists(false)
@@ -229,12 +229,12 @@ func TestASNExistsForUpdateSuccess(t *testing.T) {
 	mock.ExpectQuery("SELECT").WillReturnRows(rows)
 	mock.ExpectCommit()
 
-	reqInfo := api.APIInfo{Tx: db.MustBegin()}
+	reqInfo := api.Info{Tx: db.MustBegin()}
 	asnNum := 2
 	cachegroupID := 10
 	id := 1
 	asn := TOASNV11{
-		api.APIInfoImpl{ReqInfo: &reqInfo},
+		api.InfoerImpl{ReqInfo: &reqInfo},
 		tc.ASNNullable{ASN: &asnNum, CachegroupID: &cachegroupID, ID: &id},
 	}
 	err = asn.ASNExists(false)
@@ -263,11 +263,11 @@ func TestASNExists(t *testing.T) {
 	mock.ExpectQuery("SELECT").WillReturnRows(rows)
 	mock.ExpectCommit()
 
-	reqInfo := api.APIInfo{Tx: db.MustBegin()}
+	reqInfo := api.Info{Tx: db.MustBegin()}
 	asnNum := 2
 	cachegroupID := 10
 	asn := TOASNV11{
-		api.APIInfoImpl{ReqInfo: &reqInfo},
+		api.InfoerImpl{ReqInfo: &reqInfo},
 		tc.ASNNullable{ASN: &asnNum, CachegroupID: &cachegroupID},
 	}
 	err = asn.ASNExists(true)
