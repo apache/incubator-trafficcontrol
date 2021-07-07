@@ -182,7 +182,8 @@
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>2.19.1</version>
 				<configuration>
-					<argLine>-XX:-UseSplitVerifier -Djava.library.path=${java.library.path}</argLine>
+					<argLine>@{argLine}</argLine>
+					<!--<argLine>-XX:-UseSplitVerifier -Djava.library.path=${java.library.path}</argLine>-->
 					<excludedGroups>com.comcast.cdn.traffic_control.traffic_router.core.util.IntegrationTest,com.comcast.cdn.traffic_control.traffic_router.core.util.ExternalTest</excludedGroups>
 				</configuration>
 			</plugin>
@@ -196,7 +197,8 @@
 							<goal>integration-test</goal>
 						</goals>
 						<configuration>
-							<argLine>-Djava.library.path=${java.library.path}</argLine> <!-- This needs to be parameterized -->
+							<argLine>@{argLine}</argLine>
+							<!--<argLine>-Djava.library.path=${java.library.path}</argLine>--> <!-- This needs to be parameterized -->
 							<groups>com.comcast.cdn.traffic_control.traffic_router.core.util.ExternalTest</groups>
 							<includes>
 								<include>**/*Suite.java</include>
@@ -210,7 +212,8 @@
 							<goal>verify</goal>
 						</goals>
 						<configuration>
-							<argLine>-Djava.library.path=${java.library.path}</argLine> <!-- This needs to be parameterized -->
+							<argLine>@{argLine}</argLine>
+							<!--<argLine>-Djava.library.path=${java.library.path}</argLine>--> <!-- This needs to be parameterized -->
 							<groups>com.comcast.cdn.traffic_control.traffic_router.core.util.IntegrationTest</groups>
 							<includes>
 								<include>**/*.java</include>
