@@ -24,6 +24,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/apache/trafficcontrol/lib/go-log"
 	"github.com/apache/trafficcontrol/lib/go-tc/tovalidate"
@@ -150,7 +151,21 @@ func (profileImport *ProfileImportRequest) Validate(tx *sql.Tx) error {
 
 	// Profile fields are valid
 	errs := tovalidate.ToErrors(validation.Errors{
-		"name":        validation.Validate(profile.Name, validation.Required),
+		"name": validation.Validate(profile.Name, validation.By(
+			func(value interface{}) error {
+				name, ok := value.(*string)
+				if !ok {
+					return fmt.Errorf("wrong type, need: string, got: %T", value)
+				}
+				if name == nil || *name == "" {
+					return errors.New("required and cannot be blank")
+				}
+				if strings.Contains(*name, " ") {
+					return errors.New("cannot contain spaces")
+				}
+				return nil
+			},
+		)),
 		"description": validation.Validate(profile.Description, validation.Required),
 		"cdnName":     validation.Validate(profile.CDNName, validation.Required),
 		"type":        validation.Validate(profile.Type, validation.Required),

@@ -24,6 +24,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/apache/trafficcontrol/lib/go-log"
 	"github.com/apache/trafficcontrol/lib/go-tc"
@@ -71,6 +72,18 @@ func CopyProfileHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func copyProfile(inf *api.APIInfo, p *tc.ProfileCopy) errorDetails {
+	if inf == nil || p == nil {
+		return errorDetails{
+			sysErr:  errors.New("copyProfile received nil APIInfo or ProfileCopy reference"),
+			errCode: http.StatusInternalServerError,
+		}
+	}
+	if strings.Contains(p.Name, " ") {
+		return errorDetails{
+			userErr: errors.New("new Profile name cannot contain spaces"),
+			errCode: http.StatusBadRequest,
+		}
+	}
 	// check if the newProfile already exists
 	ok, err := tc.ProfileExistsByName(p.Name, inf.Tx.Tx)
 	if ok {
