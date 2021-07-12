@@ -29,11 +29,22 @@ const ATSDotRulesFileName = StorageFileName
 const ContentTypeATSDotRules = ContentTypeTextASCII
 const LineCommentATSDotRules = LineCommentHash
 
+// ATSDotRulesOpts contains settings to configure generation options.
+type ATSDotRulesOpts struct {
+	// HdrComment is the header comment to include at the beginning of the file.
+	// This should be the text desired, without comment syntax (like # or //). The file's comment syntax will be added.
+	// To omit the header comment, pass the empty string.
+	HdrComment string
+}
+
 func MakeATSDotRules(
 	server *Server,
 	serverParams []tc.Parameter,
-	hdrComment string,
+	opt *ATSDotRulesOpts,
 ) (Cfg, error) {
+	if opt == nil {
+		opt = &ATSDotRulesOpts{}
+	}
 	warnings := []string{}
 	if server.Profile == nil {
 		return Cfg{}, makeErr(warnings, "server missing Profile")
@@ -42,7 +53,7 @@ func MakeATSDotRules(
 	serverParams = filterParams(serverParams, ATSDotRulesFileName, "", "", "location")
 	paramData, paramWarns := paramsToMap(serverParams)
 	warnings = append(warnings, paramWarns...)
-	text := makeHdrComment(hdrComment)
+	text := makeHdrComment(opt.HdrComment)
 
 	drivePrefix := strings.TrimPrefix(paramData["Drive_Prefix"], `/dev/`)
 	drivePostfix := strings.Split(paramData["Drive_Letters"], ",")

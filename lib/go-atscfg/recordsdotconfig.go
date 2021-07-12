@@ -41,14 +41,21 @@ type RecordsConfigOpts struct {
 	// DNSLocalBindServiceAddr is whether to set the server's service addresses
 	// as the records.config proxy.config.dns.local_ipv* settings.
 	DNSLocalBindServiceAddr bool
+
+	// HdrComment is the header comment to include at the beginning of the file.
+	// This should be the text desired, without comment syntax (like # or //). The file's comment syntax will be added.
+	// To omit the header comment, pass the empty string.
+	HdrComment string
 }
 
 func MakeRecordsDotConfig(
 	server *Server,
 	serverParams []tc.Parameter,
-	hdrComment string,
-	opt RecordsConfigOpts,
+	opt *RecordsConfigOpts,
 ) (Cfg, error) {
+	if opt == nil {
+		opt = &RecordsConfigOpts{}
+	}
 	warnings := []string{}
 	if server.Profile == nil {
 		return Cfg{}, makeErr(warnings, "server profile missing")
@@ -57,7 +64,7 @@ func MakeRecordsDotConfig(
 	params, paramWarns := paramsToMap(filterParams(serverParams, RecordsFileName, "", "", "location"))
 	warnings = append(warnings, paramWarns...)
 
-	hdr := makeHdrComment(hdrComment)
+	hdr := makeHdrComment(opt.HdrComment)
 	txt := genericProfileConfig(params, RecordsSeparator)
 	if txt == "" {
 		txt = "\n" // If no params exist, don't send "not found," but an empty file. We know the profile exists.
@@ -78,7 +85,7 @@ func MakeRecordsDotConfig(
 
 // addRecordsDotConfigOverrides modifies the records.config text and adds any overrides.
 // Returns the modified text and any warnings.
-func addRecordsDotConfigOverrides(txt string, server *Server, opt RecordsConfigOpts) (string, []string) {
+func addRecordsDotConfigOverrides(txt string, server *Server, opt *RecordsConfigOpts) (string, []string) {
 	warnings := []string{}
 	txt, ipWarns := addRecordsDotConfigOutgoingIP(txt, server)
 	warnings = append(warnings, ipWarns...)

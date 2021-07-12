@@ -28,7 +28,7 @@ import (
 )
 
 func TestMakeParentDotConfig(t *testing.T) {
-	hdr := ParentConfigOpts{AddComments: false, HdrComment: "myHeaderComment"}
+	hdr := &ParentConfigOpts{AddComments: false, HdrComment: "myHeaderComment"}
 
 	ds0 := makeParentDS()
 	ds0Type := tc.DSTypeHTTP
@@ -146,7 +146,7 @@ func TestMakeParentDotConfig(t *testing.T) {
 }
 
 func TestMakeParentDotConfigCapabilities(t *testing.T) {
-	hdr := ParentConfigOpts{AddComments: false, HdrComment: "myHeaderComment"}
+	hdr := &ParentConfigOpts{AddComments: false, HdrComment: "myHeaderComment"}
 
 	ds0 := makeParentDS()
 	ds0Type := tc.DSTypeHTTP
@@ -290,7 +290,7 @@ func TestMakeParentDotConfigCapabilities(t *testing.T) {
 }
 
 func TestMakeParentDotConfigMSOSecondaryParent(t *testing.T) {
-	hdr := ParentConfigOpts{AddComments: false, HdrComment: "myHeaderComment"}
+	hdr := &ParentConfigOpts{AddComments: false, HdrComment: "myHeaderComment"}
 
 	ds0 := makeParentDS()
 	ds0Type := tc.DSTypeHTTP
@@ -405,7 +405,7 @@ func TestMakeParentDotConfigMSOSecondaryParent(t *testing.T) {
 }
 
 func TestMakeParentDotConfigTopologies(t *testing.T) {
-	hdr := ParentConfigOpts{AddComments: false, HdrComment: "myHeaderComment"}
+	hdr := &ParentConfigOpts{AddComments: false, HdrComment: "myHeaderComment"}
 
 	ds0 := makeParentDS()
 	ds0Type := tc.DSTypeHTTP
@@ -547,7 +547,7 @@ func TestMakeParentDotConfigTopologies(t *testing.T) {
 
 // TestMakeParentDotConfigNotInTopologies tests when a given edge is NOT in a Topology, that it doesn't add a remap line.
 func TestMakeParentDotConfigNotInTopologies(t *testing.T) {
-	hdr := ParentConfigOpts{AddComments: false, HdrComment: "myHeaderComment"}
+	hdr := &ParentConfigOpts{AddComments: false, HdrComment: "myHeaderComment"}
 
 	ds0 := makeParentDS()
 	ds0Type := tc.DSTypeHTTP
@@ -677,7 +677,7 @@ func TestMakeParentDotConfigNotInTopologies(t *testing.T) {
 }
 
 func TestMakeParentDotConfigTopologiesCapabilities(t *testing.T) {
-	hdr := ParentConfigOpts{AddComments: false, HdrComment: "myHeaderComment"}
+	hdr := &ParentConfigOpts{AddComments: false, HdrComment: "myHeaderComment"}
 
 	ds0 := makeParentDS()
 	ds0.ID = util.IntPtr(42)
@@ -835,7 +835,7 @@ func TestMakeParentDotConfigTopologiesCapabilities(t *testing.T) {
 }
 
 func TestMakeParentDotConfigTopologiesOmitOfflineParents(t *testing.T) {
-	hdr := ParentConfigOpts{AddComments: false, HdrComment: "myHeaderComment"}
+	hdr := &ParentConfigOpts{AddComments: false, HdrComment: "myHeaderComment"}
 
 	ds0 := makeParentDS()
 	ds0Type := tc.DSTypeHTTP
@@ -978,7 +978,7 @@ func TestMakeParentDotConfigTopologiesOmitOfflineParents(t *testing.T) {
 }
 
 func TestMakeParentDotConfigTopologiesOmitDifferentCDNParents(t *testing.T) {
-	hdr := ParentConfigOpts{AddComments: false, HdrComment: "myHeaderComment"}
+	hdr := &ParentConfigOpts{AddComments: false, HdrComment: "myHeaderComment"}
 
 	ds0 := makeParentDS()
 	ds0Type := tc.DSTypeHTTP
@@ -1122,7 +1122,7 @@ func TestMakeParentDotConfigTopologiesOmitDifferentCDNParents(t *testing.T) {
 }
 
 func TestMakeParentDotConfigTopologiesMSO(t *testing.T) {
-	hdr := ParentConfigOpts{AddComments: false, HdrComment: "myHeaderComment"}
+	hdr := &ParentConfigOpts{AddComments: false, HdrComment: "myHeaderComment"}
 
 	ds1 := makeParentDS()
 	ds1.ID = util.IntPtr(43)
@@ -1254,7 +1254,7 @@ func TestMakeParentDotConfigTopologiesMSO(t *testing.T) {
 }
 
 func TestMakeParentDotConfigTopologiesMSOWithCapabilities(t *testing.T) {
-	hdr := ParentConfigOpts{AddComments: false, HdrComment: "myHeaderComment"}
+	hdr := &ParentConfigOpts{AddComments: false, HdrComment: "myHeaderComment"}
 
 	ds1 := makeParentDS()
 	ds1.ID = util.IntPtr(43)
@@ -1395,7 +1395,7 @@ func TestMakeParentDotConfigTopologiesMSOWithCapabilities(t *testing.T) {
 }
 
 func TestMakeParentDotConfigMSOWithCapabilities(t *testing.T) {
-	hdr := ParentConfigOpts{AddComments: false, HdrComment: "myHeaderComment"}
+	hdr := &ParentConfigOpts{AddComments: false, HdrComment: "myHeaderComment"}
 
 	ds1 := makeParentDS()
 	ds1.ID = util.IntPtr(43)
@@ -1522,7 +1522,7 @@ func TestMakeParentDotConfigMSOWithCapabilities(t *testing.T) {
 }
 
 func TestMakeParentDotConfigTopologiesMSOParams(t *testing.T) {
-	hdr := ParentConfigOpts{AddComments: false, HdrComment: "myHeaderComment"}
+	hdr := &ParentConfigOpts{AddComments: false, HdrComment: "myHeaderComment"}
 
 	ds1 := makeParentDS()
 	ds1.ID = util.IntPtr(43)
@@ -1698,7 +1698,7 @@ func TestMakeParentDotConfigTopologiesMSOParams(t *testing.T) {
 }
 
 func TestMakeParentDotConfigTopologiesParams(t *testing.T) {
-	hdr := ParentConfigOpts{AddComments: false, HdrComment: "myHeaderComment"}
+	hdr := &ParentConfigOpts{AddComments: false, HdrComment: "myHeaderComment"}
 
 	ds1 := makeParentDS()
 	ds1.ID = util.IntPtr(43)
@@ -1874,7 +1874,7 @@ func TestMakeParentDotConfigTopologiesParams(t *testing.T) {
 }
 
 func TestMakeParentDotConfigTopologiesNonStandardServerTypes(t *testing.T) {
-	hdr := ParentConfigOpts{AddComments: false, HdrComment: "myHeaderComment"}
+	hdr := &ParentConfigOpts{AddComments: false, HdrComment: "myHeaderComment"}
 
 	ds0 := makeParentDS()
 	ds0Type := tc.DSTypeHTTP
@@ -2018,7 +2018,7 @@ func TestMakeParentDotConfigTopologiesNonStandardServerTypes(t *testing.T) {
 
 func TestMakeParentDotConfigSecondaryMode(t *testing.T) {
 
-	hdr := ParentConfigOpts{AddComments: false, HdrComment: "myHeaderComment"}
+	hdr := &ParentConfigOpts{AddComments: false, HdrComment: "myHeaderComment"}
 
 	ds0 := makeParentDS()
 	ds0Type := tc.DSTypeHTTP
@@ -2179,7 +2179,7 @@ func TestMakeParentDotConfigSecondaryMode(t *testing.T) {
 }
 
 func TestMakeParentDotConfigNoSecondaryMode(t *testing.T) {
-	hdr := ParentConfigOpts{AddComments: false, HdrComment: "myHeaderComment"}
+	hdr := &ParentConfigOpts{AddComments: false, HdrComment: "myHeaderComment"}
 
 	ds0 := makeParentDS()
 	ds0Type := tc.DSTypeHTTP
@@ -2341,7 +2341,7 @@ func TestMakeParentDotConfigNoSecondaryMode(t *testing.T) {
 }
 
 func TestMakeParentDotConfigComments(t *testing.T) {
-	hdr := ParentConfigOpts{AddComments: true, HdrComment: "myHeaderComment"}
+	hdr := &ParentConfigOpts{AddComments: true, HdrComment: "myHeaderComment"}
 
 	ds0 := makeParentDS()
 	ds0Type := tc.DSTypeHTTP
@@ -2462,7 +2462,7 @@ func TestMakeParentDotConfigComments(t *testing.T) {
 }
 
 func TestMakeParentDotConfigCommentTopology(t *testing.T) {
-	hdr := ParentConfigOpts{AddComments: true, HdrComment: "myHeaderComment"}
+	hdr := &ParentConfigOpts{AddComments: true, HdrComment: "myHeaderComment"}
 
 	ds0 := makeParentDS()
 	ds0Type := tc.DSTypeHTTP

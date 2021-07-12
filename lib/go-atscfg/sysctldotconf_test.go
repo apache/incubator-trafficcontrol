@@ -38,7 +38,7 @@ func TestMakeSysCtlDotConf(t *testing.T) {
 
 	params := makeParamsFromMap(*server.Profile, SysctlFileName, paramData)
 
-	cfg, err := MakeSysCtlDotConf(server, params, hdr)
+	cfg, err := MakeSysCtlDotConf(server, params, &SysCtlDotConfOpts{HdrComment: hdr})
 	if err != nil {
 		t.Fatal(err)
 	}

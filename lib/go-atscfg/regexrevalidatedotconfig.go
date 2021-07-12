@@ -45,13 +45,24 @@ const RegexRevalidateMinTTL = time.Hour
 const ContentTypeRegexRevalidateDotConfig = ContentTypeTextASCII
 const LineCommentRegexRevalidateDotConfig = LineCommentHash
 
+// RegexRevalidateDotConfigOpts contains settings to configure generation options.
+type RegexRevalidateDotConfigOpts struct {
+	// HdrComment is the header comment to include at the beginning of the file.
+	// This should be the text desired, without comment syntax (like # or //). The file's comment syntax will be added.
+	// To omit the header comment, pass the empty string.
+	HdrComment string
+}
+
 func MakeRegexRevalidateDotConfig(
 	server *Server,
 	deliveryServices []DeliveryService,
 	globalParams []tc.Parameter,
 	jobs []tc.Job,
-	hdrComment string,
+	opt *RegexRevalidateDotConfigOpts,
 ) (Cfg, error) {
+	if opt == nil {
+		opt = &RegexRevalidateDotConfigOpts{}
+	}
 	warnings := []string{}
 
 	if server.CDNName == nil {
@@ -94,7 +105,7 @@ func MakeRegexRevalidateDotConfig(
 	cfgJobs, jobWarns := filterJobs(dsJobs, maxReval, RegexRevalidateMinTTL)
 	warnings = append(warnings, jobWarns...)
 
-	txt := makeHdrComment(hdrComment)
+	txt := makeHdrComment(opt.HdrComment)
 	for _, job := range cfgJobs {
 		txt += job.AssetURL + " " + strconv.FormatInt(job.PurgeEnd.Unix(), 10)
 		if job.Type != "" {

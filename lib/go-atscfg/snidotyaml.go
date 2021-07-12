@@ -61,8 +61,11 @@ func MakeSNIDotYAML(
 	cacheGroupArr []tc.CacheGroupNullable,
 	serverCapabilities map[int]map[ServerCapability]struct{},
 	dsRequiredCapabilities map[int]map[ServerCapability]struct{},
-	opt SNIDotYAMLOpts,
+	opt *SNIDotYAMLOpts,
 ) (Cfg, error) {
+	if opt == nil {
+		opt = &SNIDotYAMLOpts{}
+	}
 	if len(opt.DefaultTLSVersions) == 0 {
 		opt.DefaultTLSVersions = DefaultDefaultTLSVersions
 	}

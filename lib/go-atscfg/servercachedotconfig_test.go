@@ -56,7 +56,7 @@ func TestMakeServerCacheDotConfig(t *testing.T) {
 		makeDS("ds-nocache", "http://ds-nocache.example.test", tc.DSTypeHTTPNoCache),
 	}
 
-	cfg, err := makeCacheDotConfigMid(server, dses, hdr)
+	cfg, err := makeCacheDotConfigMid(server, dses, &CacheDotConfigOpts{HdrComment: hdr})
 	if err != nil {
 		t.Fatal(err)
 	}

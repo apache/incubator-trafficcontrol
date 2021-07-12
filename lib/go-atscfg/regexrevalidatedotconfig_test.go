@@ -84,7 +84,7 @@ func TestMakeRegexRevalidateDotConfig(t *testing.T) {
 		},
 	}
 
-	cfg, err := MakeRegexRevalidateDotConfig(server, dses, params, jobs, hdr)
+	cfg, err := MakeRegexRevalidateDotConfig(server, dses, params, jobs, &RegexRevalidateDotConfigOpts{HdrComment: hdr})
 	if err != nil {
 		t.Fatal(err)
 	}

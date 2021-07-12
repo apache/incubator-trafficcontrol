@@ -115,8 +115,11 @@ func MakeSSLServerNameYAML(
 	cacheGroupArr []tc.CacheGroupNullable,
 	serverCapabilities map[int]map[ServerCapability]struct{},
 	dsRequiredCapabilities map[int]map[ServerCapability]struct{},
-	opt SSLServerNameYAMLOpts,
+	opt *SSLServerNameYAMLOpts,
 ) (Cfg, error) {
+	if opt == nil {
+		opt = &SSLServerNameYAMLOpts{}
+	}
 	if len(opt.DefaultTLSVersions) == 0 {
 		opt.DefaultTLSVersions = DefaultDefaultTLSVersions
 	}

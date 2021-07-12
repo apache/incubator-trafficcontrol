@@ -48,7 +48,7 @@ func TestMakeSSLMultiCertDotConfig(t *testing.T) {
 		makeDS("my-https-to-http-ds", tc.DSTypeHTTP, 3 /* https to http */, "https://my-https-to-http-ds.example.net"),
 	}
 
-	cfg, err := MakeSSLMultiCertDotConfig(server, dses, hdr)
+	cfg, err := MakeSSLMultiCertDotConfig(server, dses, &SSLMultiCertDotConfigOpts{HdrComment: hdr})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -92,7 +92,7 @@ func TestMakeSSLMultiCertDotConfigHTTPDeliveryService(t *testing.T) {
 		makeDS("myds", tc.DSTypeHTTP, 0 /* http */, "https://myds.example.net"),
 	}
 
-	cfg, err := MakeSSLMultiCertDotConfig(server, dses, hdr)
+	cfg, err := MakeSSLMultiCertDotConfig(server, dses, &SSLMultiCertDotConfigOpts{HdrComment: hdr})
 	if err != nil {
 		t.Fatal(err)
 	}

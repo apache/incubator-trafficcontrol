@@ -38,6 +38,14 @@ const ParamRAMDrivePrefix = "RAM_Drive_Prefix"
 const ServerHostingDotConfigMidIncludeInactive = false
 const ServerHostingDotConfigEdgeIncludeInactive = true
 
+// HostingDotConfigOpts contains settings to configure generation options.
+type HostingDotConfigOpts struct {
+	// HdrComment is the header comment to include at the beginning of the file.
+	// This should be the text desired, without comment syntax (like # or //). The file's comment syntax will be added.
+	// To omit the header comment, pass the empty string.
+	HdrComment string
+}
+
 func MakeHostingDotConfig(
 	server *Server,
 	servers []Server,
@@ -45,8 +53,11 @@ func MakeHostingDotConfig(
 	deliveryServices []DeliveryService,
 	deliveryServiceServers []DeliveryServiceServer,
 	topologies []tc.Topology,
-	hdrComment string,
+	opt *HostingDotConfigOpts,
 ) (Cfg, error) {
+	if opt == nil {
+		opt = &HostingDotConfigOpts{}
+	}
 	warnings := []string{}
 
 	if server.CDNID == nil {
@@ -147,7 +158,7 @@ func MakeHostingDotConfig(
 		filteredDSes = append(filteredDSes, ds)
 	}
 
-	text := makeHdrComment(hdrComment)
+	text := makeHdrComment(opt.HdrComment)
 
 	nameTopologies := makeTopologyNameMap(topologies)
 

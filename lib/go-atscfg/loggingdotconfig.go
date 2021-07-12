@@ -33,13 +33,24 @@ const LoggingFileName = "logging.config"
 const ContentTypeLoggingDotConfig = ContentTypeTextASCII
 const LineCommentLoggingDotConfig = LineCommentHash
 
+// LoggingDotConfigOpts contains settings to configure generation options.
+type LoggingDotConfigOpts struct {
+	// HdrComment is the header comment to include at the beginning of the file.
+	// This should be the text desired, without comment syntax (like # or //). The file's comment syntax will be added.
+	// To omit the header comment, pass the empty string.
+	HdrComment string
+}
+
 // MakeStorageDotConfig creates storage.config for a given ATS Profile.
 // The paramData is the map of parameter names to values, for all parameters assigned to the given profile, with the config_file "storage.config".
 func MakeLoggingDotConfig(
 	server *Server,
 	serverParams []tc.Parameter,
-	hdrCommentTxt string,
+	opt *LoggingDotConfigOpts,
 ) (Cfg, error) {
+	if opt == nil {
+		opt = &LoggingDotConfigOpts{}
+	}
 	warnings := []string{}
 
 	if server.Profile == nil {
@@ -49,7 +60,7 @@ func MakeLoggingDotConfig(
 	paramData, paramWarns := paramsToMap(filterParams(serverParams, LoggingFileName, "", "", "location"))
 	warnings = append(warnings, paramWarns...)
 
-	hdrComment := makeHdrComment(hdrCommentTxt)
+	hdrComment := makeHdrComment(opt.HdrComment)
 	// This is an LUA file, so we need to massage the header a bit for LUA commenting.
 	hdrComment = strings.Replace(hdrComment, `# `, ``, -1)
 	hdrComment = strings.Replace(hdrComment, "\n", ``, -1)

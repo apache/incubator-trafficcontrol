@@ -43,7 +43,7 @@ func TestMakeLoggingDotYAML(t *testing.T) {
 		"LogObject.Invalid":        "ShouldNotBeHere",
 	})
 
-	cfg, err := MakeLoggingDotYAML(server, params, hdr)
+	cfg, err := MakeLoggingDotYAML(server, params, &LoggingDotYAMLOpts{HdrComment: hdr})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -103,7 +103,7 @@ func TestMakeLoggingDotYAMLMultiFormat(t *testing.T) {
 	server := makeGenericServer()
 	server.Profile = &profileName
 
-	cfg, err := MakeLoggingDotYAML(server, paramData, hdr)
+	cfg, err := MakeLoggingDotYAML(server, paramData, &LoggingDotYAMLOpts{HdrComment: hdr})
 	if err != nil {
 		t.Fatal(err)
 	}

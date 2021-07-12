@@ -32,7 +32,7 @@ func TestMakeURISigningConfig(t *testing.T) {
 		"myds": keyBts,
 	}
 
-	cfg, err := MakeURISigningConfig(fileName, keys)
+	cfg, err := MakeURISigningConfig(fileName, keys, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

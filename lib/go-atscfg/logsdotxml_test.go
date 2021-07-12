@@ -39,7 +39,7 @@ func TestMakeLogsXMLDotConfig(t *testing.T) {
 	server := makeGenericServer()
 	server.Profile = &profileName
 
-	cfg, err := MakeLogsXMLDotConfig(server, paramData, hdr)
+	cfg, err := MakeLogsXMLDotConfig(server, paramData, &LogsXMLDotConfigOpts{HdrComment: hdr})
 	if err != nil {
 		t.Fatal(err)
 	}

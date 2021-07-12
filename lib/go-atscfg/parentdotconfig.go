@@ -93,8 +93,11 @@ func MakeParentDotConfig(
 	cacheGroupArr []tc.CacheGroupNullable,
 	dss []DeliveryServiceServer,
 	cdn *tc.CDN,
-	opt ParentConfigOpts,
+	opt *ParentConfigOpts,
 ) (Cfg, error) {
+	if opt == nil {
+		opt = &ParentConfigOpts{}
+	}
 	warnings := []string{}
 
 	if server.HostName == nil || *server.HostName == "" {

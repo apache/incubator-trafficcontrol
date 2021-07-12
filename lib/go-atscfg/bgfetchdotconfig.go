@@ -22,17 +22,28 @@ package atscfg
 const ContentTypeBGFetchDotConfig = ContentTypeTextASCII
 const LineCommentBGFetchDotConfig = LineCommentHash
 
+// BGFetchDotConfigOpts contains settings to configure generation options.
+type BGFetchDotConfigOpts struct {
+	// HdrComment is the header comment to include at the beginning of the file.
+	// This should be the text desired, without comment syntax (like # or //). The file's comment syntax will be added.
+	// To omit the header comment, pass the empty string.
+	HdrComment string
+}
+
 func MakeBGFetchDotConfig(
 	server *Server,
-	hdrComment string,
+	opt *BGFetchDotConfigOpts,
 ) (Cfg, error) {
+	if opt == nil {
+		opt = &BGFetchDotConfigOpts{}
+	}
 	warnings := []string{}
 
 	if server.CDNName == nil {
 		return Cfg{}, makeErr(warnings, "server missing CDNName")
 	}
 
-	text := makeHdrComment(hdrComment)
+	text := makeHdrComment(opt.HdrComment)
 	text += "include User-Agent *\n"
 
 	return Cfg{

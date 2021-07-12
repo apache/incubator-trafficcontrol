@@ -28,7 +28,7 @@ import (
 )
 
 func TestMakeSSLServerNameYAML(t *testing.T) {
-	opts := SSLServerNameYAMLOpts{VerboseComments: false, HdrComment: "myHeaderComment"}
+	opts := &SSLServerNameYAMLOpts{VerboseComments: false, HdrComment: "myHeaderComment"}
 
 	ds0 := makeParentDS()
 	ds0Type := tc.DSTypeHTTP
@@ -147,7 +147,7 @@ func TestMakeSSLServerNameYAML(t *testing.T) {
 }
 
 func TestMakeSSLServerNameYAMLParams(t *testing.T) {
-	opts := SSLServerNameYAMLOpts{VerboseComments: false, HdrComment: "myHeaderComment"}
+	opts := &SSLServerNameYAMLOpts{VerboseComments: false, HdrComment: "myHeaderComment"}
 
 	ds0 := makeParentDS()
 	ds0Type := tc.DSTypeHTTP
@@ -279,7 +279,7 @@ func TestMakeSSLServerNameYAMLParams(t *testing.T) {
 }
 
 func TestMakeSSLServerNameYAMLParamInvalid(t *testing.T) {
-	opts := SSLServerNameYAMLOpts{VerboseComments: false, HdrComment: "myHeaderComment"}
+	opts := &SSLServerNameYAMLOpts{VerboseComments: false, HdrComment: "myHeaderComment"}
 
 	ds0 := makeParentDS()
 	ds0Type := tc.DSTypeHTTP

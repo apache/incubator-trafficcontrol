@@ -46,7 +46,7 @@ func TestMakeURLSigConfig(t *testing.T) {
 
 	params := makeParamsFromMap(*server.Profile, fileName, paramData)
 
-	cfg, err := MakeURLSigConfig(fileName, server, params, allURLSigKeys, hdr)
+	cfg, err := MakeURLSigConfig(fileName, server, params, allURLSigKeys, &URLSigConfigOpts{HdrComment: hdr})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -68,7 +68,7 @@ func TestMakeURLSigConfig(t *testing.T) {
 		"myds": urlSigKeys,
 	}
 
-	cfg, err = MakeURLSigConfig(fileName, server, params, allURLSigKeys, hdr)
+	cfg, err = MakeURLSigConfig(fileName, server, params, allURLSigKeys, &URLSigConfigOpts{HdrComment: hdr})
 	if err != nil {
 		t.Fatal(err)
 	}

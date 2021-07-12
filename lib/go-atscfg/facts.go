@@ -22,17 +22,28 @@ package atscfg
 const ContentType12MFacts = ContentTypeTextASCII
 const LineComment12MFacts = LineCommentHash
 
+// Config12MFactsOpts contains settings to configure generation options.
+type Config12MFactsOpts struct {
+	// HdrComment is the header comment to include at the beginning of the file.
+	// This should be the text desired, without comment syntax (like # or //). The file's comment syntax will be added.
+	// To omit the header comment, pass the empty string.
+	HdrComment string
+}
+
 func Make12MFacts(
 	server *Server,
-	hdrComment string,
+	opt *Config12MFactsOpts,
 ) (Cfg, error) {
+	if opt == nil {
+		opt = &Config12MFactsOpts{}
+	}
 	warnings := []string{}
 
 	if server.Profile == nil {
 		return Cfg{}, makeErr(warnings, "this server missing Profile")
 	}
 
-	hdr := makeHdrComment(hdrComment)
+	hdr := makeHdrComment(opt.HdrComment)
 	txt := hdr
 	txt += "profile:" + *server.Profile + "\n"
 

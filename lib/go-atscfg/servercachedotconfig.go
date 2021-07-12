@@ -32,8 +32,11 @@ const ServerCacheDotConfigIncludeInactiveDSes = false
 func makeCacheDotConfigMid(
 	server *Server,
 	deliveryServices []DeliveryService,
-	hdrComment string,
+	opt *CacheDotConfigOpts,
 ) (Cfg, error) {
+	if opt == nil {
+		opt = &CacheDotConfigOpts{}
+	}
 	warnings := []string{}
 
 	if server.HostName == nil {
@@ -56,7 +59,7 @@ func makeCacheDotConfigMid(
 		dses[tc.DeliveryServiceName(*ds.XMLID)] = serverCacheConfigDS{OrgServerFQDN: *ds.OrgServerFQDN, Type: *ds.Type}
 	}
 
-	text := makeHdrComment(hdrComment)
+	text := makeHdrComment(opt.HdrComment)
 
 	lines := []string{}
 

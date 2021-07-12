@@ -28,11 +28,22 @@ const SysctlFileName = "sysctl.conf"
 const ContentTypeSysctlDotConf = ContentTypeTextASCII
 const LineCommentSysctlDotConf = LineCommentHash
 
+// SysCtlDotConfOpts contains settings to configure generation options.
+type SysCtlDotConfOpts struct {
+	// HdrComment is the header comment to include at the beginning of the file.
+	// This should be the text desired, without comment syntax (like # or //). The file's comment syntax will be added.
+	// To omit the header comment, pass the empty string.
+	HdrComment string
+}
+
 func MakeSysCtlDotConf(
 	server *Server,
 	serverParams []tc.Parameter,
-	hdrComment string,
+	opt *SysCtlDotConfOpts,
 ) (Cfg, error) {
+	if opt == nil {
+		opt = &SysCtlDotConfOpts{}
+	}
 	warnings := []string{}
 	if server.Profile == nil {
 		return Cfg{}, makeErr(warnings, "server missing Profile")
@@ -41,7 +52,7 @@ func MakeSysCtlDotConf(
 	paramData, paramWarns := paramsToMap(filterParams(serverParams, SysctlFileName, "", "", "location"))
 	warnings = append(warnings, paramWarns...)
 
-	hdr := makeHdrComment(hdrComment)
+	hdr := makeHdrComment(opt.HdrComment)
 	txt := genericProfileConfig(paramData, SysctlSeparator)
 	if txt == "" {
 		txt = "\n" // If no params exist, don't send "not found," but an empty file. We know the profile exists.

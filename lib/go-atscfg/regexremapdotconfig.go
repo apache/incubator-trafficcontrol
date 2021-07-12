@@ -28,12 +28,23 @@ import (
 const ContentTypeRegexRemapDotConfig = ContentTypeTextASCII
 const LineCommentRegexRemapDotConfig = LineCommentHash
 
+// RegexRemapDotConfigOpts contains settings to configure generation options.
+type RegexRemapDotConfigOpts struct {
+	// HdrComment is the header comment to include at the beginning of the file.
+	// This should be the text desired, without comment syntax (like # or //). The file's comment syntax will be added.
+	// To omit the header comment, pass the empty string.
+	HdrComment string
+}
+
 func MakeRegexRemapDotConfig(
 	fileName string,
 	server *Server,
 	deliveryServices []DeliveryService,
-	hdrComment string,
+	opt *RegexRemapDotConfigOpts,
 ) (Cfg, error) {
+	if opt == nil {
+		opt = &RegexRemapDotConfigOpts{}
+	}
 	warnings := []string{}
 	if server.CDNName == nil {
 		return Cfg{}, makeErr(warnings, "server CDNName missing")
@@ -68,7 +79,7 @@ func MakeRegexRemapDotConfig(
 	dses, dsWarns := deliveryServicesToCDNDSes([]DeliveryService{ds})
 	warnings = append(warnings, dsWarns...)
 
-	text := makeHdrComment(hdrComment)
+	text := makeHdrComment(opt.HdrComment)
 
 	cdnDS, ok := dses[tc.DeliveryServiceName(dsName)]
 	if !ok {

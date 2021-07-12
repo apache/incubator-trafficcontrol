@@ -44,6 +44,14 @@ const DefaultCoalesceNumberV4 = 5
 const DefaultCoalesceMaskLenV6 = 48
 const DefaultCoalesceNumberV6 = 5
 
+// IPAllowDotConfigOpts contains settings to configure generation options.
+type IPAllowDotConfigOpts struct {
+	// HdrComment is the header comment to include at the beginning of the file.
+	// This should be the text desired, without comment syntax (like # or //). The file's comment syntax will be added.
+	// To omit the header comment, pass the empty string.
+	HdrComment string
+}
+
 // MakeIPAllowDotConfig creates the ip_allow.config ATS config file.
 // The childServers is a list of servers which are children for this Mid-tier server. This should be empty for Edge servers.
 // More specifically, it should be the list of edges whose cachegroup's parent_cachegroup or secondary_parent_cachegroup is the cachegroup of this Mid server.
@@ -53,8 +61,11 @@ func MakeIPAllowDotConfig(
 	servers []Server,
 	cacheGroups []tc.CacheGroupNullable,
 	topologies []tc.Topology,
-	hdrComment string,
+	opt *IPAllowDotConfigOpts,
 ) (Cfg, error) {
+	if opt == nil {
+		opt = &IPAllowDotConfigOpts{}
+	}
 	warnings := []string{}
 
 	if server.Cachegroup == nil {
@@ -310,7 +321,7 @@ func MakeIPAllowDotConfig(
 		})
 	}
 
-	text := makeHdrComment(hdrComment)
+	text := makeHdrComment(opt.HdrComment)
 	for _, al := range ipAllowDat {
 		text += `src_ip=` + al.Src + ` action=` + al.Action + ` method=` + al.Method + "\n"
 	}

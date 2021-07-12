@@ -28,12 +28,23 @@ import (
 
 const ContentTypeServerUnknownConfig = ContentTypeTextASCII
 
+// ServerUnknownOpts contains settings to configure generation options.
+type ServerUnknownOpts struct {
+	// HdrComment is the header comment to include at the beginning of the file.
+	// This should be the text desired, without comment syntax (like # or //). The file's comment syntax will be added.
+	// To omit the header comment, pass the empty string.
+	HdrComment string
+}
+
 func MakeServerUnknown(
 	fileName string,
 	server *Server,
 	serverParams []tc.Parameter,
-	hdrComment string,
+	opt *ServerUnknownOpts,
 ) (Cfg, error) {
+	if opt == nil {
+		opt = &ServerUnknownOpts{}
+	}
 	warnings := []string{}
 
 	if server.HostName == nil {
@@ -44,7 +55,7 @@ func MakeServerUnknown(
 
 	params := paramsToMultiMap(filterParams(serverParams, fileName, "", "", ""))
 
-	hdr := makeHdrComment(hdrComment)
+	hdr := makeHdrComment(opt.HdrComment)
 
 	txt := ""
 

@@ -37,6 +37,14 @@ const LineCommentRemapDotConfig = LineCommentHash
 
 const RemapConfigRangeDirective = `__RANGE_DIRECTIVE__`
 
+// RemapDotConfigOpts contains settings to configure generation options.
+type RemapDotConfigOpts struct {
+	// HdrComment is the header comment to include at the beginning of the file.
+	// This should be the text desired, without comment syntax (like # or //). The file's comment syntax will be added.
+	// To omit the header comment, pass the empty string.
+	HdrComment string
+}
+
 func MakeRemapDotConfig(
 	server *Server,
 	unfilteredDSes []DeliveryService,
@@ -49,8 +57,11 @@ func MakeRemapDotConfig(
 	cacheGroupArr []tc.CacheGroupNullable,
 	serverCapabilities map[int]map[ServerCapability]struct{},
 	dsRequiredCapabilities map[int]map[ServerCapability]struct{},
-	hdrComment string,
+	opt *RemapDotConfigOpts,
 ) (Cfg, error) {
+	if opt == nil {
+		opt = &RemapDotConfigOpts{}
+	}
 	warnings := []string{}
 	if server.HostName == nil {
 		return Cfg{}, makeErr(warnings, "server HostName missing")
@@ -87,7 +98,7 @@ func MakeRemapDotConfig(
 
 	nameTopologies := makeTopologyNameMap(topologies)
 
-	hdr := makeHdrComment(hdrComment)
+	hdr := makeHdrComment(opt.HdrComment)
 	txt := ""
 	typeWarns := []string{}
 	if tc.CacheTypeFromString(server.Type) == tc.CacheTypeMid {

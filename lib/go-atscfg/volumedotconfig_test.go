@@ -41,7 +41,7 @@ func TestMakeVolumeDotConfig(t *testing.T) {
 
 	params := makeParamsFromMap(*server.Profile, VolumeFileName, paramData)
 
-	cfg, err := MakeVolumeDotConfig(server, params, hdr)
+	cfg, err := MakeVolumeDotConfig(server, params, &VolumeDotConfigOpts{HdrComment: hdr})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -61,7 +61,7 @@ func TestMakeVolumeDotConfig(t *testing.T) {
 	delete(paramData, "SSD_Drive_Letters")
 	params = makeParamsFromMap(*server.Profile, VolumeFileName, paramData)
 
-	cfg, err = MakeVolumeDotConfig(server, params, hdr)
+	cfg, err = MakeVolumeDotConfig(server, params, &VolumeDotConfigOpts{HdrComment: hdr})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -79,7 +79,7 @@ func TestMakeVolumeDotConfig(t *testing.T) {
 	delete(paramData, "RAM_Drive_Letters")
 	params = makeParamsFromMap(*server.Profile, VolumeFileName, paramData)
 
-	cfg, err = MakeVolumeDotConfig(server, params, hdr)
+	cfg, err = MakeVolumeDotConfig(server, params, &VolumeDotConfigOpts{HdrComment: hdr})
 	if err != nil {
 		t.Fatal(err)
 	}

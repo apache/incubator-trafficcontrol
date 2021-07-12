@@ -77,7 +77,7 @@ func TestMakeHeaderRewriteDotConfig(t *testing.T) {
 	serverCaps := map[int]map[ServerCapability]struct{}{}
 	dsRequiredCaps := map[int]map[ServerCapability]struct{}{}
 
-	cfg, err := MakeHeaderRewriteDotConfig(fileName, dses, dss, server, servers, cgs, serverParams, serverCaps, dsRequiredCaps, topologies, hdr)
+	cfg, err := MakeHeaderRewriteDotConfig(fileName, dses, dss, server, servers, cgs, serverParams, serverCaps, dsRequiredCaps, topologies, &HeaderRewriteDotConfigOpts{HdrComment: hdr})
 
 	if err != nil {
 		t.Errorf("error expected nil, actual '%v'\n", err)
@@ -157,7 +157,7 @@ func TestMakeHeaderRewriteDotConfigNoMaxOriginConnections(t *testing.T) {
 	serverCaps := map[int]map[ServerCapability]struct{}{}
 	dsRequiredCaps := map[int]map[ServerCapability]struct{}{}
 
-	cfg, err := MakeHeaderRewriteDotConfig(fileName, dses, dss, server, servers, cgs, serverParams, serverCaps, dsRequiredCaps, topologies, hdr)
+	cfg, err := MakeHeaderRewriteDotConfig(fileName, dses, dss, server, servers, cgs, serverParams, serverCaps, dsRequiredCaps, topologies, &HeaderRewriteDotConfigOpts{HdrComment: hdr})
 
 	if err != nil {
 		t.Errorf("error expected nil, actual '%v'\n", err)
@@ -239,7 +239,7 @@ func TestMakeHeaderRewriteMidDotConfig(t *testing.T) {
 	serverCaps := map[int]map[ServerCapability]struct{}{}
 	dsRequiredCaps := map[int]map[ServerCapability]struct{}{}
 
-	cfg, err := MakeHeaderRewriteDotConfig(fileName, dses, dss, server, servers, cgs, serverParams, serverCaps, dsRequiredCaps, topologies, hdr)
+	cfg, err := MakeHeaderRewriteDotConfig(fileName, dses, dss, server, servers, cgs, serverParams, serverCaps, dsRequiredCaps, topologies, &HeaderRewriteDotConfigOpts{HdrComment: hdr})
 	if err != nil {
 		t.Error(err)
 	}
@@ -328,7 +328,7 @@ func TestMakeHeaderRewriteMidDotConfigNoMaxConns(t *testing.T) {
 	serverCaps := map[int]map[ServerCapability]struct{}{}
 	dsRequiredCaps := map[int]map[ServerCapability]struct{}{}
 
-	cfg, err := MakeHeaderRewriteDotConfig(fileName, dses, dss, mid0, servers, cgs, serverParams, serverCaps, dsRequiredCaps, topologies, hdr)
+	cfg, err := MakeHeaderRewriteDotConfig(fileName, dses, dss, mid0, servers, cgs, serverParams, serverCaps, dsRequiredCaps, topologies, &HeaderRewriteDotConfigOpts{HdrComment: hdr})
 	if err != nil {
 		t.Error(err)
 	}

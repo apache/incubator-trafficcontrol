@@ -78,7 +78,7 @@ func TestMakeIPAllowDotYAML(t *testing.T) {
 
 	topologies := []tc.Topology{}
 
-	cfg, err := MakeIPAllowDotYAML(params, sv, svs, cgs, topologies, hdr)
+	cfg, err := MakeIPAllowDotYAML(params, sv, svs, cgs, topologies, &IPAllowDotYAMLOpts{HdrComment: hdr})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -182,7 +182,7 @@ func TestMakeIPAllowDotYAMLEdge(t *testing.T) {
 
 	topologies := []tc.Topology{}
 
-	cfg, err := MakeIPAllowDotYAML(params, sv, svs, cgs, topologies, hdr)
+	cfg, err := MakeIPAllowDotYAML(params, sv, svs, cgs, topologies, &IPAllowDotYAMLOpts{HdrComment: hdr})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -268,7 +268,7 @@ func TestMakeIPAllowDotYAMLNonDefaultV6Number(t *testing.T) {
 
 	topologies := []tc.Topology{}
 
-	cfg, err := MakeIPAllowDotYAML(params, sv, svs, cgs, topologies, hdr)
+	cfg, err := MakeIPAllowDotYAML(params, sv, svs, cgs, topologies, &IPAllowDotYAMLOpts{HdrComment: hdr})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -374,7 +374,7 @@ func TestMakeIPAllowDotYAMLTopologies(t *testing.T) {
 
 	//	topologies := []tc.Topology{}
 
-	cfg, err := MakeIPAllowDotYAML(params, sv, svs, cgs, topologies, hdr)
+	cfg, err := MakeIPAllowDotYAML(params, sv, svs, cgs, topologies, &IPAllowDotYAMLOpts{HdrComment: hdr})
 	if err != nil {
 		t.Fatal(err)
 	}

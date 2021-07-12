@@ -31,13 +31,24 @@ const StorageFileName = "storage.config"
 const ContentTypeStorageDotConfig = ContentTypeTextASCII
 const LineCommentStorageDotConfig = LineCommentHash
 
+// StorageDotConfigOpts contains settings to configure generation options.
+type StorageDotConfigOpts struct {
+	// HdrComment is the header comment to include at the beginning of the file.
+	// This should be the text desired, without comment syntax (like # or //). The file's comment syntax will be added.
+	// To omit the header comment, pass the empty string.
+	HdrComment string
+}
+
 // MakeStorageDotConfig creates storage.config for a given ATS Profile.
 // The paramData is the map of parameter names to values, for all parameters assigned to the given profile, with the config_file "storage.config".
 func MakeStorageDotConfig(
 	server *Server,
 	serverParams []tc.Parameter,
-	hdrComment string,
+	opt *StorageDotConfigOpts,
 ) (Cfg, error) {
+	if opt == nil {
+		opt = &StorageDotConfigOpts{}
+	}
 	warnings := []string{}
 
 	if server.Profile == nil {
@@ -80,7 +91,7 @@ func MakeStorageDotConfig(
 	if text == "" {
 		text = "\n" // If no params exist, don't send "not found," but an empty file. We know the profile exists.
 	}
-	hdr := makeHdrComment(hdrComment)
+	hdr := makeHdrComment(opt.HdrComment)
 	text = hdr + text
 
 	return Cfg{

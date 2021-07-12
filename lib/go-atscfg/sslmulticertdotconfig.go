@@ -31,11 +31,22 @@ const ContentTypeSSLMultiCertDotConfig = ContentTypeTextASCII
 const LineCommentSSLMultiCertDotConfig = LineCommentHash
 const SSLMultiCertConfigFileName = `ssl_multicert.config`
 
+// SSLMultiCertDotConfigOpts contains settings to configure generation options.
+type SSLMultiCertDotConfigOpts struct {
+	// HdrComment is the header comment to include at the beginning of the file.
+	// This should be the text desired, without comment syntax (like # or //). The file's comment syntax will be added.
+	// To omit the header comment, pass the empty string.
+	HdrComment string
+}
+
 func MakeSSLMultiCertDotConfig(
 	server *Server,
 	deliveryServices []DeliveryService,
-	hdrComment string,
+	opt *SSLMultiCertDotConfigOpts,
 ) (Cfg, error) {
+	if opt == nil {
+		opt = &SSLMultiCertDotConfigOpts{}
+	}
 	warnings := []string{}
 	if server.CDNName == nil {
 		return Cfg{}, makeErr(warnings, "server missing CDNName")
@@ -44,7 +55,7 @@ func MakeSSLMultiCertDotConfig(
 	dses, dsWarns := DeliveryServicesToSSLMultiCertDSes(deliveryServices)
 	warnings = append(warnings, dsWarns...)
 
-	hdr := makeHdrComment(hdrComment)
+	hdr := makeHdrComment(opt.HdrComment)
 
 	dses = GetSSLMultiCertDotConfigDeliveryServices(dses)
 

@@ -27,11 +27,22 @@ import (
 const ContentTypeSetDSCPDotConfig = ContentTypeTextASCII
 const LineCommentSetDSCPDotConfig = LineCommentHash
 
+// SetDSCPDotConfigOpts contains settings to configure generation options.
+type SetDSCPDotConfigOpts struct {
+	// HdrComment is the header comment to include at the beginning of the file.
+	// This should be the text desired, without comment syntax (like # or //). The file's comment syntax will be added.
+	// To omit the header comment, pass the empty string.
+	HdrComment string
+}
+
 func MakeSetDSCPDotConfig(
 	fileName string,
 	server *Server,
-	hdrComment string,
+	opt *SetDSCPDotConfigOpts,
 ) (Cfg, error) {
+	if opt == nil {
+		opt = &SetDSCPDotConfigOpts{}
+	}
 	warnings := []string{}
 
 	if server.CDNName == nil {
@@ -43,7 +54,7 @@ func MakeSetDSCPDotConfig(
 	dscpNumStr = strings.TrimPrefix(dscpNumStr, "set_dscp_")
 	dscpNumStr = strings.TrimSuffix(dscpNumStr, ".config")
 
-	text := makeHdrComment(hdrComment)
+	text := makeHdrComment(opt.HdrComment)
 
 	if _, err := strconv.Atoi(dscpNumStr); err != nil {
 		// TODO warn? We don't generally warn for client errors, because it can be an attack vector. Provide a more informative error return? Return a 404?

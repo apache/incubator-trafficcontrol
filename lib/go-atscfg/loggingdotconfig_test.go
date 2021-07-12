@@ -40,7 +40,7 @@ func TestMakeLoggingDotConfig(t *testing.T) {
 		"LogObject.Invalid":        "ShouldNotBeHere",
 	})
 
-	cfg, err := MakeLoggingDotConfig(server, params, hdrComment)
+	cfg, err := MakeLoggingDotConfig(server, params, &LoggingDotConfigOpts{HdrComment: hdrComment})
 	if err != nil {
 		t.Fatal(err)
 	}

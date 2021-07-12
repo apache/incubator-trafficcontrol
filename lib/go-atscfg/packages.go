@@ -32,11 +32,19 @@ const PackagesParamConfigFile = `package`
 const ContentTypePackages = ContentTypeTextASCII
 const LineCommentPackages = ""
 
+// PackagesOpts contains settings to configure generation options.
+type PackagesOpts struct {
+}
+
 // MakePackages returns the 'packages' ATS config file endpoint.
 // This is a JSON object, and should be served with an 'application/json' Content-Type.
 func MakePackages(
 	serverParams []tc.Parameter,
+	opts *PackagesOpts,
 ) (Cfg, error) {
+	if opts == nil {
+		opts = &PackagesOpts{}
+	}
 	warnings := []string{}
 
 	params := paramsToMultiMap(filterParams(serverParams, PackagesParamConfigFile, "", "", ""))

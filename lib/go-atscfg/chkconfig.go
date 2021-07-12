@@ -31,11 +31,19 @@ const ChkconfigParamConfigFile = `chkconfig`
 const ContentTypeChkconfig = ContentTypeTextASCII
 const LineCommentChkconfig = LineCommentHash
 
+// ChkconfigOpts contains settings to configure generation options.
+type ChkconfigOpts struct {
+}
+
 // MakeChkconfig returns the 'chkconfig' ATS config file endpoint.
 // This is a JSON object, and should be served with an 'application/json' Content-Type.
 func MakeChkconfig(
 	serverParams []tc.Parameter,
+	opt *ChkconfigOpts,
 ) (Cfg, error) {
+	if opt == nil {
+		opt = &ChkconfigOpts{}
+	}
 	warnings := []string{}
 
 	serverParams = filterParams(serverParams, ChkconfigParamConfigFile, "", "", "")

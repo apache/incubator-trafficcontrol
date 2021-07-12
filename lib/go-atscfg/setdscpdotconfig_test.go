@@ -33,7 +33,7 @@ func TestMakeSetDSCPDotConfig(t *testing.T) {
 	hdr := "myHeaderComment"
 	fileName := "set_dscp_42.config"
 
-	cfg, err := MakeSetDSCPDotConfig(fileName, server, hdr)
+	cfg, err := MakeSetDSCPDotConfig(fileName, server, &SetDSCPDotConfigOpts{HdrComment: hdr})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -58,7 +58,7 @@ func TestMakeSetDSCPDotConfigNonNumber(t *testing.T) {
 	hdr := "myHeaderComment"
 	fileName := "set_dscp_42a.config"
 
-	cfg, err := MakeSetDSCPDotConfig(fileName, server, hdr)
+	cfg, err := MakeSetDSCPDotConfig(fileName, server, &SetDSCPDotConfigOpts{HdrComment: hdr})
 	if err != nil {
 		t.Fatal(err)
 	}

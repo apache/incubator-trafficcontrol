@@ -31,11 +31,22 @@ const ContentTypeLogsDotXML = `text/xml`
 
 const LineCommentLogsDotXML = `<!--`
 
+// LogsXMLDotConfigOpts contains settings to configure generation options.
+type LogsXMLDotConfigOpts struct {
+	// HdrComment is the header comment to include at the beginning of the file.
+	// This should be the text desired, without comment syntax (like # or //). The file's comment syntax will be added.
+	// To omit the header comment, pass the empty string.
+	HdrComment string
+}
+
 func MakeLogsXMLDotConfig(
 	server *Server,
 	serverParams []tc.Parameter,
-	hdrCommentTxt string,
+	opt *LogsXMLDotConfigOpts,
 ) (Cfg, error) {
+	if opt == nil {
+		opt = &LogsXMLDotConfigOpts{}
+	}
 	warnings := []string{}
 
 	if server.Profile == nil {
@@ -48,7 +59,7 @@ func MakeLogsXMLDotConfig(
 	// Note LineCommentLogsDotXML must be a single-line comment!
 	// But this file doesn't have a single-line format, so we use <!-- for the header and promise it's on a single line
 	// Note! if this file is ever changed to have multi-line comments, LineCommentLogsDotXML will have to be changed to the empty string.
-	hdrComment := makeHdrComment(hdrCommentTxt)
+	hdrComment := makeHdrComment(opt.HdrComment)
 	hdrComment = strings.Replace(hdrComment, `# `, ``, -1)
 	hdrComment = strings.Replace(hdrComment, "\n", ``, -1)
 	text := "<!-- " + hdrComment + " -->\n"

@@ -31,11 +31,22 @@ const LoggingYAMLFileName = "logging.yaml"
 const ContentTypeLoggingDotYAML = "application/yaml; charset=us-ascii" // Note YAML has no IANA standard mime type. This is one of several common usages, and is likely to be the standardized value. If you're reading this, please check IANA to see if YAML has been added, and change this to the IANA definition if so. Also note we include 'charset=us-ascii' because YAML is commonly UTF-8, but ATS is likely to be unable to handle UTF.
 const LineCommentLoggingDotYAML = LineCommentHash
 
+// LoggingDotYAMLOpts contains settings to configure generation options.
+type LoggingDotYAMLOpts struct {
+	// HdrComment is the header comment to include at the beginning of the file.
+	// This should be the text desired, without comment syntax (like # or //). The file's comment syntax will be added.
+	// To omit the header comment, pass the empty string.
+	HdrComment string
+}
+
 func MakeLoggingDotYAML(
 	server *Server,
 	serverParams []tc.Parameter,
-	hdrComment string,
+	opts *LoggingDotYAMLOpts,
 ) (Cfg, error) {
+	if opts == nil {
+		opts = &LoggingDotYAMLOpts{}
+	}
 	warnings := []string{}
 	requiredIndent := 0
 
@@ -46,7 +57,7 @@ func MakeLoggingDotYAML(
 	paramData, paramWarns := paramsToMap(filterParams(serverParams, LoggingYAMLFileName, "", "", "location"))
 	warnings = append(warnings, paramWarns...)
 
-	hdr := makeHdrComment(hdrComment)
+	hdr := makeHdrComment(opts.HdrComment)
 
 	version, vWarn := getATSMajorVersion(serverParams)
 	warnings = append(warnings, vWarn...)

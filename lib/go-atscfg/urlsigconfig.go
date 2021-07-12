@@ -29,13 +29,24 @@ import (
 const ContentTypeURLSig = ContentTypeTextASCII
 const LineCommentURLSig = LineCommentHash
 
+// URLSigConfigOpts contains settings to configure generation options.
+type URLSigConfigOpts struct {
+	// HdrComment is the header comment to include at the beginning of the file.
+	// This should be the text desired, without comment syntax (like # or //). The file's comment syntax will be added.
+	// To omit the header comment, pass the empty string.
+	HdrComment string
+}
+
 func MakeURLSigConfig(
 	fileName string,
 	server *Server,
 	serverParams []tc.Parameter,
 	allURLSigKeys map[tc.DeliveryServiceName]tc.URLSigKeys,
-	hdrComment string,
+	opt *URLSigConfigOpts,
 ) (Cfg, error) {
+	if opt == nil {
+		opt = &URLSigConfigOpts{}
+	}
 	warnings := []string{}
 
 	if server.Profile == nil {
@@ -56,7 +67,7 @@ func MakeURLSigConfig(
 		urlSigKeys = tc.URLSigKeys{}
 	}
 
-	hdr := makeHdrComment(hdrComment)
+	hdr := makeHdrComment(opt.HdrComment)
 
 	sep := " = "
 

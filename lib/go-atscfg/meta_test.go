@@ -86,7 +86,7 @@ func TestMakeMetaConfig(t *testing.T) {
 		makeLocationParam("external.config"),
 	}
 
-	cfg, _, err := MakeConfigFilesList(cfgPath, server, serverParams, deliveryServices, dss, globalParams, cgs, topologies)
+	cfg, _, err := MakeConfigFilesList(cfgPath, server, serverParams, deliveryServices, dss, globalParams, cgs, topologies, &ConfigFilesListOpts{})
 	if err != nil {
 		t.Fatalf("MakeConfigFilesList: " + err.Error())
 	}
@@ -184,7 +184,7 @@ func TestMakeMetaConfig(t *testing.T) {
 	}
 
 	server.Type = "MID"
-	cfg, _, err = MakeConfigFilesList(cfgPath, server, serverParams, deliveryServices, dss, globalParams, cgs, topologies)
+	cfg, _, err = MakeConfigFilesList(cfgPath, server, serverParams, deliveryServices, dss, globalParams, cgs, topologies, &ConfigFilesListOpts{})
 	if err != nil {
 		t.Fatalf("MakeConfigFilesList: " + err.Error())
 	}

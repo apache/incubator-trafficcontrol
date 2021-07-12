@@ -29,18 +29,29 @@ import (
 const ContentTypeCacheDotConfig = ContentTypeTextASCII
 const LineCommentCacheDotConfig = LineCommentHash
 
+// CacheDotConfigOpts contains settings to configure generation options.
+type CacheDotConfigOpts struct {
+	// HdrComment is the header comment to include at the beginning of the file.
+	// This should be the text desired, without comment syntax (like # or //). The file's comment syntax will be added.
+	// To omit the header comment, pass the empty string.
+	HdrComment string
+}
+
 // MakeCacheDotConfig makes the ATS cache.config config file.
 func MakeCacheDotConfig(
 	server *Server,
 	servers []Server,
 	deliveryServices []DeliveryService,
 	deliveryServiceServers []DeliveryServiceServer,
-	hdrComment string,
+	opt *CacheDotConfigOpts,
 ) (Cfg, error) {
+	if opt == nil {
+		opt = &CacheDotConfigOpts{}
+	}
 	if tc.CacheTypeFromString(server.Type) == tc.CacheTypeMid {
-		return makeCacheDotConfigMid(server, deliveryServices, hdrComment)
+		return makeCacheDotConfigMid(server, deliveryServices, opt)
 	} else {
-		return makeCacheDotConfigEdge(server, servers, deliveryServices, deliveryServiceServers, hdrComment)
+		return makeCacheDotConfigEdge(server, servers, deliveryServices, deliveryServiceServers, opt)
 	}
 }
 
@@ -49,8 +60,11 @@ func makeCacheDotConfigEdge(
 	servers []Server,
 	deliveryServices []DeliveryService,
 	deliveryServiceServers []DeliveryServiceServer,
-	hdrComment string,
+	opt *CacheDotConfigOpts,
 ) (Cfg, error) {
+	if opt == nil {
+		opt = &CacheDotConfigOpts{}
+	}
 	warnings := []string{}
 
 	if server.Profile == nil {
@@ -139,7 +153,7 @@ func makeCacheDotConfigEdge(
 	if text == "" {
 		text = "\n" // If no params exist, don't send "not found," but an empty file. We know the profile exists.
 	}
-	hdr := makeHdrComment(hdrComment)
+	hdr := makeHdrComment(opt.HdrComment)
 	text = hdr + text
 
 	return Cfg{

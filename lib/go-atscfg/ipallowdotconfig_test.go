@@ -78,7 +78,7 @@ func TestMakeIPAllowDotConfig(t *testing.T) {
 
 	topologies := []tc.Topology{}
 
-	cfg, err := MakeIPAllowDotConfig(params, sv, svs, cgs, topologies, hdr)
+	cfg, err := MakeIPAllowDotConfig(params, sv, svs, cgs, topologies, &IPAllowDotConfigOpts{HdrComment: hdr})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -176,7 +176,7 @@ func TestMakeIPAllowDotConfigEdge(t *testing.T) {
 
 	topologies := []tc.Topology{}
 
-	cfg, err := MakeIPAllowDotConfig(params, sv, svs, cgs, topologies, hdr)
+	cfg, err := MakeIPAllowDotConfig(params, sv, svs, cgs, topologies, &IPAllowDotConfigOpts{HdrComment: hdr})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -262,7 +262,7 @@ func TestMakeIPAllowDotConfigNonDefaultV6Number(t *testing.T) {
 
 	topologies := []tc.Topology{}
 
-	cfg, err := MakeIPAllowDotConfig(params, sv, svs, cgs, topologies, hdr)
+	cfg, err := MakeIPAllowDotConfig(params, sv, svs, cgs, topologies, &IPAllowDotConfigOpts{HdrComment: hdr})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -368,7 +368,7 @@ func TestMakeIPAllowDotConfigTopologies(t *testing.T) {
 
 	//	topologies := []tc.Topology{}
 
-	cfg, err := MakeIPAllowDotConfig(params, sv, svs, cgs, topologies, hdr)
+	cfg, err := MakeIPAllowDotConfig(params, sv, svs, cgs, topologies, &IPAllowDotConfigOpts{HdrComment: hdr})
 	if err != nil {
 		t.Fatal(err)
 	}

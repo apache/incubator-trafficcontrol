@@ -43,7 +43,7 @@ func TestMakeServerUnknown(t *testing.T) {
 		"header":     []string{"//hdr"},
 	})
 
-	cfg, err := MakeServerUnknown(fileName, server, params, hdr)
+	cfg, err := MakeServerUnknown(fileName, server, params, &ServerUnknownOpts{HdrComment: hdr})
 	if err != nil {
 		t.Fatal(err)
 	}

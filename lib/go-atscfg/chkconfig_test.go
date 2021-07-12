@@ -49,7 +49,7 @@ func TestMakeChkconfig(t *testing.T) {
 		},
 	}
 
-	cfg, err := MakeChkconfig(params)
+	cfg, err := MakeChkconfig(params, &ChkconfigOpts{})
 	if err != nil {
 		t.Fatal(err)
 	}

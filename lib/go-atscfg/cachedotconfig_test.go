@@ -60,7 +60,7 @@ func TestMakeCacheDotConfig(t *testing.T) {
 
 	hdr := "myHeaderComment"
 
-	cfg, err := MakeCacheDotConfig(server, servers, dses, dss, hdr)
+	cfg, err := MakeCacheDotConfig(server, servers, dses, dss, &CacheDotConfigOpts{HdrComment: hdr})
 	if err != nil {
 		t.Fatal(err)
 	}

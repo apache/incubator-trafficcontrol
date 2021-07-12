@@ -58,7 +58,7 @@ func TestMakeStorageDotConfig(t *testing.T) {
 	   	/dev/ssk volume=3
 	*/
 
-	cfg, err := MakeStorageDotConfig(server, params, hdr)
+	cfg, err := MakeStorageDotConfig(server, params, &StorageDotConfigOpts{HdrComment: hdr})
 	if err != nil {
 		t.Fatal(err)
 	}

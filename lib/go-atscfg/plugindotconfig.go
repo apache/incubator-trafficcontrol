@@ -28,11 +28,22 @@ const PluginFileName = "plugin.config"
 const ContentTypePluginDotConfig = ContentTypeTextASCII
 const LineCommentPluginDotConfig = LineCommentHash
 
+// PluginDotConfigOpts contains settings to configure generation options.
+type PluginDotConfigOpts struct {
+	// HdrComment is the header comment to include at the beginning of the file.
+	// This should be the text desired, without comment syntax (like # or //). The file's comment syntax will be added.
+	// To omit the header comment, pass the empty string.
+	HdrComment string
+}
+
 func MakePluginDotConfig(
 	server *Server,
 	serverParams []tc.Parameter,
-	hdrComment string,
+	opt *PluginDotConfigOpts,
 ) (Cfg, error) {
+	if opt == nil {
+		opt = &PluginDotConfigOpts{}
+	}
 	warnings := []string{}
 	if server.Profile == nil {
 		return Cfg{}, makeErr(warnings, "server profile missing")
@@ -41,7 +52,7 @@ func MakePluginDotConfig(
 	paramData, paramWarns := paramsToMap(filterParams(serverParams, PluginFileName, "", "", "location"))
 	warnings = append(warnings, paramWarns...)
 
-	hdr := makeHdrComment(hdrComment)
+	hdr := makeHdrComment(opt.HdrComment)
 	txt := genericProfileConfig(paramData, PluginSeparator)
 	if txt == "" {
 		txt = "\n" // If no params exist, don't send "not found," but an empty file. We know the profile exists.

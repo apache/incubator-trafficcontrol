@@ -44,7 +44,7 @@ func TestMakeDropQStringDotConfig(t *testing.T) {
 
 	hdr := "myHeaderComment"
 
-	cfg, err := MakeDropQStringDotConfig(server, params, hdr)
+	cfg, err := MakeDropQStringDotConfig(server, params, &DropQStringDotConfigOpts{HdrComment: hdr})
 	if err != nil {
 		t.Fatal(err)
 	}

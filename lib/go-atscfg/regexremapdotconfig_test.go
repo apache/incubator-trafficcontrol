@@ -44,7 +44,7 @@ func TestMakeRegexRemapDotConfig(t *testing.T) {
 
 	dses := []DeliveryService{*ds}
 
-	cfg, err := MakeRegexRemapDotConfig(fileName, server, dses, hdr)
+	cfg, err := MakeRegexRemapDotConfig(fileName, server, dses, &RegexRemapDotConfigOpts{HdrComment: hdr})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -93,7 +93,7 @@ func TestMakeRegexRemapDotConfigUnusedDS(t *testing.T) {
 
 	dses := []DeliveryService{*ds, *ds1}
 
-	cfg, err := MakeRegexRemapDotConfig(fileName, server, dses, hdr)
+	cfg, err := MakeRegexRemapDotConfig(fileName, server, dses, &RegexRemapDotConfigOpts{HdrComment: hdr})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -146,7 +146,7 @@ func TestMakeRegexRemapDotConfigReplaceReturns(t *testing.T) {
 
 	dses := []DeliveryService{*ds}
 
-	cfg, err := MakeRegexRemapDotConfig(fileName, server, dses, hdr)
+	cfg, err := MakeRegexRemapDotConfig(fileName, server, dses, &RegexRemapDotConfigOpts{HdrComment: hdr})
 	if err != nil {
 		t.Fatal(err)
 	}

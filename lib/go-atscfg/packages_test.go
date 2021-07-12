@@ -31,7 +31,7 @@ func TestMakePackages(t *testing.T) {
 	}
 	paramData := makeParamsFromMapArr("serverProfile", LogsXMLFileName, params)
 
-	cfg, err := MakePackages(paramData)
+	cfg, err := MakePackages(paramData, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

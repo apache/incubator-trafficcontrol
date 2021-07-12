@@ -48,6 +48,14 @@ const LineCommentIPAllowDotYAML = LineCommentHash
 const MethodPush = `PUSH`
 const MethodPurge = `PURGE`
 
+// AStatsDotConfigOpts contains settings to configure generation options.
+type IPAllowDotYAMLOpts struct {
+	// HdrComment is the header comment to include at the beginning of the file.
+	// This should be the text desired, without comment syntax (like # or //). The file's comment syntax will be added.
+	// To omit the header comment, pass the empty string.
+	HdrComment string
+}
+
 // MakeIPAllowDotYAML creates the ip_allow.yaml ATS 9+ config file.
 func MakeIPAllowDotYAML(
 	serverParams []tc.Parameter,
@@ -55,8 +63,11 @@ func MakeIPAllowDotYAML(
 	servers []Server,
 	cacheGroups []tc.CacheGroupNullable,
 	topologies []tc.Topology,
-	hdrComment string,
+	opt *IPAllowDotYAMLOpts,
 ) (Cfg, error) {
+	if opt == nil {
+		opt = &IPAllowDotYAMLOpts{}
+	}
 	warnings := []string{}
 
 	if server.Cachegroup == nil {
@@ -312,7 +323,7 @@ func MakeIPAllowDotYAML(
 		})
 	}
 
-	text := makeHdrComment(hdrComment)
+	text := makeHdrComment(opt.HdrComment)
 	text += `
 ip_allow:`
 	for _, al := range ipAllowDat {

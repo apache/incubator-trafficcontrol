@@ -32,6 +32,10 @@ type CfgMeta struct {
 	Path string
 }
 
+// ConfigFilesListOpts contains settings to configure generation options.
+type ConfigFilesListOpts struct {
+}
+
 // MakeMetaObj returns the list of config files, any warnings, and any errors.
 func MakeConfigFilesList(
 	configDir string,
@@ -42,7 +46,11 @@ func MakeConfigFilesList(
 	globalParams []tc.Parameter,
 	cacheGroupArr []tc.CacheGroupNullable,
 	topologies []tc.Topology,
+	opt *ConfigFilesListOpts,
 ) ([]CfgMeta, []string, error) {
+	if opt == nil {
+		opt = &ConfigFilesListOpts{}
+	}
 	warnings := []string{}
 
 	if server.Cachegroup == nil {

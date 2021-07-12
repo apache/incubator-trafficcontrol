@@ -31,7 +31,7 @@ func TestMake12MFacts(t *testing.T) {
 
 	hdr := "myHeaderComment"
 
-	cfg, err := Make12MFacts(server, hdr)
+	cfg, err := Make12MFacts(server, &Config12MFactsOpts{HdrComment: hdr})
 	if err != nil {
 		t.Fatal(err)
 	}

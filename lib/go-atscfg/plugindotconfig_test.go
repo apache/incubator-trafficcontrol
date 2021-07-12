@@ -37,7 +37,7 @@ func TestMakePluginDotConfig(t *testing.T) {
 	server := makeGenericServer()
 	server.Profile = &profileName
 
-	cfg, err := MakePluginDotConfig(server, paramData, hdr)
+	cfg, err := MakePluginDotConfig(server, paramData, &PluginDotConfigOpts{HdrComment: hdr})
 	if err != nil {
 		t.Fatal(err)
 	}

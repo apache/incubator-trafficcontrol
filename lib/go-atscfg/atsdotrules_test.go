@@ -60,7 +60,7 @@ func TestMakeATSDotRules(t *testing.T) {
 		},
 	}
 
-	cfg, err := MakeATSDotRules(server, serverParams, hdr)
+	cfg, err := MakeATSDotRules(server, serverParams, &ATSDotRulesOpts{HdrComment: hdr})
 	if err != nil {
 		t.Fatal(err)
 	}
