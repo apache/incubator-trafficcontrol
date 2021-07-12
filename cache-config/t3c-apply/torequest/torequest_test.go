@@ -38,13 +38,13 @@ var testCfg config.Cfg = config.Cfg{
 	Retries:             3,
 	RevalWaitTime:       2,
 	ReverseProxyDisable: false,
-	RunMode:             t3cutil.ModeRevalidate,
+	Files:               t3cutil.ApplyFilesFlagReval,
 	SkipOSCheck:         false,
 	TOTimeoutMS:         1000,
 	TOUser:              "mickey",
 	TOPass:              "mouse",
 	TOURL:               "http://mouse.com",
-	WaitForParents:      "false",
+	WaitForParents:      false,
 	YumOptions:          "none",
 }
 

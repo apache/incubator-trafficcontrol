@@ -321,7 +321,6 @@ func RandomDuration(max time.Duration) time.Duration {
 }
 
 func CheckUser(cfg config.Cfg) bool {
-	result := true
 	userInfo, err := user.Current()
 
 	if err != nil {
@@ -329,24 +328,29 @@ func CheckUser(cfg config.Cfg) bool {
 		return false
 	}
 
-	switch cfg.RunMode {
-	case t3cutil.ModeBadAss:
-		fallthrough
-	case t3cutil.ModeSyncDS:
-		if userInfo.Username != "root" {
-			log.Errorf("Only the root user may run in BadAss, or SyncDS mode, current user: %s\n",
-				userInfo.Username)
-			result = false
+	log.Infof("user check: report-only=%v service-action=%v install-packages=%v files=%v user='%v'\n", cfg.ReportOnly, cfg.ServiceAction, cfg.InstallPackages, cfg.Files, userInfo.Username)
+
+	// TODO remove check? Let people run as any user, if it succeeds? Warn?
+	if userInfo.Username != "root" && !cfg.ReportOnly {
+		if cfg.ServiceAction == t3cutil.ApplyServiceActionFlagRestart {
+			log.Errorf("Only the root user may restart services, current user: %s\n", userInfo.Username)
+			return false
+		} else if cfg.InstallPackages {
+			log.Errorf("Only the root user may install packages, current user: %s\n", userInfo.Username)
+			return false
+		} else if cfg.Files == t3cutil.ApplyFilesFlagAll {
+			// TODO remove? Why would reval be ok, but not other files?
+			log.Errorf("Only the root user may set non-reval files, current user: %s\n", userInfo.Username)
+			return false
 		}
-	default:
-		log.Infof("current mode: %s, run user: %s\n", cfg.RunMode.String(), userInfo.Username)
 	}
-	return result
+
+	return true
 }
 
 func CleanTmpDir(cfg config.Cfg) bool {
-	if cfg.RunMode == t3cutil.ModeReport {
-		log.Infof("Mode is '%v', not cleaning tmp directory", cfg.RunMode)
+	if cfg.ReportOnly {
+		log.Infoln("Running report only, not cleaning tmp directory")
 		return true
 	}
 
@@ -403,34 +407,34 @@ func doMkDirWithOwner(name string, cfg config.Cfg, uid *int, gid *int, all bool)
 		return true
 	}
 	if err != nil {
-		if cfg.RunMode != t3cutil.ModeReport {
-			if err != nil { // the path does not exist.
-				if all {
-					err = os.MkdirAll(name, 0755)
-				} else {
-					err = os.Mkdir(name, 0755)
-				}
-				if err != nil {
-					log.Errorf("unable to create the directory '%s': %v", name, err)
-					return false
-				}
+		if cfg.ReportOnly {
+			log.Infof("Reporting only: the directory %s does not exist and was not created", name)
+			return true
+		}
 
-				if uid != nil && gid != nil {
-					err = os.Chown(name, *uid, *gid)
-					if err != nil {
-						log.Errorf("unable to chown directory uid/gid, '%s': %v", name, err)
-						return false
-					}
-				}
-			} else if fileInfo.Mode().IsDir() {
-				log.Debugf("the directory: %s, already exists\n", name)
+		if err != nil { // the path does not exist.
+			if all {
+				err = os.MkdirAll(name, 0755)
 			} else {
-				log.Errorf("there is a file named, '%s' that is not a directory: %v", name, err)
+				err = os.Mkdir(name, 0755)
+			}
+			if err != nil {
+				log.Errorf("unable to create the directory '%s': %v", name, err)
 				return false
 			}
+
+			if uid != nil && gid != nil {
+				err = os.Chown(name, *uid, *gid)
+				if err != nil {
+					log.Errorf("unable to chown directory uid/gid, '%s': %v", name, err)
+					return false
+				}
+			}
+		} else if fileInfo.Mode().IsDir() {
+			log.Debugf("the directory: %s, already exists\n", name)
 		} else {
-			log.Infof("the directory %s does not exist and was not created, runMode: %s", name, cfg.RunMode)
-			return true
+			log.Errorf("there is a file named, '%s' that is not a directory: %v", name, err)
+			return false
 		}
 	}
 	return false
@@ -452,7 +456,8 @@ func UpdateMaxmind(cfg config.Cfg) bool {
 	}
 
 	// Dont update for report mode
-	if cfg.RunMode == t3cutil.ModeReport {
+	if cfg.ReportOnly {
+		log.Infof("Reporting: maxmind location '%v', reporting only and not modifying file\n", cfg.MaxMindLocation)
 		return false
 	}
 

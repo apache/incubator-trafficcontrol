@@ -30,7 +30,6 @@ import (
 )
 
 func main() {
-	modeStr := getopt.StringLong("run-mode", 'm', "report", "[badass | report | revalidate | syncds] run mode, default is 'report'")
 	// presumably calculated by by t3c-check-refs
 	// TODO remove? The blueprint says t3c/ORT will no longer install packages
 	pluginPackagesInstalledStr := getopt.StringLong("plugin-packages-installed", 'p', "", "comma-delimited list of ATS plugin packages which were installed by t3c")
@@ -56,13 +55,6 @@ func main() {
 	pluginPackagesInstalled = StrMap(pluginPackagesInstalled, strings.TrimSpace)
 	pluginPackagesInstalled = StrRemoveIf(pluginPackagesInstalled, StrIsEmpty)
 
-	mode := t3cutil.StrToMode(*modeStr)
-	if mode == t3cutil.ModeInvalid {
-		fmt.Fprintf(os.Stderr, "Unknown mode '"+*modeStr+"'")
-		getopt.PrintUsage(os.Stdout)
-		os.Exit(-1)
-	}
-
 	// ATS restart is needed if:
 	// [x] 1. mode was badass
 	// [x] 2. any ATS Plugin was installed
@@ -74,10 +66,6 @@ func main() {
 	// [ ] 2. any of the following were changed: url_sig*, uri_signing*, hdr_rw*, (plugin.config), (50-ats.rules),
 	//        ssl/*.cer, ssl/*.key, anything else in /trafficserver,
 	//
-
-	if mode == t3cutil.ModeBadAss {
-		ExitRestart()
-	}
 
 	if len(pluginPackagesInstalled) > 0 {
 		ExitRestart()

@@ -49,7 +49,7 @@ func generate(cfg config.Cfg) ([]t3cutil.ATSConfigFile, error) {
 		return nil, errors.New("requesting: " + err.Error())
 	}
 	args := []string{
-		"--dir=" + config.TSConfigDir,
+		"--dir=" + cfg.TsConfigDir,
 	}
 
 	if cfg.LogLocationErr == log.LogLocationNull {
@@ -71,7 +71,7 @@ func generate(cfg config.Cfg) ([]t3cutil.ATSConfigFile, error) {
 	if cfg.DefaultClientTLSVersions != nil {
 		args = append(args, "--default-client-tls-versions="+*cfg.DefaultClientTLSVersions+"")
 	}
-	if cfg.RunMode == t3cutil.ModeRevalidate {
+	if cfg.Files == t3cutil.ApplyFilesFlagReval {
 		args = append(args, "--revalidate-only")
 	}
 	args = append(args, "--via-string-release="+strconv.FormatBool(!cfg.OmitViaStringRelease))
@@ -320,11 +320,10 @@ func checkRefs(cfg config.Cfg, cfgFile []byte, filesAdding []string) error {
 }
 
 // checkReload is a helper for the sub-command t3c-check-reload.
-func checkReload(mode t3cutil.Mode, pluginPackagesInstalled []string, changedConfigFiles []string) (t3cutil.ServiceNeeds, error) {
-	log.Infof("t3c-check-reload calling with mode '%v' pluginPackagesInstalled '%v' changedConfigFiles '%v'\n", mode, pluginPackagesInstalled, changedConfigFiles)
+func checkReload(pluginPackagesInstalled []string, changedConfigFiles []string) (t3cutil.ServiceNeeds, error) {
+	log.Infof("t3c-check-reload calling with pluginPackagesInstalled '%v' changedConfigFiles '%v'\n", pluginPackagesInstalled, changedConfigFiles)
 
 	stdOut, stdErr, code := t3cutil.Do(`t3c`, `check`, `reload`,
-		"--run-mode="+mode.String(),
 		"--plugin-packages-installed="+strings.Join(pluginPackagesInstalled, ","),
 		"--changed-config-paths="+strings.Join(changedConfigFiles, ","),
 	)

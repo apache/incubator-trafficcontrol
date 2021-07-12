@@ -46,7 +46,10 @@ const (
 )
 
 func runSysctl(cfg config.Cfg) {
-	if cfg.RunMode == t3cutil.ModeBadAss {
+	if cfg.ReportOnly {
+		return
+	}
+	if cfg.ServiceAction == t3cutil.ApplyServiceActionFlagRestart {
 		_, rc, err := util.ExecCommand("/usr/sbin/sysctl", "-p")
 		if err != nil {
 			log.Errorln("sysctl -p failed")
@@ -68,11 +71,11 @@ func main() {
 	}
 
 	if cfg.UseGit == config.UseGitYes {
-		err := util.EnsureConfigDirIsGitRepo(config.TSConfigDir)
+		err := util.EnsureConfigDirIsGitRepo(cfg)
 		if err != nil {
-			log.Errorln("Ensuring config directory '" + config.TSConfigDir + "' is a git repo - config may not be a git repo! " + err.Error())
+			log.Errorln("Ensuring config directory '" + cfg.TsConfigDir + "' is a git repo - config may not be a git repo! " + err.Error())
 		} else {
-			log.Infoln("Successfully ensured ATS config directory '" + config.TSConfigDir + "' is a git repo")
+			log.Infoln("Successfully ensured ATS config directory '" + cfg.TsConfigDir + "' is a git repo")
 		}
 	} else {
 		log.Infoln("UseGit not 'yes', not creating git repo")
@@ -81,8 +84,8 @@ func main() {
 	if cfg.UseGit == config.UseGitYes || cfg.UseGit == config.UseGitAuto {
 		// commit anything someone else changed when we weren't looking,
 		// with a keyword indicating it wasn't our change
-		if err := util.MakeGitCommitAll(config.TSConfigDir, util.GitChangeNotSelf, cfg.RunMode, true); err != nil {
-			log.Errorln("git committing existing changes, dir '" + config.TSConfigDir + "': " + err.Error())
+		if err := util.MakeGitCommitAll(cfg, util.GitChangeNotSelf, true); err != nil {
+			log.Errorln("git committing existing changes, dir '" + cfg.TsConfigDir + "': " + err.Error())
 		}
 	}
 
@@ -101,7 +104,7 @@ func main() {
 		log.Errorln("CleanTmpDir failed, cannot continue")
 		os.Exit(GeneralFailure)
 	}
-	if cfg.RunMode != t3cutil.ModeReport {
+	if !cfg.ReportOnly {
 		if !lock.GetLock(config.TmpBase + "/to_ort.lock") {
 			os.Exit(AlreadyRunning)
 		}
@@ -118,7 +121,7 @@ func main() {
 
 	// if running in Revalidate mode, check to see if it's
 	// necessary to continue
-	if cfg.RunMode == t3cutil.ModeRevalidate {
+	if cfg.Files == t3cutil.ApplyFilesFlagReval {
 		syncdsUpdate, err = trops.CheckRevalidateState(false)
 		if err != nil || syncdsUpdate == torequest.UpdateTropsNotNeeded {
 			if err != nil {
@@ -134,15 +137,16 @@ func main() {
 			log.Errorln(err)
 			GitCommitAndExit(SyncDSError, cfg)
 		}
-		if cfg.RunMode == t3cutil.ModeSyncDS && syncdsUpdate == torequest.UpdateTropsNotNeeded {
+		if !cfg.IgnoreUpdateFlag && cfg.Files == t3cutil.ApplyFilesFlagAll && syncdsUpdate == torequest.UpdateTropsNotNeeded {
 			// check for maxmind db updates even if we have no other updates
 			CheckMaxmindUpdate(cfg)
 			GitCommitAndExit(Success, cfg)
 		}
 	}
 
-	if cfg.RunMode == t3cutil.ModeRevalidate {
-		log.Infoln("======== Revalidating, no package processing needed ========")
+	if cfg.Files != t3cutil.ApplyFilesFlagAll {
+		// make sure we got the data necessary to check packages
+		log.Infoln("======== Didn't get all files, no package processing needed or possible ========")
 	} else {
 		log.Infoln("======== Start processing packages  ========")
 		err = trops.ProcessPackages()
@@ -159,7 +163,7 @@ func main() {
 		}
 	}
 
-	log.Debugf("Preparing to fetch the config files for %s, cfg.RunMode: %s, syncdsUpdate: %s\n", cfg.CacheHostName, cfg.RunMode, syncdsUpdate)
+	log.Debugf("Preparing to fetch the config files for %s, files: %s, syncdsUpdate: %s\n", cfg.CacheHostName, cfg.Files, syncdsUpdate)
 	err = trops.GetConfigFileList()
 	if err != nil {
 		log.Errorf("Unable to continue: %s\n", err)
@@ -229,8 +233,8 @@ func main() {
 func GitCommitAndExit(exitCode int, cfg config.Cfg) {
 	success := exitCode == Success
 	if cfg.UseGit == config.UseGitYes || cfg.UseGit == config.UseGitAuto {
-		if err := util.MakeGitCommitAll(config.TSConfigDir, util.GitChangeIsSelf, cfg.RunMode, success); err != nil {
-			log.Errorln("git committing existing changes, dir '" + config.TSConfigDir + "': " + err.Error())
+		if err := util.MakeGitCommitAll(cfg, util.GitChangeIsSelf, success); err != nil {
+			log.Errorln("git committing existing changes, dir '" + cfg.TsConfigDir + "': " + err.Error())
 		}
 	}
 	os.Exit(exitCode)

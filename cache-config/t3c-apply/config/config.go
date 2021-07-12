@@ -36,7 +36,8 @@ import (
 )
 
 var TSHome string = "/opt/trafficserver"
-var TSConfigDir string = "/opt/trafficserver/etc/trafficserver"
+
+const DefaultTSConfigDir = "/opt/trafficserver/etc/trafficserver"
 
 const (
 	StatusDir          = "/var/lib/trafficcontrol-cache-config/status"
@@ -81,7 +82,6 @@ type Cfg struct {
 	Retries             int
 	RevalWaitTime       time.Duration
 	ReverseProxyDisable bool
-	RunMode             t3cutil.Mode
 	SkipOSCheck         bool
 	TOInsecure          bool
 	TOTimeoutMS         time.Duration
@@ -89,13 +89,12 @@ type Cfg struct {
 	TOPass              string
 	TOURL               string
 	DNSLocalBind        bool
-	WaitForParents      WaitForParentsFlag
+	WaitForParents      bool
 	YumOptions          string
 	// UseGit is whether to create and maintain a git repo of config changes.
 	// Note this only applies to the ATS config directory inferred or set via the flag.
 	//      It does not do anything for config files generated outside that location.
 	UseGit                      UseGitFlag
-	SyncDSUpdatesIPAllow        bool
 	OmitViaStringRelease        bool
 	DisableParentConfigComments bool
 	DefaultClientEnableH2       *bool
@@ -105,6 +104,14 @@ type Cfg struct {
 	MaxMindLocation string
 	TsHome          string
 	TsConfigDir     string
+
+	ServiceAction     t3cutil.ApplyServiceActionFlag
+	ReportOnly        bool
+	Files             t3cutil.ApplyFilesFlag
+	InstallPackages   bool
+	IgnoreUpdateFlag  bool
+	NoUnsetUpdateFlag bool
+	UpdateIPAllow     bool
 }
 
 type UseGitFlag string
@@ -215,20 +222,17 @@ func GetCfg() (Cfg, error) {
 	retriesPtr := getopt.IntLong("num-retries", 'r', 3, "[number] retry connection to Traffic Ops URL [number] times, default is 3")
 	revalWaitTimePtr := getopt.IntLong("reval-wait-time", 'T', 60, "[seconds] wait a random number of seconds between 0 and [seconds] before revlidation, default is 60")
 	reverseProxyDisablePtr := getopt.BoolLong("reverse-proxy-disable", 'p', "[false | true] bypass the reverse proxy even if one has been configured default is false")
-	runModePtr := getopt.StringLong("run-mode", 'm', "report", "[badass | report | revalidate | syncds] run mode, default is 'report'")
-	skipOSCheckPtr := getopt.BoolLong("skip-os-check", 'O', "[false | true] skip os check, default is false")
+	skipOSCheckPtr := getopt.BoolLong("skip-os-check", 'S', "[false | true] skip os check, default is false")
 	toInsecurePtr := getopt.BoolLong("traffic-ops-insecure", 'I', "[true | false] ignore certificate errors from Traffic Ops")
 	toTimeoutMSPtr := getopt.IntLong("traffic-ops-timeout-milliseconds", 't', 30000, "Timeout in milli-seconds for Traffic Ops requests, default is 30000")
 	toURLPtr := getopt.StringLong("traffic-ops-url", 'u', "", "Traffic Ops URL. Must be the full URL, including the scheme. Required. May also be set with the environment variable TO_URL")
 	toUserPtr := getopt.StringLong("traffic-ops-user", 'U', "", "Traffic Ops username. Required. May also be set with the environment variable TO_USER")
 	toPassPtr := getopt.StringLong("traffic-ops-password", 'P', "", "Traffic Ops password. Required. May also be set with the environment variable TO_PASS")
 	tsHomePtr := getopt.StringLong("trafficserver-home", 'R', "", "Trafficserver Package directory. May also be set with the environment variable TS_HOME")
-	waitForParentsPtr := getopt.StringLong("wait-for-parents", 'W', "reval", "[true | false | reval] do not update if parent_pending = 1 in the update json. default is reval, wait for parents in reval mode but not syncds (unless Traffic Ops !UseRevalPending, and then wait in syncds)")
 	dnsLocalBindPtr := getopt.BoolLong("dns-local-bind", 'b', "[true | false] whether to use the server's Service Addresses to set the ATS DNS local bind address")
 	helpPtr := getopt.BoolLong("help", 'h', "Print usage information and exit")
 	useGitStr := getopt.StringLong("git", 'g', "auto", "Create and use a git repo in the config directory. Options are yes, no, and auto. If yes, create and use. If auto, use if it exist. Default is auto.")
-	syncdsUpdatesIPAllowPtr := getopt.BoolLong("syncds-updates-ipallow", 'S', "Whether syncds mode will update ipallow. This exists because ATS had a bug where reloading after changing ipallow would block everything. Default is false.")
-	omitViaStringReleasePtr := getopt.BoolLong("omit-via-string-release", 'o', "Whether to set the records.config via header to the ATS release from the RPM. Default true.")
+	omitViaStringReleasePtr := getopt.BoolLong("omit-via-string-release", 'e', "Whether to set the records.config via header to the ATS release from the RPM. Default true.")
 	disableParentConfigCommentsPtr := getopt.BoolLong("disable-parent-config-comments", 'c', "Whether to disable verbose parent.config comments. Default false.")
 	defaultEnableH2 := getopt.BoolLong("default-client-enable-h2", '2', "Whether to enable HTTP/2 on Delivery Services by default, if they have no explicit Parameter. This is irrelevant if ATS records.config is not serving H2. If omitted, H2 is disabled.")
 	defaultClientTLSVersions := getopt.StringLong("default-client-tls-versions", 'V', "", "Comma-delimited list of default TLS versions for Delivery Services with no Parameter, e.g. --default-tls-versions='1.1,1.2,1.3'. If omitted, all versions are enabled.")
@@ -236,7 +240,106 @@ func GetCfg() (Cfg, error) {
 	verbosePtr := getopt.CounterLong("verbose", 'v', `Log verbosity. Logging is output to stderr. By default, errors are logged. To log warnings, pass '-v'. To log info, pass '-vv'. To omit error logging, see '-s'`)
 	silentPtr := getopt.BoolLong("silent", 's', `Silent. Errors are not logged, and the 'verbose' flag is ignored. If a fatal error occurs, the return code will be non-zero but no text will be output to stderr`)
 
+	const waitForParentsFlagName = "wait-for-parents"
+	waitForParentsPtr := getopt.BoolLong(waitForParentsFlagName, 'W', "[true | false] do not update if parent_pending = 1 in the update json. Default is false")
+
+	const serviceActionFlagName = "service-action"
+	const defaultServiceAction = t3cutil.ApplyServiceActionFlagReload
+	serviceActionPtr := getopt.EnumLong(serviceActionFlagName, 'a', []string{string(t3cutil.ApplyServiceActionFlagReload), string(t3cutil.ApplyServiceActionFlagRestart), string(t3cutil.ApplyServiceActionFlagNone), ""}, "", "action to perform on Traffic Server and other system services. Only reloads if necessary, but always restarts. Default is 'reload'")
+
+	const reportOnlyFlagName = "report-only"
+	reportOnlyPtr := getopt.BoolLong(reportOnlyFlagName, 'o', "Log information about necessary files and actions, but take no action. Default is false")
+
+	const filesFlagName = "files"
+	const defaultFiles = t3cutil.ApplyFilesFlagAll
+	filesPtr := getopt.EnumLong(filesFlagName, 'f', []string{string(t3cutil.ApplyFilesFlagAll), string(t3cutil.ApplyFilesFlagReval), ""}, "", "[all | reval] Which files to generate. If reval, the Traffic Ops server reval_pending flag is used instead of the upd_pending flag. Default is 'all'")
+
+	const installPackagesFlagName = "install-packages"
+	installPackagesPtr := getopt.BoolLong(installPackagesFlagName, 'k', "Whether to install necessary packages. Default is false.")
+
+	const ignoreUpdateFlagName = "ignore-update-flag"
+	ignoreUpdateFlagPtr := getopt.BoolLong(ignoreUpdateFlagName, 'F', "Whether to ignore the upd_pending or reval_pending flag in Traffic Ops, and always generate and apply files. If true, the flag is still unset in Traffic Ops after files are applied. Default is false.")
+	noUnsetUpdateFlagPtr := getopt.BoolLong("no-unset-update-flag", 'n', "Whether to not unset the update flag in Traffic Ops after applying files. This option makes it possible to generate test or debug configuration from a production Traffic Ops without un-setting queue or reval flags. Default is false.")
+
+	const updateIPAllowFlagName = "update-ipallow"
+	updateIPAllowPtr := getopt.BoolLong(updateIPAllowFlagName, 'A', "Whether ipallow file will be updated if necessary. This exists because ATS had a bug where reloading after changing ipallow would block everything. Default is false.")
+
+	const runModeFlagName = "run-mode"
+	runModePtr := getopt.StringLong(runModeFlagName, 'm', "", `[badass | report | revalidate | syncds] run mode. Optional, convenience flag which sets other flags for common usage scenarios.
+syncds     keeps the defaults:
+                --report-only=false
+                --files=all
+                --install-packages=false
+                --service-action=reload
+                --ignore-update-flag=false
+                --update-ipallow=false
+                --no-unset-update-flag=false
+revalidate sets --files=reval
+                --wait-for-parents=true
+badass     sets --install-packages=true
+                --service-action=restart
+                --ignore-update-flag=true
+                --update-ipallow=true
+report     sets --report-only=true
+
+Note the 'syncds' settings are all the flag defaults. Hence, if no mode is set, the default is effectively 'syncds'.
+
+If any of the related flags are also set, they override the mode's default behavior.`)
+
 	getopt.Parse()
+
+	// The mode is never exposed outside this function to prevent accidentally changing behavior based on it,
+	// so we want to log what flags the mode set here, to aid debugging.
+	// But we can't do that until the loggers are initialized.
+	modeLogStrs := []string{}
+	if getopt.IsSet(runModeFlagName) {
+		runMode := t3cutil.StrToMode(*runModePtr)
+		if runMode == t3cutil.ModeInvalid {
+			return Cfg{}, errors.New(*runModePtr + " is an invalid mode.")
+		}
+		switch runMode {
+		case t3cutil.ModeSyncDS:
+			// syncds flags are all the defaults, no need to change anything
+		case t3cutil.ModeRevalidate:
+			if !getopt.IsSet(filesFlagName) {
+				modeLogStrs = append(modeLogStrs, runMode.String()+" setting --"+filesFlagName+"="+t3cutil.ApplyFilesFlagReval.String())
+				*filesPtr = t3cutil.ApplyFilesFlagReval.String()
+			}
+			if !getopt.IsSet(waitForParentsFlagName) {
+				modeLogStrs = append(modeLogStrs, runMode.String()+" setting --"+waitForParentsFlagName+"="+"true")
+				*waitForParentsPtr = true
+			}
+		case t3cutil.ModeBadAss:
+			if !getopt.IsSet(serviceActionFlagName) {
+				modeLogStrs = append(modeLogStrs, runMode.String()+" setting --"+serviceActionFlagName+"="+t3cutil.ApplyServiceActionFlagRestart.String())
+				*serviceActionPtr = t3cutil.ApplyServiceActionFlagRestart.String()
+			}
+			if !getopt.IsSet(installPackagesFlagName) {
+				modeLogStrs = append(modeLogStrs, runMode.String()+" setting --"+installPackagesFlagName+"="+"true")
+				*installPackagesPtr = true
+			}
+			if !getopt.IsSet(ignoreUpdateFlagName) {
+				modeLogStrs = append(modeLogStrs, runMode.String()+" setting --"+ignoreUpdateFlagName+"="+"true")
+				*ignoreUpdateFlagPtr = true
+			}
+			if !getopt.IsSet(updateIPAllowFlagName) {
+				modeLogStrs = append(modeLogStrs, runMode.String()+" setting --"+updateIPAllowFlagName+"="+"true")
+				*updateIPAllowPtr = true
+			}
+		case t3cutil.ModeReport:
+			if !getopt.IsSet(reportOnlyFlagName) {
+				modeLogStrs = append(modeLogStrs, runMode.String()+" setting --"+reportOnlyFlagName+"="+"true")
+				*reportOnlyPtr = true
+			}
+		}
+	}
+
+	if *serviceActionPtr == "" {
+		*serviceActionPtr = defaultServiceAction.String()
+	}
+	if *filesPtr == "" {
+		*filesPtr = defaultFiles.String()
+	}
 
 	dispersion := time.Second * time.Duration(*dispersionPtr)
 	loginDispersion := time.Second * time.Duration(*loginDispersionPtr)
@@ -277,11 +380,6 @@ func GetCfg() (Cfg, error) {
 		return Cfg{}, errors.New("Invalid git flag '" + *useGitStr + "'. Valid options are yes, no, auto.")
 	}
 
-	waitForParents := StrToWaitForParentsFlag(*waitForParentsPtr)
-	if waitForParents == WaitForParentsInvalid {
-		return Cfg{}, errors.New("Invalid wait-for-parents flag '" + *waitForParentsPtr + "'. Valid options are true, false, reval.")
-	}
-
 	retries := *retriesPtr
 	revalWaitTime := time.Second * time.Duration(*revalWaitTimePtr)
 	reverseProxyDisable := *reverseProxyDisablePtr
@@ -298,11 +396,6 @@ func GetCfg() (Cfg, error) {
 	if help {
 		Usage()
 		return Cfg{}, nil
-	}
-
-	runMode := t3cutil.StrToMode(*runModePtr)
-	if runMode == t3cutil.ModeInvalid {
-		return Cfg{}, errors.New(*runModePtr + " is an invalid mode.")
 	}
 
 	urlSourceStr := "argument" // for error messages
@@ -342,10 +435,13 @@ func GetCfg() (Cfg, error) {
 			}
 		}
 	}
+
+	tsConfigDir := DefaultTSConfigDir
+
 	if tsHome != "" {
 		TSHome = tsHome
-		TSConfigDir = tsHome + "/etc/trafficserver"
-		fmt.Printf("TSHome: %s, TSConfigDir: %s\n", TSHome, TSConfigDir)
+		tsConfigDir = tsHome + "/etc/trafficserver"
+		fmt.Printf("TSHome: %s, TSConfigDir: %s\n", TSHome, tsConfigDir)
 	}
 
 	usageStr := "basic usage: t3c-apply --traffic-ops-url=myurl --traffic-ops-user=myuser --traffic-ops-password=mypass --cache-host-name=my-cache"
@@ -384,7 +480,6 @@ func GetCfg() (Cfg, error) {
 		Retries:                     retries,
 		RevalWaitTime:               revalWaitTime,
 		ReverseProxyDisable:         reverseProxyDisable,
-		RunMode:                     runMode,
 		SkipOSCheck:                 skipOsCheck,
 		TOInsecure:                  toInsecure,
 		TOTimeoutMS:                 toTimeoutMS,
@@ -392,21 +487,32 @@ func GetCfg() (Cfg, error) {
 		TOPass:                      toPass,
 		TOURL:                       toURL,
 		DNSLocalBind:                dnsLocalBind,
-		WaitForParents:              waitForParents,
+		WaitForParents:              *waitForParentsPtr,
 		YumOptions:                  yumOptions,
 		UseGit:                      useGit,
-		SyncDSUpdatesIPAllow:        *syncdsUpdatesIPAllowPtr,
+		UpdateIPAllow:               *updateIPAllowPtr,
 		OmitViaStringRelease:        *omitViaStringReleasePtr,
 		DisableParentConfigComments: *disableParentConfigCommentsPtr,
 		DefaultClientEnableH2:       defaultEnableH2,
 		DefaultClientTLSVersions:    defaultClientTLSVersions,
 		MaxMindLocation:             maxmindLocation,
 		TsHome:                      TSHome,
-		TsConfigDir:                 TSConfigDir,
+		TsConfigDir:                 tsConfigDir,
+
+		ServiceAction:     t3cutil.ApplyServiceActionFlag(*serviceActionPtr),
+		ReportOnly:        *reportOnlyPtr,
+		Files:             t3cutil.ApplyFilesFlag(*filesPtr),
+		InstallPackages:   *installPackagesPtr,
+		IgnoreUpdateFlag:  *ignoreUpdateFlagPtr,
+		NoUnsetUpdateFlag: *noUnsetUpdateFlagPtr,
 	}
 
 	if err = log.InitCfg(cfg); err != nil {
 		return Cfg{}, errors.New("Initializing loggers: " + err.Error() + "\n")
+	}
+
+	for _, str := range modeLogStrs {
+		log.Infoln(str)
 	}
 
 	printConfig(cfg)
@@ -454,6 +560,7 @@ func getOSSvcManagement() SvcManagement {
 }
 
 func printConfig(cfg Cfg) {
+	// TODO add new flags
 	log.Debugf("Dispersion: %d\n", cfg.Dispersion)
 	log.Debugf("LogLocationDebug: %s\n", cfg.LogLocationDebug)
 	log.Debugf("LogLocationErr: %s\n", cfg.LogLocationErr)
@@ -465,7 +572,6 @@ func printConfig(cfg Cfg) {
 	log.Debugf("Retries: %d\n", cfg.Retries)
 	log.Debugf("RevalWaitTime: %d\n", cfg.RevalWaitTime)
 	log.Debugf("ReverseProxyDisable: %t\n", cfg.ReverseProxyDisable)
-	log.Debugf("RunMode: %s\n", cfg.RunMode)
 	log.Debugf("SkipOSCheck: %t\n", cfg.SkipOSCheck)
 	log.Debugf("TOInsecure: %t\n", cfg.TOInsecure)
 	log.Debugf("TOTimeoutMS: %d\n", cfg.TOTimeoutMS)

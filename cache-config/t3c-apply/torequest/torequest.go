@@ -286,7 +286,7 @@ func (r *TrafficOpsReq) checkStatusFiles(svrStatus string) error {
 			continue
 		}
 		fileExists, _ := util.FileExists(otherStatus)
-		if r.Cfg.RunMode != t3cutil.ModeReport && fileExists {
+		if !r.Cfg.ReportOnly && fileExists {
 			log.Errorf("Removing other status file %s that exists\n", otherStatus)
 			err = os.Remove(otherStatus)
 			if err != nil {
@@ -295,7 +295,7 @@ func (r *TrafficOpsReq) checkStatusFiles(svrStatus string) error {
 		}
 	}
 
-	if r.Cfg.RunMode != t3cutil.ModeReport {
+	if !r.Cfg.ReportOnly {
 		if !util.MkDir(config.StatusDir, r.Cfg) {
 			return fmt.Errorf("unable to create '%s'\n", config.StatusDir)
 		}
@@ -463,9 +463,8 @@ const configFileTempSuffix = `.tmp`
 
 // replaceCfgFile replaces an ATS configuration file with one from Traffic Ops.
 func (r *TrafficOpsReq) replaceCfgFile(cfg *ConfigFile) error {
-	if r.Cfg.RunMode != t3cutil.ModeBadAss &&
-		r.Cfg.RunMode != t3cutil.ModeSyncDS &&
-		r.Cfg.RunMode != t3cutil.ModeRevalidate {
+	if r.Cfg.ReportOnly ||
+		(r.Cfg.Files != t3cutil.ApplyFilesFlagAll && r.Cfg.Files != t3cutil.ApplyFilesFlagReval) {
 		log.Infof("You elected not to replace %s with the version from Traffic Ops.\n", cfg.Name)
 		cfg.ChangeApplied = false
 		return nil
@@ -530,7 +529,7 @@ func (r *TrafficOpsReq) sleepTimer(serverStatus *tc.ServerUpdateStatus) {
 		revalClockSec = r.Cfg.RevalWaitTime / time.Second
 	}
 
-	if serverStatus.UseRevalPending && r.Cfg.RunMode != t3cutil.ModeBadAss {
+	if serverStatus.UseRevalPending {
 		log.Infoln("Performing a revalidation check before sleeping...")
 		_, err := r.RevalidateWhileSleeping()
 		if err != nil {
@@ -539,7 +538,8 @@ func (r *TrafficOpsReq) sleepTimer(serverStatus *tc.ServerUpdateStatus) {
 			log.Infoln("Revalidation check complete.")
 		}
 	}
-	if randDispSec < revalClockSec || serverStatus.UseRevalPending == false || r.Cfg.RunMode == t3cutil.ModeBadAss {
+
+	if randDispSec < revalClockSec || serverStatus.UseRevalPending == false {
 		log.Infof("Sleeping for %d seconds: ", randDispSec)
 	} else {
 		log.Infof("%d seconds until next revalidation check.\n", revalClockSec)
@@ -551,7 +551,7 @@ func (r *TrafficOpsReq) sleepTimer(serverStatus *tc.ServerUpdateStatus) {
 		fmt.Printf(".")
 		time.Sleep(time.Second)
 		revalClockSec--
-		if revalClockSec < 1 && r.Cfg.RunMode != t3cutil.ModeBadAss && serverStatus.UseRevalPending {
+		if revalClockSec < 1 && serverStatus.UseRevalPending {
 			fmt.Printf("\n")
 			log.Infoln("Interrupting dispersion sleep period for revalidation check.")
 			_, err := r.RevalidateWhileSleeping()
@@ -580,7 +580,7 @@ func (r *TrafficOpsReq) sleepTimer(serverStatus *tc.ServerUpdateStatus) {
 // CheckSystemServices is used to verify that packages installed
 // are enabled for startup.
 func (r *TrafficOpsReq) CheckSystemServices() error {
-	if r.Cfg.RunMode != t3cutil.ModeBadAss {
+	if r.Cfg.ServiceAction != t3cutil.ApplyServiceActionFlagRestart {
 		return nil
 	}
 	result, err := getChkconfig(r.Cfg)
@@ -724,45 +724,50 @@ func (r *TrafficOpsReq) GetHeaderComment() string {
 
 // CheckRevalidateState retrieves and returns the revalidate status from Traffic Ops.
 func (r *TrafficOpsReq) CheckRevalidateState(sleepOverride bool) (UpdateStatus, error) {
-	updateStatus := UpdateTropsNotNeeded
 	log.Infoln("Checking revalidate state.")
+	if !sleepOverride &&
+		(r.Cfg.ReportOnly || r.Cfg.Files != t3cutil.ApplyFilesFlagReval) {
+		updateStatus := UpdateTropsNotNeeded
+		log.Infof("CheckRevalidateState returning %v\n", updateStatus)
+		return updateStatus, nil
+	}
 
-	if r.Cfg.RunMode == t3cutil.ModeRevalidate || sleepOverride {
-		serverStatus, err := getUpdateStatus(r.Cfg)
-		log.Infof("my status: %s\n", serverStatus.Status)
-		if err != nil {
-			log.Errorln("getting update status: " + err.Error())
-			return updateStatus, errors.New("getting update status: " + err.Error())
-		}
-		if serverStatus.UseRevalPending == false {
-			log.Errorln("Update URL: Instant invalidate is not enabled.  Separated revalidation requires upgrading to Traffic Ops version 2.2 and enabling this feature.")
-			return UpdateTropsNotNeeded, nil
-		}
-		if serverStatus.RevalPending == true {
-			log.Errorln("Traffic Ops is signaling that a revalidation is waiting to be applied.")
-			updateStatus = UpdateTropsNeeded
-			if serverStatus.ParentRevalPending == true {
-				if r.Cfg.WaitForParents == config.WaitForParentsReval || r.Cfg.WaitForParents == config.WaitForParentsTrue {
-					log.Infoln("Traffic Ops is signaling that my parents need to revalidate, not revalidating.")
-					updateStatus = UpdateTropsNotNeeded
-				} else {
-					log.Infoln("Traffic Ops is signaling that my parents need to revalidate, but wait-for-parents is false, revalidating anyway.")
-				}
+	updateStatus := UpdateTropsNotNeeded
+
+	serverStatus, err := getUpdateStatus(r.Cfg)
+	log.Infof("my status: %s\n", serverStatus.Status)
+	if err != nil {
+		log.Errorln("getting update status: " + err.Error())
+		return UpdateTropsNotNeeded, errors.New("getting update status: " + err.Error())
+	}
+	if serverStatus.UseRevalPending == false {
+		log.Errorln("Update URL: Instant invalidate is not enabled.  Separated revalidation requires upgrading to Traffic Ops version 2.2 and enabling this feature.")
+		return UpdateTropsNotNeeded, nil
+	}
+	if serverStatus.RevalPending == true {
+		log.Errorln("Traffic Ops is signaling that a revalidation is waiting to be applied.")
+		updateStatus = UpdateTropsNeeded
+		if serverStatus.ParentRevalPending == true {
+			if r.Cfg.WaitForParents {
+				log.Infoln("Traffic Ops is signaling that my parents need to revalidate, not revalidating.")
+				updateStatus = UpdateTropsNotNeeded
+			} else {
+				log.Infoln("Traffic Ops is signaling that my parents need to revalidate, but wait-for-parents is false, revalidating anyway.")
 			}
-		} else if serverStatus.RevalPending == false && r.Cfg.RunMode == t3cutil.ModeRevalidate {
-			log.Errorln("In revalidate mode, but no update needs to be applied. I'm outta here.")
-			return UpdateTropsNotNeeded, nil
-		} else {
-			log.Errorln("Traffic Ops is signaling that no revalidations are waiting to be applied.")
-			return UpdateTropsNotNeeded, nil
 		}
+	} else if serverStatus.RevalPending == false && !r.Cfg.ReportOnly && r.Cfg.Files == t3cutil.ApplyFilesFlagReval {
+		log.Errorln("In revalidate mode, but no update needs to be applied. I'm outta here.")
+		return UpdateTropsNotNeeded, nil
+	} else {
+		log.Errorln("Traffic Ops is signaling that no revalidations are waiting to be applied.")
+		return UpdateTropsNotNeeded, nil
+	}
 
-		err = r.checkStatusFiles(serverStatus.Status)
-		if err != nil {
-			log.Errorln(errors.New("checking status files: " + err.Error()))
-		} else {
-			log.Infoln("CheckRevalidateState checkStatusFiles returned nil error")
-		}
+	err = r.checkStatusFiles(serverStatus.Status)
+	if err != nil {
+		log.Errorln(errors.New("checking status files: " + err.Error()))
+	} else {
+		log.Infoln("CheckRevalidateState checkStatusFiles returned nil error")
 	}
 
 	log.Infof("CheckRevalidateState returning %v\n", updateStatus)
@@ -777,7 +782,8 @@ func (r *TrafficOpsReq) CheckSyncDSState() (UpdateStatus, error) {
 		randDispSec = util.RandomDuration(r.Cfg.Dispersion)
 	}
 	log.Debugln("Checking syncds state.")
-	if r.Cfg.RunMode == t3cutil.ModeSyncDS || r.Cfg.RunMode == t3cutil.ModeBadAss || r.Cfg.RunMode == t3cutil.ModeReport {
+	//	if r.Cfg.RunMode == t3cutil.ModeSyncDS || r.Cfg.RunMode == t3cutil.ModeBadAss || r.Cfg.RunMode == t3cutil.ModeReport {
+	if r.Cfg.Files != t3cutil.ApplyFilesFlagReval {
 		serverStatus, err := getUpdateStatus(r.Cfg)
 		if err != nil {
 			log.Errorln("getting '" + r.Cfg.CacheHostName + "' update status: " + err.Error())
@@ -792,12 +798,11 @@ func (r *TrafficOpsReq) CheckSyncDSState() (UpdateStatus, error) {
 			updateStatus = UpdateTropsNeeded
 			log.Errorln("Traffic Ops is signaling that an update is waiting to be applied")
 
-			if serverStatus.ParentPending &&
-				(r.Cfg.WaitForParents == config.WaitForParentsTrue ||
-					(r.Cfg.WaitForParents == config.WaitForParentsReval && !serverStatus.UseRevalPending)) {
+			if serverStatus.ParentPending && r.Cfg.WaitForParents {
 				log.Errorln("Traffic Ops is signaling that my parents need an update.")
-				if r.Cfg.RunMode == t3cutil.ModeSyncDS {
-					log.Infof("In syncds mode, sleeping for %ds to see if the update my parents need is cleared.", randDispSec/time.Second)
+				// TODO should reval really not sleep?
+				if !r.Cfg.ReportOnly && r.Cfg.Files != t3cutil.ApplyFilesFlagReval {
+					log.Infof("sleeping for %ds to see if the update my parents need is cleared.", randDispSec/time.Second)
 					r.sleepTimer(serverStatus)
 					serverStatus, err = getUpdateStatus(r.Cfg)
 					if err != nil {
@@ -813,8 +818,8 @@ func (r *TrafficOpsReq) CheckSyncDSState() (UpdateStatus, error) {
 			} else {
 				log.Debugf("Processing with update: Traffic Ops server status %+v config wait-for-parents %+v", serverStatus, r.Cfg.WaitForParents)
 			}
-		} else if r.Cfg.RunMode == t3cutil.ModeSyncDS {
-			log.Errorln("In syncds mode, but no syncds update needs to be applied.  Running revalidation before exiting.")
+		} else if !r.Cfg.IgnoreUpdateFlag {
+			log.Errorln("no queued update needs to be applied.  Running revalidation before exiting.")
 			r.RevalidateWhileSleeping()
 			return UpdateTropsNotNeeded, nil
 		} else {
@@ -845,8 +850,8 @@ func (r *TrafficOpsReq) ProcessConfigFiles() (UpdateStatus, error) {
 		// add service metadata
 		if strings.Contains(cfg.Path, "/opt/trafficserver/") || strings.Contains(cfg.Dir, "udev") {
 			cfg.Service = "trafficserver"
-			if r.Cfg.RunMode == t3cutil.ModeSyncDS && !r.IsPackageInstalled("trafficserver") {
-				log.Errorln("In syncds mode, but trafficserver isn't installed. Continuing.")
+			if !r.Cfg.InstallPackages && !r.IsPackageInstalled("trafficserver") {
+				log.Errorln("Not installing packages, but trafficserver isn't installed. Continuing.")
 			}
 		} else if strings.Contains(cfg.Path, "/opt/ort") && strings.Contains(cfg.Name, "12M_facts") {
 			cfg.Service = "puppet"
@@ -858,7 +863,7 @@ func (r *TrafficOpsReq) ProcessConfigFiles() (UpdateStatus, error) {
 			cfg.Service = "unknown"
 		}
 
-		log.Debugf("In %s mode, I'm about to process config file: %s, service: %s\n", r.Cfg.RunMode, cfg.Path, cfg.Service)
+		log.Debugf("About to process config file: %s, service: %s\n", cfg.Path, cfg.Service)
 
 		err := r.checkConfigFile(cfg, filesAdding)
 		if err != nil {
@@ -884,7 +889,7 @@ func (r *TrafficOpsReq) ProcessConfigFiles() (UpdateStatus, error) {
 				updateStatus = UpdateTropsFailed
 				log.Errorln("remap.config changed however, prereqs failed for plugin.config so I am skipping updates for remap.config")
 				continue
-			} else if cfg.Name == "ip_allow.config" && !r.Cfg.SyncDSUpdatesIPAllow && r.Cfg.RunMode == t3cutil.ModeSyncDS {
+			} else if cfg.Name == "ip_allow.config" && !r.Cfg.UpdateIPAllow {
 				log.Warnln("ip_allow.config changed, not updating! Run with --mode=badass or --syncds-updates-ipallow=true to update!")
 				continue
 			} else {
@@ -940,7 +945,7 @@ func (r *TrafficOpsReq) ProcessPackages() error {
 		// check if the full package version is installed
 		fullPackage := pkgs[ii].Name + "-" + pkgs[ii].Version
 
-		if r.Cfg.RunMode == t3cutil.ModeBadAss {
+		if r.Cfg.InstallPackages {
 			if instpkg == fullPackage {
 				log.Infof("%s Currently installed and not marked for removal\n", reqpkg)
 				r.pkgs[fullPackage] = true
@@ -969,7 +974,7 @@ func (r *TrafficOpsReq) ProcessPackages() error {
 				log.Errorf("%s is Not installed and is marked for installation.\n", fullPackage)
 				install = append(install, fullPackage)
 			}
-		} else if r.Cfg.RunMode == t3cutil.ModeSyncDS {
+		} else {
 			// Only check if packages exist and complain if they are wrong.
 			if instpkg == fullPackage {
 				log.Infof("%s Currently installed.\n", reqpkg)
@@ -986,21 +991,21 @@ func (r *TrafficOpsReq) ProcessPackages() error {
 	}
 
 	log.Debugf("number of packages requiring installation: %d\n", len(install))
-	if r.Cfg.RunMode == t3cutil.ModeReport {
+	if r.Cfg.ReportOnly {
 		log.Errorf("number of packages requiring installation: %d\n", len(install))
 	}
 	log.Debugf("number of packages requiring removal: %d\n", len(uninstall))
-	if r.Cfg.RunMode == t3cutil.ModeReport {
+	if r.Cfg.ReportOnly {
 		log.Errorf("number of packages requiring removal: %d\n", len(uninstall))
 	}
 
-	if r.Cfg.RunMode == t3cutil.ModeBadAss {
+	if r.Cfg.InstallPackages {
 		log.Debugf("number of packages requiring installation: %d\n", len(install))
-		if r.Cfg.RunMode == t3cutil.ModeReport {
+		if r.Cfg.ReportOnly {
 			log.Errorf("number of packages requiring installation: %d\n", len(install))
 		}
 		log.Debugf("number of packages requiring removal: %d\n", len(uninstall))
-		if r.Cfg.RunMode == t3cutil.ModeReport {
+		if r.Cfg.ReportOnly {
 			log.Errorf("number of packages requiring removal: %d\n", len(uninstall))
 		}
 
@@ -1014,7 +1019,7 @@ func (r *TrafficOpsReq) ProcessPackages() error {
 			log.Infoln("All packages available.. proceding..")
 
 			// uninstall packages marked for removal
-			if len(install) > 0 && r.Cfg.RunMode == t3cutil.ModeBadAss {
+			if len(install) > 0 && r.Cfg.InstallPackages {
 				for jj := range uninstall {
 					log.Infof("Uninstalling %s\n", install[jj])
 					r, err := util.PackageAction("remove", uninstall[jj])
@@ -1040,7 +1045,7 @@ func (r *TrafficOpsReq) ProcessPackages() error {
 				}
 			}
 		}
-		if r.Cfg.RunMode == t3cutil.ModeReport && len(install) > 0 {
+		if r.Cfg.ReportOnly && len(install) > 0 {
 			for ii := range install {
 				log.Errorf("\nIn Report mode and %s needs installation.\n", install[ii])
 				return errors.New("In Report mode and packages need installation")
@@ -1056,7 +1061,11 @@ func (r *TrafficOpsReq) RevalidateWhileSleeping() (UpdateStatus, error) {
 		return updateStatus, err
 	}
 	if updateStatus != 0 {
-		r.Cfg.RunMode = t3cutil.ModeRevalidate
+		r.Cfg.Files = t3cutil.ApplyFilesFlagReval
+		// TODO verify? This is for revalidating after a syncds, so we probably do want to wait for parents here, and users probably don't for the main syncds run. But, this feels surprising.
+		// The better solution is to gut the RevalidateWhileSleeping stuff, once TO can handle more load
+		r.Cfg.WaitForParents = true
+
 		err = r.GetConfigFileList()
 		if err != nil {
 			return updateStatus, err
@@ -1087,9 +1096,14 @@ func (r *TrafficOpsReq) RevalidateWhileSleeping() (UpdateStatus, error) {
 // according to the changed config files and run mode.
 // Returns nil on success or any error.
 func (r *TrafficOpsReq) StartServices(syncdsUpdate *UpdateStatus) error {
-	serviceNeeds, err := checkReload(r.Cfg.RunMode, r.getPluginPackagesInstalled(), r.changedFiles)
-	if err != nil {
-		return errors.New("determining if service needs restarted - not reloading or restarting! : " + err.Error())
+	serviceNeeds := t3cutil.ServiceNeedsNothing
+	if r.Cfg.ServiceAction == t3cutil.ApplyServiceActionFlagRestart {
+		serviceNeeds = t3cutil.ServiceNeedsRestart
+	} else {
+		err := error(nil)
+		if serviceNeeds, err = checkReload(r.getPluginPackagesInstalled(), r.changedFiles); err != nil {
+			return errors.New("determining if service needs restarted - not reloading or restarting! : " + err.Error())
+		}
 	}
 
 	log.Infof("t3c-check-reload returned '%+v'\n", serviceNeeds)
@@ -1104,8 +1118,14 @@ func (r *TrafficOpsReq) StartServices(syncdsUpdate *UpdateStatus) error {
 		return errors.New("getting trafficserver service status: " + err.Error())
 	}
 
-	switch r.Cfg.RunMode {
-	case t3cutil.ModeBadAss:
+	if r.Cfg.ReportOnly {
+		if serviceNeeds == t3cutil.ServiceNeedsRestart {
+			log.Errorln("ATS configuration has changed.  The new config will be picked up the next time ATS is started.")
+		} else if serviceNeeds == t3cutil.ServiceNeedsReload {
+			log.Errorln("ATS configuration has changed. 'traffic_ctl config reload' needs to be run")
+		}
+		return nil
+	} else if r.Cfg.ServiceAction == t3cutil.ApplyServiceActionFlagRestart {
 		startStr := "restart"
 		if svcStatus != util.SvcRunning {
 			startStr = "start"
@@ -1118,16 +1138,7 @@ func (r *TrafficOpsReq) StartServices(syncdsUpdate *UpdateStatus) error {
 			*syncdsUpdate = UpdateTropsSuccessful
 		}
 		return nil // we restarted, so no need to reload
-	case t3cutil.ModeReport:
-		if serviceNeeds == t3cutil.ServiceNeedsRestart {
-			log.Errorln("ATS configuration has changed.  The new config will be picked up the next time ATS is started.")
-		} else if serviceNeeds == t3cutil.ServiceNeedsReload {
-			log.Errorln("ATS configuration has changed. 'traffic_ctl config reload' needs to be run")
-		}
-		return nil
-	case t3cutil.ModeSyncDS:
-		fallthrough
-	case t3cutil.ModeRevalidate:
+	} else if r.Cfg.ServiceAction == t3cutil.ApplyServiceActionFlagReload {
 		if serviceNeeds == t3cutil.ServiceNeedsRestart {
 			if *syncdsUpdate == UpdateTropsNeeded {
 				*syncdsUpdate = UpdateTropsSuccessful
@@ -1151,7 +1162,7 @@ func (r *TrafficOpsReq) StartServices(syncdsUpdate *UpdateStatus) error {
 		}
 		return nil
 	}
-	return errors.New("Unknown run mode '" + r.Cfg.RunMode.String() + "'! Not reloading or restarting!") // should never happen
+	return nil
 }
 
 func (r *TrafficOpsReq) getPluginPackagesInstalled() []string {
@@ -1189,27 +1200,27 @@ func (r *TrafficOpsReq) UpdateTrafficOps(syncdsUpdate *UpdateStatus) (bool, erro
 	if !updateResult {
 		return true, nil
 	}
-	if r.Cfg.RunMode == t3cutil.ModeReport {
+	if r.Cfg.ReportOnly {
 		log.Errorln("In Report mode and Traffic Ops needs updated you should probably do that manually.")
 		return true, nil
 	}
 
-	switch r.Cfg.RunMode {
-	case t3cutil.ModeBadAss:
-		fallthrough
-	case t3cutil.ModeSyncDS:
-		if serverStatus.RevalPending {
-			err = sendUpdate(r.Cfg, false, true)
-		} else {
-			err = sendUpdate(r.Cfg, false, false)
-		}
-	case t3cutil.ModeRevalidate:
-		if serverStatus.UpdatePending {
-			err = sendUpdate(r.Cfg, true, false)
-		} else {
-			err = sendUpdate(r.Cfg, false, false)
+	if !r.Cfg.ReportOnly && !r.Cfg.NoUnsetUpdateFlag {
+		if r.Cfg.Files == t3cutil.ApplyFilesFlagAll {
+			if serverStatus.RevalPending {
+				err = sendUpdate(r.Cfg, false, true)
+			} else {
+				err = sendUpdate(r.Cfg, false, false)
+			}
+		} else if r.Cfg.Files == t3cutil.ApplyFilesFlagReval {
+			if serverStatus.UpdatePending {
+				err = sendUpdate(r.Cfg, true, false)
+			} else {
+				err = sendUpdate(r.Cfg, false, false)
+			}
 		}
 	}
+
 	if err != nil {
 		return false, errors.New("Traffic Ops Update failed: " + err.Error())
 	}
