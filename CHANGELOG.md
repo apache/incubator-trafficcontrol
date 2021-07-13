@@ -84,6 +84,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/).
 - Converted TP Cache Checks table to ag-grid
 - [#5981](https://github.com/apache/trafficcontrol/issues/5891) - `/deliveryservices/{{ID}}/safe` returns incorrect response for the requested API version
 - [#5984](https://github.com/apache/trafficcontrol/issues/5894) - `/servers/{{ID}}/deliveryservices` returns incorrect response for the requested API version
+- [#5576](https://github.com/apache/trafficcontrol/issues/5576) - Inconsistent Profile Name restrictions
 
 ### Changed
 - Updated the Traffic Ops Python client to 3.0
@@ -115,7 +116,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/).
 
 ### Removed
 - Removed the unused `backend_max_connections` option from `cdn.conf`.
-- Removed the `Long Description 2` and `Long Description 3` fields of `DeliveryService` from the UI, and changed the backend so that routes corresponding API 4.0 and above no longer accept or return these fields. 
+- Removed the `Long Description 2` and `Long Description 3` fields of `DeliveryService` from the UI, and changed the backend so that routes corresponding API 4.0 and above no longer accept or return these fields.
 - The Perl implementation of Traffic Ops has been stripped out, along with the Go implementation's "fall-back to Perl" behavior.
 - Traffic Ops no longer includes an `app/public` directory, as the static webserver has been removed along with the Perl Traffic Ops implementation. Traffic Ops also no longer attempts to download MaxMind GeoIP City databases when running the Traffic Ops Postinstall script.
 - The `compare` tool stack has been removed, as it no longer serves a purpose.
