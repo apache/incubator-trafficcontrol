@@ -1,0 +1,259 @@
+{
+  "config": {
+    "domain_name": "cdn.test"
+  },
+  "contentServers": {
+    "mm-sanjose-ec0": {
+      "cacheGroup": "sanjose",
+      "ip": "192.0.2.1",
+      "port": 8081,
+      "status": "REPORTED",
+      "type": "EDGE"
+    },
+    "mm-sanjose-ec1": {
+      "cacheGroup": "sanjose",
+      "ip": "192.0.2.1",
+      "port": 8081,
+      "status": "REPORTED",
+      "type": "EDGE"
+    },
+    "mm-sanjose-ec2": {
+      "cacheGroup": "sanjose",
+      "ip": "192.0.2.1",
+      "port": 8081,
+      "status": "REPORTED",
+      "type": "EDGE"
+    },
+    "mm-denver-ec0": {
+      "cacheGroup": "denver",
+      "ip": "192.0.2.1",
+      "port": 8081,
+      "status": "REPORTED",
+      "type": "EDGE"
+    },
+    "mm-denver-ec1": {
+      "cacheGroup": "denver",
+      "ip": "192.0.2.1",
+      "port": 8081,
+      "status": "REPORTED",
+      "type": "EDGE"
+    },
+    "mm-denver-ec2": {
+      "cacheGroup": "denver",
+      "ip": "192.0.2.1",
+      "port": 8081,
+      "status": "REPORTED",
+      "type": "EDGE"
+    },
+    "mm-jacksonville-ec0": {
+      "cacheGroup": "jacksonville",
+      "ip": "192.0.2.1",
+      "port": 8081,
+      "status": "REPORTED",
+      "type": "EDGE"
+    },
+    "mm-jacksonville-ec1": {
+      "cacheGroup": "jacksonville",
+      "ip": "192.0.2.1",
+      "port": 8081,
+      "status": "REPORTED",
+      "type": "EDGE"
+    },
+    "mm-jacksonville-ec2": {
+      "cacheGroup": "jacksonville",
+      "ip": "192.0.2.1",
+      "port": 8081,
+      "status": "REPORTED",
+      "type": "EDGE"
+    },
+    "mm-chicago-ec0": {
+      "cacheGroup": "chicago",
+      "ip": "192.0.2.1",
+      "port": 8081,
+      "status": "REPORTED",
+      "type": "EDGE"
+    },
+    "mm-chicago-ec1": {
+      "cacheGroup": "chicago",
+      "ip": "192.0.2.1",
+      "port": 8081,
+      "status": "REPORTED",
+      "type": "EDGE"
+    },
+    "mm-chicago-ec2": {
+      "cacheGroup": "chicago",
+      "ip": "192.0.2.1",
+      "port": 8081,
+      "status": "REPORTED",
+      "type": "EDGE"
+    },
+    "mm-pittsburgh-ec0": {
+      "cacheGroup": "pittsburgh",
+      "ip": "192.0.2.1",
+      "port": 8081,
+      "status": "REPORTED",
+      "type": "EDGE"
+    },
+    "mm-pittsburgh-ec1": {
+      "cacheGroup": "pittsburgh",
+      "ip": "192.0.2.1",
+      "port": 8081,
+      "status": "REPORTED",
+      "type": "EDGE"
+    },
+    "mm-pittsburgh-ec2": {
+      "cacheGroup": "pittsburgh",
+      "ip": "192.0.2.1",
+      "port": 8081,
+      "status": "REPORTED",
+      "type": "EDGE"
+    },
+    "mm-nashville-ec0": {
+      "cacheGroup": "nashville",
+      "ip": "192.0.2.1",
+      "port": 8081,
+      "status": "REPORTED",
+      "type": "EDGE"
+    },
+    "mm-nashville-ec1": {
+      "cacheGroup": "nashville",
+      "ip": "192.0.2.1",
+      "port": 8081,
+      "status": "REPORTED",
+      "type": "EDGE"
+    },
+    "mm-nashville-ec2": {
+      "cacheGroup": "nashville",
+      "ip": "192.0.2.1",
+      "port": 8081,
+      "status": "REPORTED",
+      "type": "EDGE"
+    },
+    "mm-houston-ec0": {
+      "cacheGroup": "houston",
+      "ip": "192.0.2.1",
+      "port": 8081,
+      "status": "REPORTED",
+      "type": "EDGE"
+    },
+    "mm-houston-ec1": {
+      "cacheGroup": "houston",
+      "ip": "192.0.2.1",
+      "port": 8081,
+      "status": "REPORTED",
+      "type": "EDGE"
+    },
+    "mm-houston-ec2": {
+      "cacheGroup": "houston",
+      "ip": "192.0.2.1",
+      "port": 8081,
+      "status": "REPORTED",
+      "type": "EDGE"
+    },
+    "mm-saltlake-ec0": {
+      "cacheGroup": "saltlake",
+      "ip": "192.0.2.1",
+      "port": 8081,
+      "status": "REPORTED",
+      "type": "EDGE"
+    },
+    "mm-saltlake-ec1": {
+      "cacheGroup": "saltlake",
+      "ip": "192.0.2.1",
+      "port": 8081,
+      "status": "REPORTED",
+      "type": "EDGE"
+    },
+    "mm-saltlake-ec2": {
+      "cacheGroup": "saltlake",
+      "ip": "192.0.2.1",
+      "port": 8081,
+      "status": "REPORTED",
+      "type": "EDGE"
+    },
+    "mm-richmond-ec0": {
+      "cacheGroup": "richmond",
+      "ip": "192.0.2.1",
+      "port": 8081,
+      "status": "REPORTED",
+      "type": "EDGE"
+    },
+    "mm-richmond-ec1": {
+      "cacheGroup": "richmond",
+      "ip": "192.0.2.1",
+      "port": 8081,
+      "status": "REPORTED",
+      "type": "EDGE"
+    },
+    "mm-richmond-ec2": {
+      "cacheGroup": "richmond",
+      "ip": "192.0.2.1",
+      "port": 8081,
+      "status": "REPORTED",
+      "type": "EDGE"
+    },
+    "mm-seattle-ec0": {
+      "cacheGroup": "seattle",
+      "ip": "192.0.2.1",
+      "port": 8081,
+      "status": "REPORTED",
+      "type": "EDGE"
+    },
+    "mm-seattle-ec1": {
+      "cacheGroup": "seattle",
+      "ip": "192.0.2.1",
+      "port": 8081,
+      "status": "REPORTED",
+      "type": "EDGE"
+    },
+    "mm-seattle-ec2": {
+      "cacheGroup": "seattle",
+      "ip": "192.0.2.1",
+      "port": 8081,
+      "status": "REPORTED",
+      "type": "EDGE"
+    }
+  },
+  "edgeLocations": {
+      "sanjose": {
+        "latitude": 37.2970523,
+        "longitude": -121.9574963
+      },
+      "denver": {
+        "latitude": 39.7645187,
+        "longitude": -104.9951946
+      },
+      "jacksonville": {
+        "latitude": 30.345284,
+        "longitude": -81.9632913
+      },
+      "chicago": {
+        "latitude": 41.8339037,
+        "longitude": -87.8720469
+      },
+      "pittsburgh": {
+        "latitude": 40.431478,
+        "longitude": -80.0505402
+      },
+      "nashville": {
+        "latitude": 36.186836,
+        "longitude": -86.9253289
+      },
+      "houston": {
+        "latitude": 29.8174782,
+        "longitude": -95.681476
+      },
+      "saltlake": {
+        "latitude": 40.7767833,
+        "longitude": -112.0605681
+      },
+      "richmond": {
+        "latitude": 37.5247764,
+        "longitude": -77.5633012
+      },
+      "seattle": {
+        "latitude": 47.6131746,
+        "longitude": -122.4821468
+      }
+  }
+}

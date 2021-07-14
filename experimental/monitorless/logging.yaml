@@ -1,0 +1,11 @@
+formats:
+- name: textlog
+  format: '%<cqtq> chi=%<chi> phn=%<phn> php=%<php> shn=%<shn> url=%<cquuc> cqhm=%<cqhm> cqhv=%<cqpv> pssc=%<pssc> ttms=%<ttms> b=%<pscl> sssc=%<sssc> sscl=%<sscl> cfsc=%<cfsc> pfsc=%<pfsc> crc=%<crc> phr=%<phr> pqsn=%<shn> uas="%<{User-Agent}cqh>">'
+logs:
+- mode: ascii
+  filename: request
+  format: textlog
+  rolling_enabled: 'both'
+  rolling_interval_sec: 172800
+  rolling_offset_hr: 24
+  rolling_size_mb: 512
