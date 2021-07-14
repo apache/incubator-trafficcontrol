@@ -32,6 +32,16 @@ do
 	if [[ -z $$v ]]; then echo "$v is unset"; exit 1; fi
 done
 
+if [ -z "$NO_WAIT" ]; then
+		TO_COOKIE="$(curl -v -s -k -X POST --data '{ "u":"'"$TRAFFIC_OPS_USER"'", "p":"'"$TRAFFIC_OPS_PASS"'" }' $TRAFFIC_OPS_URI/api/1.2/user/login 2>&1 | grep 'Set-Cookie' | sed -e 's/.*mojolicious=\(.*\); expires.*/\1/')"
+		while [ -z "$TO_COOKIE" ]; do
+				echo "Waiting for Traffic Ops to start..."
+				sleep 1;
+				TO_COOKIE="$(curl -v -s -k -X POST --data '{ "u":"'"$TRAFFIC_OPS_USER"'", "p":"'"$TRAFFIC_OPS_PASS"'" }' $TRAFFIC_OPS_URI/api/1.2/user/login 2>&1 | grep 'Set-Cookie' | sed -e 's/.*mojolicious=\(.*\); expires.*/\1/')"
+		done
+		echo "Traffic Ops Started (cookie $TO_COOKIE) - Starting Monitor Now!"
+fi
+
 start() {
 	service traffic_monitor start
 	touch /opt/traffic_monitor/var/log/traffic_monitor.log

@@ -1,0 +1,99 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+---
+version: '3'
+
+services:
+  traffic_monitor_test_load_traffic_ops_database:
+    image: traffic_monitor_test_load_traffic_ops_database
+    volumes:
+    - ${DB_SQL_PATH}:/db
+    networks:
+       - cdnet
+    build:
+      context: ../../../infrastructure/docker/traffic_ops_database/
+    container_name: traffic-monitor-test-load-traffic-ops-database
+    hostname:       traffic-monitor-test-load-traffic-ops-database
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - TODB_NAME=${TODB_NAME}
+      - TODB_USERNAME=${TODB_USERNAME}
+      - TODB_USERNAME_PASSWORD=${TODB_USERNAME_PASSWORD}
+      - DB_SQL_PATH=/db/${DB_SQL_FILE}
+      - TO_USER=${TO_ADMIN_USER}
+      - TO_PASS=${TO_ADMIN_PASS}
+
+  traffic_monitor_test_load_traffic_ops:
+    image: traffic_monitor_test_load_traffic_ops
+    ports:
+      - "443:443"
+    networks:
+    - cdnet
+    depends_on:
+      - traffic_monitor_test_load_traffic_ops_database
+    build:
+      context: ../../../infrastructure/docker/traffic_ops/
+      args:
+        - RPM=${TO_RPM}
+    domainname:     cdnet
+    container_name: traffic-monitor-test-load-traffic-ops
+    hostname:       traffic-monitor-test-load-traffic-ops
+    environment:
+      - DB_SERVER=traffic_monitor_test_load_traffic_ops_database
+      - DB_PORT=5432
+      - DOMAIN=cdnet
+      - DB_ROOT_PASS=${POSTGRES_PASSWORD}
+      - DB_NAME=${TODB_NAME}
+      - DB_USER=${TODB_USERNAME}
+      - DB_USER_PASS=${TODB_USERNAME_PASSWORD}
+      - ADMIN_USER=${TO_ADMIN_USER}
+      - ADMIN_PASS=${TO_ADMIN_PASS}
+      - CERT_COUNTRY=${CERT_COUNTRY}
+      - CERT_STATE=${CERT_STATE}
+      - CERT_CITY=${CERT_CITY}
+      - CERT_COMPANY=${CERT_COMPANY}
+      - DROP_UNIQUE_IP=1
+
+  traffic_monitor_test_load_traffic_monitor:
+    image: traffic_monitor_test_load_traffic_monitor
+    ports:
+      - "80:80"
+    networks:
+    - cdnet
+    depends_on:
+      - traffic_monitor_test_load_traffic_ops
+    build:
+      context: ../../../infrastructure/docker/traffic_monitor/
+      args:
+        - RPM=${TM_RPM}
+    domainname:     cdnet
+    container_name: traffic-monitor-test-load-traffic-monitor
+    hostname:       traffic-monitor-test-load-traffic-monitor
+    environment:
+      - "TRAFFIC_OPS_URI=https://traffic-monitor-test-load-traffic-ops"
+      - TRAFFIC_OPS_USER=${TO_ADMIN_USER}
+      - TRAFFIC_OPS_PASS=${TO_ADMIN_PASS}
+      - DOMAIN=cdnet
+      - CACHEGROUP=${TM_CACHEGROUP}
+      - PROFILE=${TM_PROFILE}
+      - PHYS_LOCATION=${TM_PHYS_LOCATION}
+      - CDN=${TM_CDN}
+      - CREATE_TO_SERVER=1
+
+networks:
+  cdnet:

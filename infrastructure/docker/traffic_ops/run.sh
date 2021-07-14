@@ -35,7 +35,47 @@
 # CERT_COMPANY
 # DOMAIN
 
-# TODO:  Unused -- should be removed?  TRAFFIC_VAULT_PASS
+# Executes the given argument as a command, every second, until they succeed, up to retrys seconds. If retrys elapses, and there is no success, this exits the script with a nonzero exit code.
+# TODO remove duplication, put in utils script for Dockerfiles
+function retry() {
+	local retrys=300
+
+	local code=0
+	while true; do
+		"$@"
+		code=$?
+		# echo "curl 0returned $?"
+		if [[ $code -eq 0 ]]; then
+			break
+		fi
+		if [[ retrys -eq 0 ]]; then
+			break
+		fi
+		sleep 1;
+		retrys=$[$retrys-1]
+	done
+	if [[ $code -ne 0 ]]; then
+		exit 1
+	fi
+}
+
+# Returns whether the Postgres database is ready. Tries, sleeps, and tries again, because the Postgres Dockerfile restarts several times.
+function dbready() {
+	echo "Waiting for database..."
+	# EXISTS=$(PGPASSWORD=${DB_USER_PASS} psql -h ${DB_SERVER} -U ${DB_USER} -d traffic_ops -c "COPY (select count(*) from tm_user where username = '${ADMIN_USER}') TO STDOUT")
+	EXISTS=$(PGPASSWORD=${DB_USER_PASS} psql -h ${DB_SERVER} -U ${DB_USER} -c "COPY (select 1 from pg_database where datname='postgres') TO STDOUT")
+	echo "Database exists: ${EXISTS}"
+	if [[ ${EXISTS} -ne 1 ]]; then
+		return 1
+	fi
+	sleep 2
+	EXISTS=$(PGPASSWORD=${DB_USER_PASS} psql -h ${DB_SERVER} -U ${DB_USER} -c "COPY (select 1 from pg_database where datname='postgres') TO STDOUT")
+	echo "Database exists: ${EXISTS}"
+	if [[ ${EXISTS} -ne 1 ]]; then
+		return 1
+	fi
+	return 0
+}
 
 # Check that env vars are set
 envvars=( DB_SERVER DB_PORT DB_ROOT_PASS DB_USER DB_USER_PASS ADMIN_USER ADMIN_PASS CERT_COUNTRY CERT_STATE CERT_CITY CERT_COMPANY DOMAIN)
@@ -43,6 +83,15 @@ for v in $envvars
 do
 	if [[ -z $$v ]]; then echo "$v is unset"; exit 1; fi
 done
+
+if [ -z "$NO_WAIT" ]; then
+	retry dbready
+	code=$?
+	if [[ $code -ne 0 ]]; then
+		echo "Failed to get database connection, cannot start!"
+		exit 1
+	fi
+fi
 
 start() {
 	service traffic_ops start
@@ -283,6 +332,13 @@ init() {
 	echo "Got cachegroup edge ID: $TMP_CACHEGROUP_EDGE_ID"
 
 	curl -v -k -X POST -H "Cookie: mojolicious=$TMP_TO_COOKIE" --data-urlencode "location.name=plocation-nyc-1" --data-urlencode "location.short_name=nyc" --data-urlencode "location.address=1 Main Street" --data-urlencode "location.city=nyc" --data-urlencode "location.state=NY" --data-urlencode "location.zip=12345" --data-urlencode "location.poc=" --data-urlencode "location.phone=" --data-urlencode "location.email=no@no.no" --data-urlencode "location.comments=" --data-urlencode "location.region=$TMP_REGION_ID" $TRAFFIC_OPS_URI/phys_location/create
+
+	if [ -z "$DROP_UNIQUE_IP" ]; then
+		# This makes it possible to add multiple servers with the same IP on different ports, which is especially useful for Docker setups.
+		# TODO remove when TO is fixed to permit multiple servers with the same hostname and profile on different ports
+		PGPASSWORD=${DB_USER_PASS} psql -h ${DB_SERVER} -U ${DB_USER} -c "DROP INDEX IF EXISTS idx_140441_ip_profile"
+		PGPASSWORD=${DB_USER_PASS} psql -h ${DB_SERVER} -U ${DB_USER} -c "DROP INDEX IF EXISTS idx_140441_ip6_profile"
+	fi
 
 	echo "INITIALIZED=1" >> /etc/environment
 }
