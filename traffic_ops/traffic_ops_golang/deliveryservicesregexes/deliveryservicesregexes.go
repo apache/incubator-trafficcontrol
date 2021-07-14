@@ -219,7 +219,7 @@ func Post(w http.ResponseWriter, r *http.Request) {
 	}
 	dsr := tc.DeliveryServiceRegexPost{}
 	if err := json.NewDecoder(r.Body).Decode(&dsr); err != nil {
-		api.HandleErr(w, r, inf.Tx.Tx, http.StatusBadRequest, errors.New("malformed JSON"), nil)
+		api.HandleErr(w, r, inf.Tx.Tx, http.StatusBadRequest, errors.New("malformed JSON: "+err.Error()), nil)
 		return
 	}
 
@@ -326,7 +326,7 @@ func Put(w http.ResponseWriter, r *http.Request) {
 	}
 	dsr := tc.DeliveryServiceRegexPost{} // PUT uses same format as POST
 	if err := json.NewDecoder(r.Body).Decode(&dsr); err != nil {
-		api.HandleErr(w, r, inf.Tx.Tx, http.StatusBadRequest, errors.New("malformed JSON"), nil)
+		api.HandleErr(w, r, inf.Tx.Tx, http.StatusBadRequest, errors.New("malformed JSON: "+err.Error()), nil)
 		return
 	}
 	_, cdnName, _, err := dbhelpers.GetDSNameAndCDNFromID(inf.Tx.Tx, inf.IntParams["dsid"])
