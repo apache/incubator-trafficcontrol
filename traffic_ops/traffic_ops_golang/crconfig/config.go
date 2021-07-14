@@ -82,6 +82,8 @@ func makeCRConfigConfig(cdn string, tx *sql.Tx, dnssecEnabled bool, domain strin
 	return crConfigConfig, nil
 }
 
+// CRConfigConfigParameter represents a single parameter in the "config"
+// section of a CDN Snapshot.
 type CRConfigConfigParameter struct {
 	Name  string
 	Value string
@@ -120,6 +122,9 @@ and config_file = 'CRConfig.json'
 	return params, nil
 }
 
+// CRConfigConfigMaxmindDefaultOverride represents an override of Maxmind's
+// default Geo-Location (for when an IP cannot be located) which will be placed
+// into the "config" section of a CDN's Snapshot.
 type CRConfigConfigMaxmindDefaultOverride struct {
 	CountryCode string  `json:"countryCode"`
 	Lat         float64 `json:"lat"`

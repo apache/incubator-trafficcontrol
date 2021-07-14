@@ -22,13 +22,14 @@ package crconfig
 import (
 	"context"
 	"fmt"
-	"github.com/lib/pq"
 	"math/rand"
 	"net"
 	"reflect"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/lib/pq"
 
 	"github.com/apache/trafficcontrol/lib/go-tc"
 	"github.com/apache/trafficcontrol/lib/go-util"
@@ -163,7 +164,7 @@ func MockGetServerParams(mock sqlmock.Sqlmock, expected map[string]ServerParams,
 	rows = rows.AddRow("cache1", "api.port", *expected["cache1"].APIPort)
 	rows = rows.AddRow("cache1", "weight", *expected["cache1"].Weight)
 	rows = rows.AddRow("cache1", "weightMultiplier", *expected["cache1"].WeightMultiplier)
-	mock.ExpectQuery("select").WithArgs(cdn).WillReturnRows(rows)
+	mock.ExpectQuery("SELECT").WithArgs(cdn).WillReturnRows(rows)
 }
 
 func TestGetServerParams(t *testing.T) {
@@ -504,7 +505,7 @@ func MockGetServerDSNames(mock sqlmock.Sqlmock, expected map[tc.CacheName][]tc.D
 			rows = rows.AddRow(cache, ds)
 		}
 	}
-	mock.ExpectQuery("select").WithArgs(cdn).WillReturnRows(rows)
+	mock.ExpectQuery("SELECT").WithArgs(cdn).WillReturnRows(rows)
 }
 
 func TestGetServerDSNames(t *testing.T) {
@@ -569,7 +570,7 @@ func MockGetServerDSes(mock sqlmock.Sqlmock, expected map[tc.CacheName]map[strin
 			rows = rows.AddRow(ds, "DNS", "", pattern, false)
 		}
 	}
-	mock.ExpectQuery("select").WithArgs(cdn).WillReturnRows(rows)
+	mock.ExpectQuery("SELECT").WithArgs(cdn).WillReturnRows(rows)
 }
 
 func TestGetServerDSes(t *testing.T) {

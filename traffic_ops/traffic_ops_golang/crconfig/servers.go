@@ -34,11 +34,6 @@ import (
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/dbhelpers"
 )
 
-const RouterTypeName = "CCR"
-const MonitorTypeName = "RASCAL"
-const EdgeTypePrefix = "EDGE"
-const MidTypePrefix = "MID"
-
 func makeCRConfigServers(cdn string, tx *sql.Tx, cdnDomain string) (
 	map[string]tc.CRConfigTrafficOpsServer,
 	map[string]tc.CRConfigRouter,
@@ -85,7 +80,7 @@ func makeCRConfigServers(cdn string, tx *sql.Tx, cdnDomain string) (
 				Profile:      s.Profile,
 				ServerStatus: s.ServerStatus,
 			}
-		case strings.HasPrefix(*s.ServerType, tc.EdgeTypePrefix) || strings.HasPrefix(*s.ServerType, tc.MidTypePrefix):
+		case strings.HasPrefix(*s.ServerType, tc.EdgeTypePrefix):
 			if s.RoutingDisabled == 0 {
 				s.CRConfigTrafficOpsServer.DeliveryServices = serverDSes[tc.CacheName(host)]
 			}
@@ -95,20 +90,29 @@ func makeCRConfigServers(cdn string, tx *sql.Tx, cdnDomain string) (
 	return servers, routers, monitors, nil
 }
 
-// ServerUnion has all fields from all servers. This is used to select all server data with a single query, and then convert each to the proper type afterwards.
+// ServerUnion has all fields from all servers. This is used to select all
+// server data with a single query, and then convert each to the proper type
+// afterwards.
 type ServerUnion struct {
 	tc.CRConfigTrafficOpsServer
 	APIPort       *string
 	SecureAPIPort *string
 }
 
+// ServerAndHost is a structure used simply to associate a hostname with a
+// server.
 type ServerAndHost struct {
 	Server ServerUnion
 	Host   string
 }
 
-const DefaultWeightMultiplier = 1000.0
-const DefaultWeight = 0.999
+// A server's HashCount is set by multiplying its weight by its weight
+// multiplier. If a server's Parameters don't set those explicitly, these
+// default values are used.
+const (
+	DefaultWeightMultiplier = 1000.0
+	DefaultWeight           = 0.999
+)
 
 func getAllServers(cdn string, tx *sql.Tx) (map[string]ServerUnion, error) {
 	serverParams, err := getServerParams(cdn, tx)
@@ -151,14 +155,14 @@ func getAllServers(cdn string, tx *sql.Tx) (map[string]ServerUnion, error) {
 	ids := []int{}
 	for rows.Next() {
 		var port sql.NullInt64
-		var hashId sql.NullString
+		var hashID sql.NullString
 		var httpsPort sql.NullInt64
 
 		var s ServerAndHost
 
 		var status string
 		var id int
-		if err := rows.Scan(&id, &s.Host, &s.Server.CacheGroup, &s.Server.Fqdn, &hashId, &httpsPort, &port, &s.Server.Profile, &s.Server.RoutingDisabled, &status, &s.Server.ServerType, pq.Array(&s.Server.Capabilities)); err != nil {
+		if err := rows.Scan(&id, &s.Host, &s.Server.CacheGroup, &s.Server.Fqdn, &hashID, &httpsPort, &port, &s.Server.Profile, &s.Server.RoutingDisabled, &status, &s.Server.ServerType, pq.Array(&s.Server.Capabilities)); err != nil {
 			return nil, errors.New("Error scanning server: " + err.Error())
 		}
 
@@ -173,8 +177,8 @@ func getAllServers(cdn string, tx *sql.Tx) (map[string]ServerUnion, error) {
 			s.Server.Port = &i
 		}
 
-		if hashId.String != "" {
-			s.Server.HashId = &hashId.String
+		if hashID.String != "" {
+			s.Server.HashId = &hashID.String
 		} else {
 			s.Server.HashId = &s.Host
 		}
@@ -260,20 +264,19 @@ func getAllServers(cdn string, tx *sql.Tx) (map[string]ServerUnion, error) {
 }
 
 func getServerDSNames(cdn string, tx *sql.Tx) (map[tc.CacheName][]tc.DeliveryServiceName, error) {
-	q := `
-select s.host_name, ds.xml_id
-from deliveryservice_server as dss
-inner join server as s on dss.server = s.id
-inner join deliveryservice as ds on ds.id = dss.deliveryservice
-inner join type as dt on dt.id = ds.type
-inner join profile as p on p.id = s.profile
-inner join status as st ON st.id = s.status
-where ds.cdn_id = (select id from cdn where name = $1)
-and ds.active = true` +
-		fmt.Sprintf(" and dt.name != '%s' ", tc.DSTypeAnyMap) + `
-and p.routing_disabled = false
-and (st.name = 'REPORTED' or st.name = 'ONLINE' or st.name = 'ADMIN_DOWN')
-`
+	q := `SELECT s.host_name,
+		ds.xml_id
+	FROM deliveryservice_server AS dss
+	INNER JOIN server AS s ON dss.server = s.id
+	INNER JOIN deliveryservice AS ds ON ds.id = dss.deliveryservice
+	INNER JOIN type AS dt ON dt.id = ds.type
+	INNER JOIN profile AS p ON p.id = s.profile
+	INNER JOIN status AS st ON st.id = s.status
+	WHERE ds.cdn_id = (SELECT id FROM cdn WHERE name = $1)
+		AND ds.active = true
+	 	AND dt.name != '` + string(tc.DSTypeAnyMap) + `'
+		AND p.routing_disabled = false
+		AND (st.name = '` + tc.CacheStatusReported.String() + `' OR st.name = '` + tc.CacheStatusOnline.String() + `' OR st.name = '` + tc.CacheStatusAdminDown.String() + `')`
 	rows, err := tx.Query(q, cdn)
 	if err != nil {
 		return nil, errors.New("Error querying server deliveryservice names: " + err.Error())
@@ -292,9 +295,15 @@ and (st.name = 'REPORTED' or st.name = 'ONLINE' or st.name = 'ADMIN_DOWN')
 	return serverDSes, nil
 }
 
+// DSRouteInfo represents a manner in which Traffic Router might route clients
+// for a Delivery Service.
 type DSRouteInfo struct {
+	// IsDNS tells whether or not the routing takes place using DNS.
 	IsDNS bool
+	// IsRaw tells whether or not the routing uses a "raw" regular expression
+	// i.e. does not include ".*" or "wildcarding".
 	IsRaw bool
+	// Remap is the regular expression used to perform the routing.
 	Remap string
 }
 
@@ -304,20 +313,21 @@ func getServerDSes(cdn string, tx *sql.Tx, domain string) (map[tc.CacheName]map[
 		return nil, errors.New("Error getting server deliveryservices: " + err.Error())
 	}
 
-	q := `
-select ds.xml_id as ds, dt.name as ds_type, ds.routing_name, r.pattern as pattern,
-ds.topology IS NOT NULL as has_topology
-from regex as r
-inner join type as rt on r.type = rt.id
-inner join deliveryservice_regex as dsr on dsr.regex = r.id
-inner join deliveryservice as ds on ds.id = dsr.deliveryservice
-inner join type as dt on dt.id = ds.type
-where ds.cdn_id = (select id from cdn where name = $1)
-and ds.active = true` +
-		fmt.Sprintf(" and dt.name != '%s' ", tc.DSTypeAnyMap) + `
-and rt.name = 'HOST_REGEXP'
-order by dsr.set_number asc
-`
+	q := `SELECT ds.xml_id AS ds,
+		dt.name AS ds_type,
+		ds.routing_name,
+		r.pattern AS pattern,
+		ds.topology IS NOT NULL AS has_topology
+	FROM regex AS r
+	INNER JOIN type AS rt ON r.type = rt.id
+	INNER JOIN deliveryservice_regex AS dsr ON dsr.regex = r.id
+	INNER JOIN deliveryservice AS ds ON ds.id = dsr.deliveryservice
+	INNER JOIN type AS dt ON dt.id = ds.type
+	WHERE ds.cdn_id = (SELECT id FROM cdn WHERE name = $1)
+		AND ds.active = true
+		AND dt.name != '` + string(tc.DSTypeAnyMap) + `'
+		AND rt.name = '` + tc.DSMatchTypeHostRegex.String() + `'
+	ORDER BY dsr.set_number ASC`
 	rows, err := tx.Query(q, cdn)
 	if err != nil {
 		return nil, errors.New("Error server deliveryservices: " + err.Error())
@@ -393,16 +403,20 @@ type ServerParams struct {
 func getServerParams(cdn string, tx *sql.Tx) (map[string]ServerParams, error) {
 	params := map[string]ServerParams{}
 
-	q := `
-select s.host_name, p.name, p.value
-from server as s
-left join profile_parameter as pp on pp.profile = s.profile
-left join parameter as p on p.id = pp.parameter
-inner join status as st ON st.id = s.status
-where s.cdn_id = (select id from cdn where name = $1)
-and ((p.config_file = 'CRConfig.json' and (p.name = 'weight' or p.name = 'weightMultiplier')) or (p.name = 'api.port') or (p.name = 'secure.api.port'))
-and (st.name = 'REPORTED' or st.name = 'ONLINE' or st.name = 'ADMIN_DOWN')
-`
+	q := `SELECT s.host_name,
+		p.name,
+		p.value
+	FROM server AS s
+	LEFT JOIN profile_parameter AS pp ON pp.profile = s.profile
+	LEFT JOIN parameter AS p ON p.id = pp.parameter
+	INNER JOIN status AS st ON st.id = s.status
+	WHERE s.cdn_id = (SELECT id FROM cdn WHERE name = $1)
+		AND (
+			(p.config_file = 'CRConfig.json' AND (p.name = 'weight' OR p.name = 'weightMultiplier')) OR
+			(p.name = 'api.port') OR
+			(p.name = 'secure.api.port')
+		)
+		AND (st.name = '` + tc.CacheStatusReported.String() + `' OR st.name = '` + tc.CacheStatusOnline.String() + `' OR st.name = '` + tc.CacheStatusAdminDown.String() + `')`
 	rows, err := tx.Query(q, cdn)
 	if err != nil {
 		return nil, errors.New("Error querying server parameters: " + err.Error())

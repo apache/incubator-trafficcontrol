@@ -32,16 +32,29 @@ import (
 	"github.com/lib/pq"
 )
 
-const CDNSOAMinimum = 30 * time.Second
-const CDNSOAExpire = 604800 * time.Second
-const CDNSOARetry = 7200 * time.Second
-const CDNSOARefresh = 28800 * time.Second
-const CDNSOAAdmin = "traffic_ops"
+// Start-Of-Authority record fields; see RFC1035 section 3.3.13.
+// (https://tools.ietf.org/html/rfc1035#section-3.3.13).
+const (
+	CDNSOAAdmin   = "traffic_ops"
+	CDNSOAExpire  = 604800 * time.Second
+	CDNSOAMinimum = 30 * time.Second
+	CDNSOARefresh = 28800 * time.Second
+	CDNSOARetry   = 7200 * time.Second
+)
+
+// DefaultTLDTTLSOA is the default Time-To-Live for the Start-Of-Authority
+// record for a CDN's Top-Level-Domain.
 const DefaultTLDTTLSOA = 86400 * time.Second
+
+// DefaultTLDTTLNS the default Time-To-Live for the Name-Space record for a
+// CDN's Top-Level-Domain.
 const DefaultTLDTTLNS = 3600 * time.Second
 
-const GeoProviderMaxmindStr = "maxmindGeolocationService"
-const GeoProviderNeustarStr = "neustarGeolocationService"
+// Names of supported IP-to-Geographic Location database providers.
+const (
+	GeoProviderMaxmindStr = "maxmindGeolocationService"
+	GeoProviderNeustarStr = "neustarGeolocationService"
+)
 
 func makeDSes(cdn string, domain string, tx *sql.Tx) (map[string]tc.CRConfigDeliveryService, error) {
 	dses := map[string]tc.CRConfigDeliveryService{}

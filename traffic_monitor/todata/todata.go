@@ -20,6 +20,7 @@ package todata
  */
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -29,7 +30,7 @@ import (
 	"github.com/apache/trafficcontrol/lib/go-tc"
 	"github.com/apache/trafficcontrol/traffic_monitor/towrap"
 
-	"github.com/json-iterator/go"
+	jsoniter "github.com/json-iterator/go"
 )
 
 // Regexes maps Delivery Service Regular Expressions to delivery services.
@@ -156,6 +157,14 @@ func (d TODataThreadsafe) Update(to towrap.TrafficOpsSessionThreadsafe, cdn stri
 		return fmt.Errorf("Error getting last CRConfig: %v", err)
 	}
 
+	monitoring, err := to.TrafficMonitorConfigMap(cdn)
+	if err != nil {
+		return fmt.Errorf("error getting monitoring configuration: %v", err)
+	}
+	if monitoring == nil {
+		return errors.New("error getting monitoring configuration: returned configuration was nil")
+	}
+
 	newTOData := TOData{}
 
 	var crConfig CRConfig
@@ -172,22 +181,22 @@ func (d TODataThreadsafe) Update(to towrap.TrafficOpsSessionThreadsafe, cdn stri
 
 	newTOData.DeliveryServiceTypes, err = getDeliveryServiceTypes(crConfig)
 	if err != nil {
-		return fmt.Errorf("Error getting delivery service types from Traffic Ops: %v\n", err)
+		return fmt.Errorf("error getting delivery service types from Traffic Ops: %v", err)
 	}
 
 	newTOData.DeliveryServiceRegexes, err = getDeliveryServiceRegexes(crConfig)
 	if err != nil {
-		return fmt.Errorf("Error getting delivery service regexes from Traffic Ops: %v\n", err)
+		return fmt.Errorf("error getting delivery service regexes from Traffic Ops: %v", err)
 	}
 
 	newTOData.ServerCachegroups, err = getServerCachegroups(crConfig)
 	if err != nil {
-		return fmt.Errorf("Error getting server cachegroups from Traffic Ops: %v\n", err)
+		return fmt.Errorf("error getting server cachegroups from Traffic Ops: %v", err)
 	}
 
-	newTOData.ServerTypes, err = getServerTypes(crConfig)
+	newTOData.ServerTypes, err = getServerTypes(*monitoring)
 	if err != nil {
-		return fmt.Errorf("Error getting server types from Traffic Ops: %v\n", err)
+		return fmt.Errorf("error getting server types from Traffic Ops: %v", err)
 	}
 
 	d.set(newTOData)
@@ -296,15 +305,15 @@ func getServerCachegroups(crc CRConfig) (map[tc.CacheName]tc.CacheGroupName, err
 }
 
 // getServerTypes gets the cache type of each ATS Edge+Mid Cache server, for the given CDN, from Traffic Ops.
-func getServerTypes(crc CRConfig) (map[tc.CacheName]tc.CacheType, error) {
+func getServerTypes(conf tc.TrafficMonitorConfigMap) (map[tc.CacheName]tc.CacheType, error) {
 	serverTypes := map[tc.CacheName]tc.CacheType{}
 
-	for server, serverData := range crc.ContentServers {
+	for server, serverData := range conf.TrafficServer {
 		t := tc.CacheTypeFromString(serverData.Type)
 		if t == tc.CacheTypeInvalid {
 			return nil, fmt.Errorf("getServerTypes CRConfig unknown type for '%s': '%s'", server, serverData.Type)
 		}
-		serverTypes[server] = t
+		serverTypes[tc.CacheName(server)] = t
 	}
 	return serverTypes, nil
 }

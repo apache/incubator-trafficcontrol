@@ -64,10 +64,10 @@ func MockMakeLocations(mock sqlmock.Sqlmock, expectedEdgeLocs map[string]tc.CRCo
 
 	rows := sqlmock.NewRows([]string{"name", "id", "type", "latitude", "longitude", "fallback_to_closest", "localization_methods"})
 	for s, l := range expectedEdgeLocs {
-		rows = rows.AddRow(s, 1, EdgeTypePrefix, l.Lat, l.Lon, false, []byte("{CZ}"))
+		rows = rows.AddRow(s, 1, tc.EdgeTypePrefix, l.Lat, l.Lon, false, []byte("{CZ}"))
 	}
 	for s, l := range expectedRouterLocs {
-		rows = rows.AddRow(s, 1, RouterTypeName, l.Lat, l.Lon, false, nil)
+		rows = rows.AddRow(s, 1, tc.RouterTypeName, l.Lat, l.Lon, false, nil)
 	}
 
 	mock.ExpectQuery("SELECT").WithArgs(cdn).WillReturnRows(rows)

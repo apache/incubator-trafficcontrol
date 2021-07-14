@@ -1,3 +1,5 @@
+// Package crconfig provides logic and handlers for the CDN Snapshot-related
+// API endpoints.
 package crconfig
 
 /*
