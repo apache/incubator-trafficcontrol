@@ -60,9 +60,9 @@ var NumberUtils = function($filter) {
 	this.average = function(arr)
 	{
 		if (!angular.isArray(arr) || arr.length == 0 ) return 0;
-		return _.reduce(arr, function(memo, num) {
+		return arr.reduce(function(memo, num)  {
 				return memo + num;
-			}, 0) / arr.length;
+			}) / arr.length;
 	}
 
 	this.ratio = function(numerator, denominator)

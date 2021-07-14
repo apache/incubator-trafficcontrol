@@ -72,8 +72,8 @@ var ChartHttpStatusController = function(deliveryService, $scope, $state, $timeo
 
 
 	var buildHttpStatusChartData = function(result, start) {
-		var normalizedChartData = [],
-			series = result.series;
+		const normalizedData = new Array();
+		const series = result.series;
 
 		if (angular.isDefined(series)) {
 			series.values.forEach(function(seriesItem) {
@@ -84,8 +84,7 @@ var ChartHttpStatusController = function(deliveryService, $scope, $state, $timeo
 				}
 			});
 		}
-
-		return normalizedChartData;
+		return normalizedData;
 	};
 
 	var buildChart = function(status2xxChartData, status3xxChartData, status4xxChartData, status5xxChartData) {

@@ -56,7 +56,7 @@ var FormEditDeliveryServiceRequestController = function(deliveryServiceRequest, 
 	};
 
 	$scope.magicNumberLabel = function(collection, magicNumber) {
-		var item = _.findWhere(collection, { value: magicNumber });
+		const item = collection.find(function(x) {return x.value === magicNumber;});
 		return item.label;
 	};
 

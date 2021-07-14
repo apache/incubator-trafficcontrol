@@ -19,7 +19,7 @@
 
 var DeliveryServiceUrlSigKeysController = function(deliveryService, urlSigKeys, $scope, $state, locationUtils, deliveryServiceService, deliveryServiceUrlSigKeysService, $uibModal) {
 	$scope.deliveryService = deliveryService;
-    //Here we take the unordered map of keys returned from riak: 
+    //Here we take the unordered map of keys returned from riak:
     //"response": {
     //   "key9":"ZvVQNYpPVQWQV8tjQnUl6osm4y7xK4zD",
     //   "key6":"JhGdpw5X9o8TqHfgezCm0bqb9SQPASWL",
@@ -91,7 +91,7 @@ var DeliveryServiceUrlSigKeysController = function(deliveryService, urlSigKeys, 
                 collection: function(deliveryServiceService) {
                     return deliveryServiceService.getDeliveryServices({ signed: true })
                     .then(function(result){
-                    	return _.filter(result, function(ds){
+                    	return result.fister(function(ds)  {
                             //you can't copy url sig keys from yourself
                     		return ds.id !== deliveryService.id;
                     	})

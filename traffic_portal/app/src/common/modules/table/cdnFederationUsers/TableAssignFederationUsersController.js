@@ -34,29 +34,33 @@ var TableAssignFederationUsersController = function(federation, users, assignedU
 			function() {
 				return parseInt($(this).attr('id'));
 			}).get();
-		$scope.users = _.map(users, function(user) {
-			if (visibleUserIds.includes(user.id)) {
-				user['selected'] = selected;
+		$scope.users = users.map(
+			function(user)  {
+				if (visibleUserIds.includes(user.id)) {
+					user['selected'] = selected;
+				}
+				return user;
 			}
-			return user;
-		});
+		);
 		updateSelectedCount();
 	};
 
 	var updateSelectedCount = function() {
-		selectedUsers = _.filter($scope.users, function(user) { return user['selected'] == true; } );
+		selectedUsers = $scope.users.filter(function(user)  { return user['selected'] === true; } );
 		$('div.selected-count').html('<b>' + selectedUsers.length + ' selected</b>');
 	};
 
 	$scope.federation = federation;
 
-	$scope.users = _.map(users, function(user) {
-		var isAssigned = _.find(assignedUsers, function(assignedUser) { return assignedUser.id == user.id });
-		if (isAssigned) {
-			user['selected'] = true;
+	$scope.users = users.map(
+		function(user)  {
+			const isAssigned = assignedUsers.find(function(assignedUser)  { return assignedUser.id === user.id });
+			if (isAssigned) {
+				user['selected'] = true;
+			}
+			return user;
 		}
-		return user;
-	});
+	);
 
 	$scope.selectAll = function($event) {
 		var checkbox = $event.target;
@@ -72,7 +76,7 @@ var TableAssignFederationUsersController = function(federation, users, assignedU
 	};
 
 	$scope.submit = function() {
-		var selectedUserIds = _.pluck(selectedUsers, 'id');
+		var selectedUserIds = selectedUsers.map(function(u) {return u.id;});
 		$uibModalInstance.close(selectedUserIds);
 	};
 

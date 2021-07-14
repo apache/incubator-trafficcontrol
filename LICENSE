@@ -334,11 +334,6 @@ This product bundles the gentelella admin theme, which is available under an MIT
 ./licenses/MIT-gentelella
 Refer to the above license for the full text.
 
-This product bundles underscore, which is available under an MIT license.
-@traffic_portal/app/src/assets/js/underscore-min_1.8.3.js
-./licenses/MIT-underscore
-Refer to the above license for the full text.
-
 This product bundles stoppableListener, which is available under a BSD-2-Clause license.
 @vendor/github.com/hydrogen18/stoppableListener/*
 ./vendor/github.com/hydrogen18/stoppableListener/LICENSE

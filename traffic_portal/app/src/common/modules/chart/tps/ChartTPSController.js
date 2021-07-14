@@ -59,7 +59,7 @@ var ChartTPSController = function(deliveryService, $scope, $state, $timeout, $fi
 	};
 
 	var buildChartData = function(series, start) {
-		var normalizedChartData = [];
+		const normalizedChartData = [];
 
 		if (angular.isDefined(series)) {
 			series.values.forEach(function(seriesItem) {

@@ -34,31 +34,33 @@ var TableAssignCapabilitiesController = function(role, capabilities, assignedCap
 			function() {
 				return $(this).attr('id'); // the cap name is being stored as the id on the row
 			}).get();
-		$scope.selectedCapabilities = _.map(capabilities, function(c) {
-			if (visibleCapabilityNames.includes(c.name)) {
-				c['selected'] = selected;
+		$scope.selectedCapabilities = capabilities.map(
+			function(c)  {
+				if (visibleCapabilityNames.includes(c.name)) {
+					c['selected'] = selected;
+				}
+				return c;
 			}
-			return c;
-		});
+		);
 		updateSelectedCount();
 	};
 
 	var updateSelectedCount = function() {
-		selectedCapabilities = _.filter($scope.selectedCapabilities, function(c) { return c['selected'] == true; } );
+		selectedCapabilities = $scope.selectedCapabilities.filter(function(c)  { return c['selected'] === true; } );
 		$('div.selected-count').html('<b>' + selectedCapabilities.length + ' capabilities selected</b>');
 	};
 
 	$scope.role = role;
 
-	$scope.selectedCapabilities = _.map(capabilities, function(c) {
-		var isAssigned = _.find(assignedCapabilities, function(assignedCap) {
-			return assignedCap == c.name
-		});
-		if (isAssigned) {
-			c['selected'] = true;
+	$scope.selectedCapabilities = capabilities.map(
+		function(c)  {
+			const isAssigned = assignedCapabilities.find(function(assignedCap)  { return assignedCap === c.name });
+			if (isAssigned) {
+				c['selected'] = true;
+			}
+			return c;
 		}
-		return c;
-	});
+	);
 
 	$scope.selectAll = function($event) {
 		var checkbox = $event.target;
@@ -74,7 +76,7 @@ var TableAssignCapabilitiesController = function(role, capabilities, assignedCap
 	};
 
 	$scope.submit = function() {
-		var selectedCapabilityNames = _.pluck(selectedCapabilities, 'name');
+		const selectedCapabilityNames = selectedCapabilities.map(function(c) {return c.name;});
 		$uibModalInstance.close(selectedCapabilityNames);
 	};
 

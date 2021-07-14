@@ -34,29 +34,33 @@ var TableProfileParamsUnassignedController = function(profile, allParams, assign
 			function() {
 				return parseInt($(this).attr('id'));
 			}).get();
-		$scope.selectedParams = _.map(allParams, function(param) {
-			if (visibleParamIds.includes(param.id)) {
-				param['selected'] = selected;
+		$scope.selectedParams = allParams.map(
+			function(param)  {
+				if (visibleParamIds.includes(param.id)) {
+					param['selected'] = selected;
+				}
+				return param;
 			}
-			return param;
-		});
+		);
 		updateSelectedCount();
 	};
 
 	var updateSelectedCount = function() {
-		selectedParams = _.filter($scope.selectedParams, function(param) { return param['selected'] == true; } );
+		selectedParams = $scope.selectedParams.filter(function(param)  { return param['selected'] === true; } );
 		$('div.selected-count').html('<b>' + selectedParams.length + ' parameters selected</b>');
 	};
 
 	$scope.profile = profile;
 
-	$scope.selectedParams = _.map(allParams, function(param) {
-		var isAssigned = _.find(assignedParams, function(assignedParam) { return assignedParam.id == param.id });
-		if (isAssigned) {
-			param['selected'] = true;
+	$scope.selectedParams = allParams.map(
+		function(param)  {
+			const isAssigned = assignedParams.find(function(assignedParam)  { return assignedParam.id === param.id });
+			if (isAssigned) {
+				param['selected'] = true;
+			}
+			return param;
 		}
-		return param;
-	});
+	);
 
 	$scope.selectAll = function($event) {
 		var checkbox = $event.target;
@@ -72,7 +76,7 @@ var TableProfileParamsUnassignedController = function(profile, allParams, assign
 	};
 
 	$scope.submit = function() {
-		var selectedParamIds = _.pluck(selectedParams, 'id');
+		const selectedParamIds = selectedParams.map(function(p) {return p.id;});
 		$uibModalInstance.close(selectedParamIds);
 	};
 

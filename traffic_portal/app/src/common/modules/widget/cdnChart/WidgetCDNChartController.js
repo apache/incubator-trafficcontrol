@@ -41,8 +41,8 @@ var WidgetCDNChartController = function(cdn, $scope, $timeout, $filter, $q, $int
 	var getCurrentStats = function(cdnName) {
 		cdnService.getCurrentStats()
 			.then(function(result) {
-				$scope.currentStats = _.find(result.currentStats, function(item) {
-					return item.cdn == cdnName;
+				$scope.currentStats = result.currentStats.find(function(item)  {
+					return item.cdn === cdnName;
 				});
 			});
 	};
@@ -74,10 +74,10 @@ var WidgetCDNChartController = function(cdn, $scope, $timeout, $filter, $q, $int
 	};
 
 	var buildBandwidthChartData = function(series, start) {
-		var normalizedChartData = [];
+		const normalizedChartData = [];
 
 		if (angular.isDefined(series)) {
-			_.each(series.values, function(seriesItem) {
+			series.values.forEach(function(seriesItem)  {
 				if (moment(seriesItem[0]).isSame(start) || moment(seriesItem[0]).isAfter(start)) {
 					normalizedChartData.push([ moment(seriesItem[0]).valueOf(), numberUtils.convertTo(seriesItem[1], $scope.unitSize) ]); // converts data to appropriate unit
 				}
@@ -88,12 +88,12 @@ var WidgetCDNChartController = function(cdn, $scope, $timeout, $filter, $q, $int
 	};
 
 	var buildConnectionsChartData = function(series, start) {
-		var normalizedChartData = [];
+		const normalizedChartData = [];
 
 		if (angular.isDefined(series)) {
 			series.values.forEach(function(seriesItem) {
 				if (moment(seriesItem[0]).isSame(start) || moment(seriesItem[0]).isAfter(start)) {
-					if (_.isNumber(seriesItem[1])) {
+					if (typeof(seriesItem[1]) === "number" || seriesItem[1] instanceof Number) {
 						normalizedChartData.push([ moment(seriesItem[0]).valueOf(), seriesItem[1] ]);
 					}
 				}

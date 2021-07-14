@@ -49,9 +49,9 @@ var WidgetDashboardStatsController = function($scope, $interval, $filter, locati
 		cdnService.getCurrentStats()
 			.then(
 				function(result) {
-					var totalStats = _.find(result.currentStats, function(item) {
+					const totalStats = result.currentStats.find(function(item)  {
 						// total stats are buried in a hash where cdn = total
-						return item.cdn == 'total';
+						return item.cdn === 'total';
 					});
 					$scope.totalBandwidth = $filter('number')(totalStats.bandwidth, 2) + ' Gbps';
 					$scope.totalConnections = $filter('number')(totalStats.connections, 0);

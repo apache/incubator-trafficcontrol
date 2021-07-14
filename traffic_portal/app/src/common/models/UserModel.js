@@ -37,10 +37,10 @@ var UserModel = function($rootScope, propertiesModel) {
     };
 
     this.hasCapability = function(cap) {
-        if (propertiesModel.properties.enforceCapabilities == false) {
+        if (propertiesModel.properties.enforceCapabilities === false) {
             return true;
         }
-        return _.has(this.user, 'capabilities') && _.indexOf(this.user.capabilities, cap) != -1;
+        return this.user.hasOwnProperty('capabilities') && this.user.capabilities.indexOf(cap) !== -1;
     };
 
 };

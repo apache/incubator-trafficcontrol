@@ -59,17 +59,16 @@ var ChartBPSController = function(deliveryService, $scope, $state, $timeout, $fi
 	};
 
 	var buildBandwidthChartData = function(series, start) {
-		var normalizedChartData = [];
+		const normalizedChartData = [];
 
 		if (angular.isDefined(series)) {
 			series.values.forEach(function(seriesItem) {
 				if (moment(seriesItem[0]).isSame(start) || moment(seriesItem[0]).isAfter(start)) {
-					normalizedChartData.push([ moment(seriesItem[0]).valueOf(), 
+					normalizedChartData.push([ moment(seriesItem[0]).valueOf(),
 						numberUtils.convertTo(seriesItem[1], $scope.unitSize) ]); // converts data to appropriate unit
 				}
 			});
 		}
-
 		return normalizedChartData;
 	};
 

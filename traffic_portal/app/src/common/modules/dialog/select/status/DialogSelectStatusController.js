@@ -32,7 +32,8 @@ var DialogSelectStatusController = function(server, statuses, $scope, $uibModalI
 	};
 
 	$scope.select = function() {
-		var selectedStatus = _.find(statuses, function(status){ return parseInt(status.id) == parseInt($scope.selectedStatusId) });
+		const selectedStatusId = parseInt($scope.selectedStatusId);
+		const selectedStatus = statuses.find( function(status)  { return parseInt(status.id) === selectedStatusId });
 		$scope.status.id = selectedStatus.id;
 		$scope.status.name = selectedStatus.name;
 		$uibModalInstance.close($scope.status);
@@ -47,8 +48,9 @@ var DialogSelectStatusController = function(server, statuses, $scope, $uibModalI
 	};
 
 	$scope.offline = function () {
-		var selectedStatus = _.find(statuses, function(status){ return parseInt(status.id) == parseInt($scope.selectedStatusId) });
-		return selectedStatus && (selectedStatus.name == "ADMIN_DOWN" || selectedStatus.name == "OFFLINE");
+		const selectedStatusId = parseInt(selectedStatusId);
+		const selectedStatus = statuses.find( function(status)  { return parseInt(status.id) === selectedStatusId });
+		return selectedStatus && (selectedStatus.name === "ADMIN_DOWN" || selectedStatus.name === "OFFLINE");
 	};
 
 };

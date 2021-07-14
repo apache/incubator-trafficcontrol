@@ -34,24 +34,26 @@ var TableParamProfilesUnassignedController = function(parameter, allProfiles, as
 			function() {
 				return parseInt($(this).attr('id'));
 			}).get();
-		$scope.selectedProfiles = _.map(allProfiles, function(profile) {
-			if (visibleProfileIds.includes(profile.id)) {
-				profile['selected'] = selected;
+		$scope.selectedProfiles = allProfiles.map(
+			function(profile)  {
+				if (visibleProfileIds.includes(profile.id)) {
+					profile['selected'] = selected;
+				}
+				return profile;
 			}
-			return profile;
-		});
+		);
 		updateSelectedCount();
 	};
 
 	var updateSelectedCount = function() {
-		selectedProfiles = _.filter($scope.selectedProfiles, function(profile) { return profile['selected'] == true; } );
+		selectedProfiles = $scope.selectedProfiles.filter(function(profile)  { return profile['selected'] === true; } );
 		$('div.selected-count').html('<b>' + selectedProfiles.length + ' profiles selected</b>');
 	};
 
 	$scope.parameter = parameter;
 
-	$scope.selectedProfiles = _.map(allProfiles, function(profile) {
-		var isAssigned = _.find(assignedProfiles, function(assignedProfile) { return assignedProfile.id == profile.id });
+	$scope.selectedProfiles = allProfiles.map(function(profile)  {
+		const isAssigned = assignedProfiles.find(function(assignedProfile)  { return assignedProfile.id === profile.id });
 		if (isAssigned) {
 			profile['selected'] = true;
 		}
@@ -72,7 +74,7 @@ var TableParamProfilesUnassignedController = function(parameter, allProfiles, as
 	};
 
 	$scope.submit = function() {
-		var selectedProfileIds = _.pluck(selectedProfiles, 'id');
+		var selectedProfileIds = selectedProfiles.map(function(p) {return p.id;});
 		$uibModalInstance.close(selectedProfileIds);
 	};
 

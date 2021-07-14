@@ -74,7 +74,7 @@ var TableRoleCapabilitiesController = function(roles, $scope, $state, $uibModal,
 			}
 		});
 		modalInstance.result.then(function() {
-			$scope.role.capabilities = _.filter($scope.role.capabilities, function(cap) { return cap != capToRemove; });
+			$scope.role.capabilities = $scope.role.capabilities.filter(function(cap)  { return cap !== capToRemove; });
 			roleService.updateRole($scope.role)
 				.then(
 					function(result) {

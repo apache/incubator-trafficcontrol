@@ -22,8 +22,8 @@ var FormDeliveryServiceTargetController = function(deliveryService, currentTarge
 	var getDeliveryServices = function() {
 		deliveryServiceService.getDeliveryServices({ cdn: deliveryService.cdnId })
 			.then(function(result) {
-				$scope.deliveryServices = _.filter(result, function(ds) {
-					return ds.type.startsWith('HTTP') && _.findWhere(currentTargets, {targetId: ds.id}) == undefined;
+				$scope.deliveryServices = result.filter( function(ds)  {
+					return ds.type.startsWith('HTTP') && currentTargets.find( function(t)  {return t.hasOwnProperty("targetId") && t.targetId === ds.id;}) === undefined;
 				});
 			});
 	};

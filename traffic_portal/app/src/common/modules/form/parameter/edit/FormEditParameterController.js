@@ -48,46 +48,47 @@ var FormEditParameterController = function(parameter, $scope, $controller, $uibM
     $scope.confirmSave = function(parameter) {
         profileService.getParameterProfiles(parameter.id).
             then(function(result) {
-                var params = {
+                const params = {
                     title: 'Update Parameter?',
-                    message: result.length + ' profiles use this parameter.<br><br>'
+                    message: result.length + ' profiles use this parameter.<br/><br/>'
                 };
                 if (result.length > 0) {
-                    params.message += _.pluck(result, 'name').join('<br>') + '<br><br>';
+                    params.message += result.map(function(x) {return x.name;}).join('<br/>') + '<br/><br/>';
                 }
                 params.message += 'Are you sure you want to update the parameter?';
 
-            var modalInstance = $uibModal.open({
-                templateUrl: 'common/modules/dialog/confirm/dialog.confirm.tpl.html',
-                controller: 'DialogConfirmController',
-                size: 'md',
-                resolve: {
-                    params: function () {
-                        return params;
+                const modalInstance = $uibModal.open({
+                    templateUrl: 'common/modules/dialog/confirm/dialog.confirm.tpl.html',
+                    controller: 'DialogConfirmController',
+                    size: 'md',
+                    resolve: {
+                        params: function () {
+                            return params;
+                        }
                     }
-                }
-            });
-            modalInstance.result.then(function() {
-                save(parameter);
-            }, function () {
-                // do nothing
-            });
-        });
+                });
+                modalInstance.result.then(function() {
+                    save(parameter);
+                }, function () {
+                    // do nothing
+                });
+            }
+        );
     };
 
     $scope.confirmDelete = function(parameter) {
         profileService.getParameterProfiles(parameter.id).
             then(function(result) {
-                var params = {
+                const params = {
                     title: 'Delete Parameter?',
-                    message: result.length + ' profiles use this parameter.<br><br>'
+                    message: result.length + ' profiles use this parameter.<br/><br/>'
                 };
                 if (result.length > 0) {
-                    params.message += _.pluck(result, 'name').join('<br>') + '<br><br>';
+                    params.message += result.map(function(x) {return x.name;}).join('<br/>') + '<br/><br/>';
                 }
                 params.message += 'Are you sure you want to delete the parameter?';
 
-                var modalInstance = $uibModal.open({
+                const modalInstance = $uibModal.open({
                     templateUrl: 'common/modules/dialog/confirm/dialog.confirm.tpl.html',
                     controller: 'DialogConfirmController',
                     size: 'md',
