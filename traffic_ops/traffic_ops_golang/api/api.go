@@ -272,6 +272,7 @@ func handleSimpleErr(w http.ResponseWriter, r *http.Request, statusCode int, use
 		return
 	}
 	w.Header().Set(rfc.ContentType, rfc.ApplicationJSON)
+	w.WriteHeader(statusCode)
 	WriteAndLogErr(w, r, append(respBts, '\n'))
 }
 

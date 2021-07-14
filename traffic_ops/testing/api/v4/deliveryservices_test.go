@@ -90,7 +90,9 @@ func TestDeliveryServices(t *testing.T) {
 		t.Run("GET request using the 'type' query string parameter", GetDeliveryServiceByValidType)
 		t.Run("GET request using the 'xmlId' query string parameter", GetDeliveryServiceByValidXmlId)
 		t.Run("Descending order sorted response to GET request", SortTestDeliveryServicesDesc)
-		t.Run("Create/ Update/ Delete delivery services with locks", CUDDeliveryServiceWithLocks)
+		if includeSystemTests {
+			t.Run("Create/ Update/ Delete delivery services with locks", CUDDeliveryServiceWithLocks)
+		}
 		t.Run("TLS Versions property", addTLSVersionsToDeliveryService)
 	})
 }

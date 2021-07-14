@@ -29,6 +29,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/apache/trafficcontrol/lib/go-log"
 	"github.com/apache/trafficcontrol/lib/go-rfc"
@@ -88,6 +89,8 @@ type ConfigTrafficOpsGolang struct {
 	LogLocationDebug         string                     `json:"log_location_debug"`
 	LogLocationEvent         string                     `json:"log_location_event"`
 	MaxDBConnections         int                        `json:"max_db_connections"`
+	CacheMS                  *int                       `json:"cache_ms"`
+	DisableReadWhileWriter   bool                       `json:"disable_read_while_writer"`
 	DBMaxIdleConnections     int                        `json:"db_max_idle_connections"`
 	DBConnMaxLifetimeSeconds int                        `json:"db_conn_max_lifetime_seconds"`
 	DBQueryTimeoutSeconds    int                        `json:"db_query_timeout_seconds"`
@@ -209,6 +212,12 @@ func NewFakeConfig() Config {
 	c.Secrets = append(c.Secrets, "foo")
 	return c
 }
+
+// DefaultCacheTime is the default cache span, if no cache_ms is set in the config.
+// To disable the cache, set cache_ms to 0.
+// It is recommended to keep the cache time small, for freshness, but nonzero for scalability.
+// One second is considered a good default balance between freshness and scalability.
+const DefaultCacheTime = time.Millisecond * 1000
 
 const DefaultLDAPTimeoutSecs = 60
 const DefaultDBQueryTimeoutSecs = 20
@@ -381,6 +390,10 @@ func ParseConfig(cfg Config) (Config, error) {
 	}
 	if cfg.DBQueryTimeoutSeconds == 0 {
 		cfg.DBQueryTimeoutSeconds = DefaultDBQueryTimeoutSecs
+	}
+
+	if cfg.CacheMS == nil {
+		cfg.CacheMS = util.IntPtr(int(DefaultCacheTime / time.Millisecond))
 	}
 
 	invalidTOURLStr := ""

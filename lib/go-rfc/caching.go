@@ -540,3 +540,9 @@ func CanReuseStored(
 	}
 	return ReuseCan
 }
+
+func MethodIsSafe(method string) bool {
+	return method == http.MethodGet ||
+		method == http.MethodOptions ||
+		method == http.MethodHead
+}

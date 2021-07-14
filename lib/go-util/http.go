@@ -92,3 +92,43 @@ func (i *BodyInterceptor) RealWrite(b []byte) (int, error) {
 func (i *BodyInterceptor) Body() []byte {
 	return i.BodyBytes
 }
+
+// FullInterceptor fulfills the Writer interface, but records the body, headers, and code, and doesn't actually write. This allows performing operations on the entire content written by a handler, for example, compressing or hashing. To actually write, call `RealWrite()`. Note this means `len(b)` and `nil` are always returned by `Write()`, any real write errors will be returned by `RealWrite()`.
+type FullInterceptor struct {
+	W       http.ResponseWriter
+	Body    []byte
+	Code    int
+	Headers http.Header
+}
+
+// WriteHeader implements http.ResponseWriter.
+// It saves the given code without writing it to the underlying ResponseWriter.
+// To write the code and header to the underlying ResponseWriter, call RealWriteHeader.
+func (fi *FullInterceptor) WriteHeader(code int) {
+	fi.Code = code
+}
+
+// Write implements http.ResponseWriter.
+// It writes the given bytes to FullInterceptor's internal tracking bytes, and does not write them to the internal ResponseWriter.
+// To write the internal bytes, call FullInterceptor.RealWrite.
+func (fi *FullInterceptor) Write(b []byte) (int, error) {
+	fi.Body = append(fi.Body, b...)
+	return len(b), nil
+}
+
+// Header implements http.ResponseWriter.
+// It returns FullInterceptor's internal ResponseWriter.Header, without modification or tracking.
+func (fi *FullInterceptor) Header() http.Header {
+	if fi.Headers == nil {
+		fi.Headers = http.Header{}
+	}
+	return fi.Headers
+}
+
+func WriteHeaders(w http.ResponseWriter, hdr http.Header) {
+	for name, vals := range hdr {
+		for _, val := range vals {
+			w.Header().Add(name, val)
+		}
+	}
+}

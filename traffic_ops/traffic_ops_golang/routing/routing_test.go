@@ -150,7 +150,7 @@ func TestCompileRoutes(t *testing.T) {
 	}
 
 	authBase := middleware.AuthBase{Secret: d.Secrets[0], Override: nil}
-	routes, versions := CreateRouteMap(routeSlice, nil, nil, nil, authBase, 1)
+	routes, versions := CreateRouteMap(routeSlice, nil, nil, nil, authBase, 1, 0, false)
 	if len(routes) == 0 {
 		t.Error("no routes handler defined")
 	}
@@ -241,17 +241,17 @@ func TestCreateRouteMap(t *testing.T) {
 	}
 
 	routes := []Route{
-		{api.Version{Major: 1, Minor: 2}, http.MethodGet, `path1`, PathOneHandler, auth.PrivLevelReadOnly, true, nil, 0},
-		{api.Version{Major: 1, Minor: 2}, http.MethodGet, `path2`, PathTwoHandler, 0, false, nil, 1},
-		{api.Version{Major: 1, Minor: 2}, http.MethodGet, `path3`, PathThreeHandler, 0, false, []middleware.Middleware{}, 2},
-		{api.Version{Major: 1, Minor: 2}, http.MethodGet, `path4`, PathFourHandler, 0, false, []middleware.Middleware{}, 3},
-		{api.Version{Major: 1, Minor: 2}, http.MethodGet, `path5`, PathFiveHandler, 0, false, []middleware.Middleware{}, 4},
+		{api.Version{Major: 1, Minor: 2}, http.MethodGet, `path1`, PathOneHandler, auth.PrivLevelReadOnly, true, nil, NoCache, 0},
+		{api.Version{Major: 1, Minor: 2}, http.MethodGet, `path2`, PathTwoHandler, 0, false, nil, NoCache, 1},
+		{api.Version{Major: 1, Minor: 2}, http.MethodGet, `path3`, PathThreeHandler, 0, false, []middleware.Middleware{}, NoCache, 2},
+		{api.Version{Major: 1, Minor: 2}, http.MethodGet, `path4`, PathFourHandler, 0, false, []middleware.Middleware{}, NoCache, 3},
+		{api.Version{Major: 1, Minor: 2}, http.MethodGet, `path5`, PathFiveHandler, 0, false, []middleware.Middleware{}, NoCache, 4},
 	}
 
 	disabledRoutesIDs := []int{4}
 
 	rawRoutes := []RawRoute{}
-	routeMap, _ := CreateRouteMap(routes, rawRoutes, disabledRoutesIDs, CatchallHandler, authBase, 60)
+	routeMap, _ := CreateRouteMap(routes, rawRoutes, disabledRoutesIDs, CatchallHandler, authBase, 60, 0, false)
 
 	route1Handler := routeMap["GET"][0].Handler
 

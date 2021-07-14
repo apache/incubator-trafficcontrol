@@ -46,6 +46,12 @@ import (
 // RoutePrefix ...
 const RoutePrefix = "^api" // TODO config?
 
+// DoCache is a constant to make routes more readable.
+const DoCache = true
+
+// NoCache is a constant to make routes more readable.
+const NoCache = false
+
 // Route ...
 type Route struct {
 	// Order matters! Do not reorder this! Routes() uses positional construction for readability.
@@ -56,6 +62,7 @@ type Route struct {
 	RequiredPrivLevel int
 	Authenticated     bool
 	Middlewares       []middleware.Middleware
+	Cache             bool
 	ID                int // unique ID for referencing this Route
 }
 
@@ -149,7 +156,7 @@ type PathHandler struct {
 
 // CreateRouteMap returns a map of methods to a slice of paths and handlers; wrapping the handlers in the appropriate middleware. Uses Semantic Versioning: routes are added to every subsequent minor version, but not subsequent major versions. For example, a 1.2 route is added to 1.3 but not 2.1. Also truncates '2.0' to '2', creating succinct major versions.
 // Returns the map of routes, and a map of API versions served.
-func CreateRouteMap(rs []Route, rawRoutes []RawRoute, disabledRouteIDs []int, perlHandler http.HandlerFunc, authBase middleware.AuthBase, reqTimeOutSeconds int) (map[string][]PathHandler, map[api.Version]struct{}) {
+func CreateRouteMap(rs []Route, rawRoutes []RawRoute, disabledRouteIDs []int, perlHandler http.HandlerFunc, authBase middleware.AuthBase, reqTimeOutSeconds int, cacheTime time.Duration, disableReadWhileWriter bool) (map[string][]PathHandler, map[api.Version]struct{}) {
 	// TODO strong types for method, path
 	versions := getSortedRouteVersions(rs)
 	requestTimeout := middleware.DefaultRequestTimeout
@@ -168,7 +175,15 @@ func CreateRouteMap(rs []Route, rawRoutes []RawRoute, disabledRouteIDs []int, pe
 			}
 			vstr := strconv.FormatUint(version.Major, 10) + "." + strconv.FormatUint(version.Minor, 10)
 			path := RoutePrefix + "/" + vstr + "/" + r.Path
-			middlewares := getRouteMiddleware(r.Middlewares, authBase, r.Authenticated, r.RequiredPrivLevel, requestTimeout)
+
+			routeDisableReadWhileWriter := disableReadWhileWriter
+			routeCacheTime := cacheTime
+			if !r.Cache {
+				routeDisableReadWhileWriter = true
+				routeCacheTime = 0
+			}
+
+			middlewares := getRouteMiddleware(r.Middlewares, authBase, r.Authenticated, r.RequiredPrivLevel, requestTimeout, routeCacheTime, routeDisableReadWhileWriter)
 
 			if isDisabledRoute {
 				m[r.Method] = append(m[r.Method], PathHandler{Path: path, Handler: middleware.WrapAccessLog(authBase.Secret, middleware.DisabledRouteHandler()), ID: r.ID})
@@ -179,7 +194,7 @@ func CreateRouteMap(rs []Route, rawRoutes []RawRoute, disabledRouteIDs []int, pe
 		}
 	}
 	for _, r := range rawRoutes {
-		middlewares := getRouteMiddleware(r.Middlewares, authBase, r.Authenticated, r.RequiredPrivLevel, requestTimeout)
+		middlewares := getRouteMiddleware(r.Middlewares, authBase, r.Authenticated, r.RequiredPrivLevel, requestTimeout, 0, true)
 		m[r.Method] = append(m[r.Method], PathHandler{Path: r.Path, Handler: middleware.Use(r.Handler, middlewares)})
 		log.Infof("adding raw route %v %v\n", r.Method, r.Path)
 	}
@@ -191,14 +206,27 @@ func CreateRouteMap(rs []Route, rawRoutes []RawRoute, disabledRouteIDs []int, pe
 	return m, versionSet
 }
 
-func getRouteMiddleware(middlewares []middleware.Middleware, authBase middleware.AuthBase, authenticated bool, privLevel int, requestTimeout time.Duration) []middleware.Middleware {
+func getRouteMiddleware(middlewares []middleware.Middleware, authBase middleware.AuthBase, authenticated bool, privLevel int, requestTimeout time.Duration, cacheTime time.Duration, disableReadWhileWriter bool) []middleware.Middleware {
 	if middlewares == nil {
 		middlewares = middleware.GetDefault(authBase.Secret, requestTimeout)
 	}
+
+	// CacheWrapper has to be here, rather than middleware.GetDefault, because otherwise the user won't be in the context.
+	// DEBUG the above statment is false
+
+	if cacheTime > 0 || !disableReadWhileWriter {
+		// DEBUG: Prepend. Issues?
+		middlewares = append([]middleware.Middleware{middleware.SmallCacheWrapper(cacheTime, disableReadWhileWriter)}, middlewares...)
+		// middlewares = append(middlewares, middleware.SmallCacheWrapper(cacheTime, disableReadWhileWriter))
+	}
+
 	if authenticated { // a privLevel of zero is an unauthenticated endpoint.
 		authWrapper := authBase.GetWrapper(privLevel)
-		middlewares = append(middlewares, authWrapper)
+		// DEBUG: Prepend. Issues?
+		middlewares = append([]middleware.Middleware{authWrapper}, middlewares...)
+		// middlewares = append(middlewares, authWrapper)
 	}
+
 	return middlewares
 }
 
@@ -343,7 +371,7 @@ func RegisterRoutes(d ServerData) error {
 	}
 
 	authBase := middleware.AuthBase{Secret: d.Config.Secrets[0], Override: nil} //we know d.Config.Secrets is a slice of at least one or start up would fail.
-	routes, versions := CreateRouteMap(routeSlice, rawRoutes, d.DisabledRoutes, handlerToFunc(catchall), authBase, d.RequestTimeout)
+	routes, versions := CreateRouteMap(routeSlice, rawRoutes, d.DisabledRoutes, handlerToFunc(catchall), authBase, d.RequestTimeout, time.Duration(*d.CacheMS)*time.Millisecond, d.DisableReadWhileWriter)
 
 	compiledRoutes := CompileRoutes(routes)
 	getReqID := nextReqIDGetter()

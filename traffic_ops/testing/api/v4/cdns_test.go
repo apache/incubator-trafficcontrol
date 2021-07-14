@@ -57,7 +57,9 @@ func TestCDNs(t *testing.T) {
 		SortTestCdnDesc(t)
 		CreateTestCDNsAlreadyExist(t)
 		DeleteTestCDNsInvalidId(t)
-		UpdateDeleteCDNWithLocks(t)
+		if includeSystemTests {
+			UpdateDeleteCDNWithLocks(t)
+		}
 	})
 }
 
