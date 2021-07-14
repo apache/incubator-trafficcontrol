@@ -119,22 +119,33 @@ func classifyConfigParams(configParams []tc.Parameter) map[string][]tc.Parameter
 }
 
 // For general <plugin>.pparam parameters
-func paramsStringFor(parameters []tc.Parameter) (string, []string) {
-	paramsString := ""
-	warnings := []string{}
+func paramsStringFor(parameters []tc.Parameter, warnings *[]string) (paramsString string) {
+	uniquemap := map[string]int{}
 
 	for _, param := range parameters {
 		paramsString += " @pparam=" + param.Value
-	}
 
-	return paramsString, warnings
+		// Try to extract argument
+		index := strings.IndexAny(param.Value, "= ")
+		var arg string
+		if 0 < index {
+			arg = param.Value[:index]
+		} else {
+			arg = param.Value
+		}
+
+		// Warn on detection, but don't correct
+		if _, exists := uniquemap[arg]; !exists {
+			uniquemap[arg] = 1
+		} else {
+			*warnings = append(*warnings, "Multiple repeated arguments '"+arg+"'")
+		}
+	}
+	return paramsString
 }
 
 // for cachekey.config parameters
-func paramsStringOldFor(parameters []tc.Parameter) (string, []string) {
-	paramsString := ""
-	warnings := []string{}
-
+func paramsStringOldFor(parameters []tc.Parameter, warnings *[]string) (paramsString string) {
 	// check for duplicate parameters
 	uniquemap := map[string]int{}
 	paramKeyVals := []keyVal{}
@@ -147,7 +158,7 @@ func paramsStringOldFor(parameters []tc.Parameter) (string, []string) {
 			paramKeyVals = append(paramKeyVals, keyVal{Key: key, Val: val})
 		} else {
 			uniquemap[key]++
-			warnings = append(warnings, "got multiple parameters for name '"+key+"' - ignoring '"+val+"'")
+			*warnings = append(*warnings, "got multiple parameters for name '"+key+"' - ignoring '"+val+"'")
 		}
 	}
 
@@ -155,7 +166,8 @@ func paramsStringOldFor(parameters []tc.Parameter) (string, []string) {
 	for _, keyVal := range paramKeyVals {
 		paramsString += " @pparam=--" + keyVal.Key + "=" + keyVal.Val
 	}
-	return paramsString, warnings
+
+	return paramsString
 }
 
 // getServerConfigRemapDotConfigForMid returns the remap lines, any warnings, and any error.
@@ -231,19 +243,16 @@ func getServerConfigRemapDotConfigForMid(
 		if nil != ds.ProfileID {
 			dsConfigParamsMap = classifyConfigParams(profilesConfigParams[*ds.ProfileID])
 			var cachekeyParams string
-			var warns []string
 
 			// Prefer to use cachekey.pparam
 			if params, ok := dsConfigParamsMap["cachekey.pparam"]; ok {
-				cachekeyParams, warns = paramsStringFor(params)
-				warnings = append(warnings, warns...)
+				cachekeyParams = paramsStringFor(params, &warnings)
 
 				if _, ok := dsConfigParamsMap["cachekey.config"]; ok {
 					warnings = append(warnings, "Delivery Service '"+*ds.XMLID+"': has both old cachekey.config and new cachekey.pparam parameters assigned, ignoring old cachekey.config ones")
 				}
 			} else if params, ok := dsConfigParamsMap["cachekey.config"]; ok {
-				cachekeyParams, warns = paramsStringOldFor(params)
-				warnings = append(warnings, warns...)
+				cachekeyParams = paramsStringOldFor(params, &warnings)
 			}
 
 			if cachekeyParams != "" {
@@ -255,10 +264,8 @@ func getServerConfigRemapDotConfigForMid(
 		}
 
 		if ds.RangeRequestHandling != nil && (*ds.RangeRequestHandling == tc.RangeRequestHandlingCacheRangeRequest || *ds.RangeRequestHandling == tc.RangeRequestHandlingSlice) {
-			midRemap += " @plugin=cache_range_requests.so"
-			paramsString, warns := paramsStringFor(dsConfigParamsMap["cache_range_requests.pparam"])
-			warnings = append(warnings, warns...)
-			midRemap += paramsString
+			midRemap += " @plugin=cache_range_requests.so" +
+				paramsStringFor(dsConfigParamsMap["cache_range_requests.pparam"], &warnings)
 		}
 
 		if midRemap != "" {
@@ -397,11 +404,15 @@ func buildEdgeRemapLine(
 		text += ` @plugin=header_rewrite.so @pparam=` + edgeHeaderRewriteConfigFileName(*ds.XMLID)
 	}
 
+	dsConfigParamsMap := classifyConfigParams(remapConfigParams)
+
 	if ds.SigningAlgorithm != nil && *ds.SigningAlgorithm != "" {
 		if *ds.SigningAlgorithm == tc.SigningAlgorithmURLSig {
-			text += ` @plugin=url_sig.so @pparam=url_sig_` + *ds.XMLID + ".config"
+			text += ` @plugin=url_sig.so @pparam=url_sig_` + *ds.XMLID + ".config" +
+				paramsStringFor(dsConfigParamsMap["url_sig.pparam"], &warnings)
 		} else if *ds.SigningAlgorithm == tc.SigningAlgorithmURISigning {
-			text += ` @plugin=uri_signing.so @pparam=uri_signing_` + *ds.XMLID + ".config"
+			text += ` @plugin=uri_signing.so @pparam=uri_signing_` + *ds.XMLID + ".config" +
+				paramsStringFor(dsConfigParamsMap["uri_signing.pparam"], &warnings)
 		}
 	}
 
@@ -422,22 +433,17 @@ func buildEdgeRemapLine(
 		}
 	}
 
-	dsConfigParamsMap := classifyConfigParams(remapConfigParams)
-
 	var cachekeyParams string
-	var warns []string
 
 	// Prefer to use cachekey.pparam
 	if params, ok := dsConfigParamsMap["cachekey.pparam"]; ok {
-		cachekeyParams, warns = paramsStringFor(params)
-		warnings = append(warnings, warns...)
+		cachekeyParams = paramsStringFor(params, &warnings)
 
 		if _, ok := dsConfigParamsMap["cachekey.config"]; ok {
 			warnings = append(warnings, "Delivery Service '"+*ds.XMLID+"': has both old cachekey.config and new cachekey.pparam parameters assigned, ignoring old cachekey.config ones")
 		}
 	} else if params, ok := dsConfigParamsMap["cachekey.config"]; ok {
-		cachekeyParams, warns = paramsStringOldFor(params)
-		warnings = append(warnings, warns...)
+		cachekeyParams = paramsStringOldFor(params, &warnings)
 	}
 
 	if cachekeyParams != "" {
@@ -457,21 +463,20 @@ func buildEdgeRemapLine(
 		crr := false
 
 		if *ds.RangeRequestHandling == tc.RangeRequestHandlingBackgroundFetch {
-			rangeReqTxt = " @plugin=background_fetch.so @pparam=bg_fetch.config"
+			rangeReqTxt = " @plugin=background_fetch.so @pparam=--config=bg_fetch.config" +
+				paramsStringFor(dsConfigParamsMap["background_fetch.pparam"], &warnings)
 		} else if *ds.RangeRequestHandling == tc.RangeRequestHandlingSlice && ds.RangeSliceBlockSize != nil {
-			paramsString, warns := paramsStringFor(dsConfigParamsMap["cache_range_requests.pparam"])
-			warnings = append(warnings, warns...)
 
-			rangeReqTxt = " @plugin=slice.so @pparam=--blockbytes=" + strconv.Itoa(*ds.RangeSliceBlockSize) + paramsString
+			rangeReqTxt = " @plugin=slice.so @pparam=--blockbytes=" + strconv.Itoa(*ds.RangeSliceBlockSize) +
+				paramsStringFor(dsConfigParamsMap["slice.pparam"], &warnings)
 			crr = true
 		} else if *ds.RangeRequestHandling == tc.RangeRequestHandlingCacheRangeRequest {
 			crr = true
 		}
 
 		if crr {
-			paramsString, warns := paramsStringFor(dsConfigParamsMap["cache_range_requests.pparam"])
-			warnings = append(warnings, warns...)
-			rangeReqTxt += " @plugin=cache_range_requests.so " + paramsString
+			rangeReqTxt += " @plugin=cache_range_requests.so " +
+				paramsStringFor(dsConfigParamsMap["cache_range_requests.pparam"], &warnings)
 		}
 	}
 
