@@ -77,6 +77,7 @@ public class RouterFilter extends OncePerRequestFilter {
 		writeHttpResponse(response, request, new HTTPRequest(request), StatTracker.getTrack(), httpAccessRecord);
 	}
 
+	@SuppressWarnings("PMD.CyclomaticComplexity")
 	private void writeHttpResponse(final HttpServletResponse response, final HttpServletRequest httpServletRequest,
 	                               final HTTPRequest request, final StatTracker.Track track, final HTTPAccessRecord httpAccessRecord) throws IOException {
 		final HTTPAccessRecord.Builder httpAccessRecordBuilder = new HTTPAccessRecord.Builder(httpAccessRecord);
@@ -112,11 +113,17 @@ public class RouterFilter extends OncePerRequestFilter {
 
 			final Map<String,String> accessRequestHeaders = new HttpAccessRequestHeaders().makeMap(httpServletRequest, requestHeaders);
 
+			String deliveryServiceIds = "";
+			if (routeResult != null && routeResult.getDeliveryServices().size() > 0) {
+				deliveryServiceIds = routeResult.getDeliveryServicesLogString();
+			}
+
 			final HTTPAccessRecord access = httpAccessRecordBuilder.resultType(track.getResult())
 				.resultDetails(track.getResultDetails())
 				.resultLocation(track.getResultLocation())
 				.requestHeaders(accessRequestHeaders)
 				.regionalGeoResult(track.getRegionalGeoResult())
+					.deliveryServiceIds(deliveryServiceIds)
 				.build();
 			ACCESS.info(HTTPAccessEventBuilder.create(access));
 			statTracker.saveTrack(track);

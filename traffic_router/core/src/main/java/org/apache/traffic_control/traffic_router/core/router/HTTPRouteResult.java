@@ -21,6 +21,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.StringJoiner;
+import java.util.stream.Collectors;
 
 import org.apache.traffic_control.traffic_router.core.ds.DeliveryService;
 
@@ -58,6 +59,10 @@ public class HTTPRouteResult implements RouteResult {
 
 	public List<DeliveryService> getDeliveryServices() {
 		return deliveryServices;
+	}
+
+	public String getDeliveryServicesLogString() {
+		return this.getDeliveryServices().stream().map(DeliveryService::getId).collect(Collectors.joining("|"));
 	}
 
 	public void addDeliveryService(final DeliveryService deliveryService) {

@@ -940,6 +940,7 @@ public class ZoneManager extends Resolver {
 			if (result != null) {
 				final Zone dynamicZone = fillDynamicZone(dynamicZoneCache, staticZone, request, result);
 				track.setResultCode(dynamicZone, request.getName(), request.getQueryType());
+				builder.deliveryServiceXmlIds(result.getDeliveryService().getId());
 				return dynamicZone;
 			} else {
 				return null;

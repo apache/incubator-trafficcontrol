@@ -46,6 +46,7 @@ public class HTTPAccessRecord {
     private final Geolocation resultLocation;
     private final Map<String, String> requestHeaders;
     private final RegionalGeoResult regionalGeoResult;
+    private final String deliveryServiceXmlIds;
 
     public Date getRequestDate() {
         return requestDate;
@@ -95,6 +96,10 @@ public class HTTPAccessRecord {
         return requestNanoTime;
     }
 
+    public String getDeliveryServiceXmlIds() {
+        return deliveryServiceXmlIds;
+    }
+
     public static class Builder {
         private final Date requestDate;
         private final HttpServletRequest request;
@@ -108,6 +113,7 @@ public class HTTPAccessRecord {
         private Map<String, String> requestHeaders = new HashMap<String, String>();
         private RegionalGeoResult regionalGeoResult;
         private final long requestNanoTime;
+        private String deliveryServiceXmlIds;
 
         public Builder(final Date requestDate, final HttpServletRequest request) {
             this.requestDate = requestDate;
@@ -178,6 +184,11 @@ public class HTTPAccessRecord {
         public HTTPAccessRecord build() {
             return new HTTPAccessRecord(this);
         }
+
+        public Builder deliveryServiceIds(final String deliveryServiceIds) {
+            this.deliveryServiceXmlIds = deliveryServiceIds;
+            return this;
+        }
     }
 
     private HTTPAccessRecord(final Builder builder) {
@@ -193,6 +204,7 @@ public class HTTPAccessRecord {
         requestHeaders = builder.requestHeaders;
         regionalGeoResult = builder.regionalGeoResult;
         requestNanoTime = builder.requestNanoTime;
+        deliveryServiceXmlIds = builder.deliveryServiceXmlIds;
     }
 
     @Override

@@ -35,6 +35,7 @@ public final class DNSAccessRecord {
     private final ResultDetails resultDetails;
     private final Geolocation resultLocation;
     private final long requestNanoTime;
+    private final String deliveryServiceXmlIds;
 
     public long getQueryInstant() {
         return queryInstant;
@@ -68,6 +69,10 @@ public final class DNSAccessRecord {
         return requestNanoTime;
     }
 
+    public String getDeliveryServiceXmlIds() {
+        return deliveryServiceXmlIds;
+    }
+
     public static class Builder {
         private final long queryInstant;
         private final InetAddress resolver;
@@ -77,6 +82,7 @@ public final class DNSAccessRecord {
         private ResultDetails resultDetails;
         private Geolocation resultLocation;
         private final long requestNanoTime;
+        private String deliveryServiceXmlIds;
 
         public Builder(final long queryInstant, final InetAddress client) {
             this.queryInstant = queryInstant;
@@ -110,6 +116,11 @@ public final class DNSAccessRecord {
             return this;
         }
 
+        public Builder deliveryServiceXmlIds(final String deliveryServicesXmlIds) {
+            this.deliveryServiceXmlIds = deliveryServicesXmlIds;
+            return this;
+        }
+
         public DNSAccessRecord build() {
             return new DNSAccessRecord(this);
         }
@@ -124,6 +135,7 @@ public final class DNSAccessRecord {
         resultDetails = builder.resultDetails;
         resultLocation = builder.resultLocation;
         requestNanoTime = builder.requestNanoTime;
+        deliveryServiceXmlIds = builder.deliveryServiceXmlIds;
     }
 
 }

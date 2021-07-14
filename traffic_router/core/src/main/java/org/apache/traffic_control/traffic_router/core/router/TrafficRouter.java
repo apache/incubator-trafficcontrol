@@ -1079,6 +1079,7 @@ public class TrafficRouter {
 
 		for (final SteeringResult steeringResult: steeringResults) {
 			routeResult.addUrl(new URL(steeringResult.getDeliveryService().createURIString(request, steeringResult.getCache())));
+			routeResult.addDeliveryService(steeringResult.getDeliveryService());
 		}
 
 		if (routeResult.getUrls().isEmpty()) {
