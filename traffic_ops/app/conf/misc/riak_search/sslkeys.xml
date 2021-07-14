@@ -19,7 +19,7 @@ specific language governing permissions and limitations
 under the License.
 -->
 
-<schema name="schedule" version="1.5">
+<schema name="sslkeys" version="1.5">
  <fields>
    <field name="cdn"   type="string"  indexed="true" stored="true" />
    <field name="deliveryservice"   type="string"  indexed="true" stored="true" />
