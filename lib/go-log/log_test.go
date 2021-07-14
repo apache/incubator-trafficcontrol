@@ -42,3 +42,15 @@ func TestUTC(t *testing.T) {
 		t.Errorf("expected UTC time, actual '" + actual + "'")
 	}
 }
+
+func TestNewlinesSingleLogLine(t *testing.T) {
+	buf := &bytes.Buffer{}
+	Init(nil, writeCloser{buf}, nil, nil, nil)
+	// Have to concatenate, because Go doesn't allow you to test multiple trailing newline behavior.
+	Errorln("foo\n\nbar\n" + "\n" + "\n")
+	actual := buf.String()
+
+	if !strings.HasSuffix(actual, `Z: foo\n\nbar`+"\n") {
+		t.Errorf("expected message with newlines to be a single log line, with interior newlines escaped and trailing newlines trimmed, actual '" + actual + "'")
+	}
+}

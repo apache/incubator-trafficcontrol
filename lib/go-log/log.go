@@ -25,6 +25,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -76,14 +77,14 @@ func logf(logger *log.Logger, format string, v ...interface{}) {
 	if logger == nil {
 		return
 	}
-	logger.Output(stackFrame, time.Now().UTC().Format(timeFormat)+": "+fmt.Sprintf(format, v...))
+	logger.Output(stackFrame, time.Now().UTC().Format(timeFormat)+": "+strings.Replace(strings.TrimSpace(fmt.Sprintf(format, v...)), "\n", `\n`, -1)+"\n")
 }
 
 func logln(logger *log.Logger, v ...interface{}) {
 	if logger == nil {
 		return
 	}
-	logger.Output(stackFrame, time.Now().UTC().Format(timeFormat)+": "+fmt.Sprintln(v...))
+	logger.Output(stackFrame, time.Now().UTC().Format(timeFormat)+": "+strings.Replace(strings.TrimSpace(fmt.Sprintln(v...)), "\n", `\n`, -1)+"\n")
 }
 
 const timeFormat = time.RFC3339Nano
