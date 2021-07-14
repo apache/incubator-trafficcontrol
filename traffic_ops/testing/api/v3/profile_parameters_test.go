@@ -18,7 +18,6 @@ package v3
 import (
 	"fmt"
 	"net/http"
-	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -31,10 +30,9 @@ const queryParamFormat = "?profileId=%d&parameterId=%d"
 
 func TestProfileParameters(t *testing.T) {
 	WithObjs(t, []TCObj{CDNs, Types, Parameters, Profiles, ProfileParameters}, func() {
-		SortTestProfileParameters(t)
-		GetTestProfileParametersIMS(t)
-		GetTestProfileParameters(t)
-		InvalidCreateTestProfileParameters(t)
+		t.Run("Get /profileparameters with the If-Modified-Since HTTP header", GetTestProfileParametersIMS)
+		t.Run("Basic GET request", GetTestProfileParameters)
+		t.Run("Attempt to create an invalid Profile-Parameter relationship", InvalidCreateTestProfileParameters)
 	})
 }
 
@@ -101,25 +99,6 @@ func InvalidCreateTestProfileParameters(t *testing.T) {
 		t.Errorf("expected: error message to contain 'parameterId', actual: %v", err)
 	}
 
-}
-
-func SortTestProfileParameters(t *testing.T) {
-	var header http.Header
-	var sortedList []string
-	resp, _, err := TOSession.GetProfileParametersWithHdr(header)
-	if err != nil {
-		t.Fatalf("Expected no error, but got %v", err.Error())
-	}
-	for i, _ := range resp {
-		sortedList = append(sortedList, resp[i].Parameter)
-	}
-
-	res := sort.SliceIsSorted(sortedList, func(p, q int) bool {
-		return sortedList[p] < sortedList[q]
-	})
-	if res != true {
-		t.Errorf("list is not sorted by their names: %v", sortedList)
-	}
 }
 
 func GetTestProfileParameters(t *testing.T) {
