@@ -94,6 +94,10 @@ func MakeStorageDotConfig(
 func makeStorageVolumeText(prefix string, letters string, volume int) string {
 	text := ""
 	for _, letter := range strings.Split(letters, ",") {
+		letter = strings.TrimSpace(letter)
+		if letter == "" {
+			continue
+		}
 		text += prefix + letter + " volume=" + strconv.Itoa(volume) + "\n"
 	}
 	return text
