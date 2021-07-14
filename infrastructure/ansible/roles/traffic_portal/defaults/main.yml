@@ -82,7 +82,7 @@ tp_default_properties_template:
     cacheChecks:
       _comments: These are configurable properties for the cache checks view. The data
         for the cache checks view is derived from TO extensions. The extensions array
-        should include an entry for each of your extensions or you can check GET api/1.3/servers/checks
+        should include an entry for each of your extensions or you can check GET api/{{ to_api _version }}/servers/checks
         to see which checks you have configured.
       show: true
       updatePending:

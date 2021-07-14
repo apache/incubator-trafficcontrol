@@ -17,7 +17,8 @@
 
 - name: Get server details for {{to_api_target_host}}
   uri:
-    url: "{{ to_api_base_url }}/api/1.2/servers/hostname/{{ to_api_target_host.split('.')[0] }}/details"
+    url: "{{ to_api_base_url }}/api/{{ to_api_version }}/servers/details?hostname={{ to_api_target_host.split('.')[0] }}"
+    #url: "{{ to_api_base_url }}/api/1.2/servers/hostname/{{ to_api_target_host.split('.')[0] }}/details"
     method: GET
     headers:
       Cookie: "{{ hostvars.localhost.login.set_cookie }}"
@@ -40,7 +41,7 @@
 
 - name: "{{ 'Set state of '+to_api_target_host+' to ' + to_api_desired_state }}"
   uri:
-    url: "{{ to_api_base_url }}/api/1.2/servers/{{ server_details.json.response.id }}/status"
+    url: "{{ to_api_base_url }}/api/{{ to_api_version }}/servers/{{ server_details.json.response.id }}/status"
     method: PUT
     body_format: json
     headers:

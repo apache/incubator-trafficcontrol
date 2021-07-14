@@ -50,7 +50,8 @@
 - name: "Take pre-install snapshot of CRConfig.json ({{ to_api_target_cdn }})"
   delegate_to: localhost
   uri:
-    url: "{{ to_api_base_url }}/api/4.0/cdns/{{ to_api_target_cdn }}/snapshot"
+    url
+    url: "{{ to_api_base_url }}/api/{{ to_api_version }}/cdns/{{ to_api_target_cdn }}/snapshot"
     method: GET
     follow_redirects: all
     return_content: yes
@@ -64,7 +65,7 @@
 - name: "Retrieves PENDING snapshot ({{ to_api_target_cdn }})"
   delegate_to: localhost
   uri:
-    url: "{{ to_api_base_url }}/api/1.2/cdns/{{ to_api_target_cdn }}/snapshot/new"
+    url: "{{ to_api_base_url }}/api/{{ to_api_ version }}/cdns/{{ to_api_target_cdn }}/snapshot/new"
     method: GET
     follow_redirects: all
     return_content: yes

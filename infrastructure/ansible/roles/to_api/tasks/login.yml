@@ -14,7 +14,7 @@
 #
 - name: Get TO Cookie
   uri:
-    url: "{{ to_api_base_url }}/api/1.2/user/login"
+    url: "{{ to_api_base_url }}/api/{{ to_api_version }}/user/login"
     method: POST
     body_format: json
     body: '{ "u":"{{ to_api_login_name }}", "p":"{{ to_api_login_password }}" }'

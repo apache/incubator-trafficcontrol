@@ -70,15 +70,7 @@ dl_ds_default_cdns:
     name: Kabletown2.0
     dnssecEnabled: false
 
-# TO Types
-dl_ds_merged_types: "{{ dl_ds_default_types }}"
-dl_ds_default_types:
-  - name: TR_LOC
-    description: Traffic Router Logical Location
-    useInTable: cachegroup
-  - name: INFRA_LOC
-    description: Generic Infrastructure Logical Location
-    useInTable: cachegroup
+# TO Types are pre-seeded in DB
 
 # The mapping of components from inventory hostvars to TO types
 dl_ds_merged_type_ansible_component_map: "{{ dl_ds_default_type_ansible_component_map }}"
@@ -125,7 +117,7 @@ dl_ds_default_cachegroups:
     parentCachegroup:
     secondaryParentCachegroup:
     localizationMethods:
-    type: INFRA_LOC
+    type: TC_LOC
     fallbackToClosest:
   - name: multi-site-org-east
     shortName: msoe
@@ -738,7 +730,7 @@ dl_ds_default_profile_cdntemplates:
         secure: 0
       - name: federationmapping.polling.url
         configFile: CRConfig.json
-        value: https://${toHostname}/api/1.4/federations/all.json
+        value: https://${toHostname}/api/{{ dl_to_api_version }}/federations/all.json
         secure: 0
       - name: geolocation.polling.interval
         configFile: CRConfig.json

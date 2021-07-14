@@ -17,7 +17,7 @@
 
 - name: Get cdn details
   uri:
-    url: "{{ to_api_base_url }}/api/1.2/cdns"
+    url: "{{ to_api_base_url }}/api/{{ to_api_version }}/cdns"
     method: GET
     headers:
       Cookie: "{{ hostvars.localhost.login.set_cookie }}"
@@ -29,7 +29,7 @@
 
 - name: "{{ 'Queue updates for ' + to_api_target_cdn }}"
   uri:
-    url: "{{ to_api_base_url }}/api/1.2/cdns/{{ cdns_details.json.response | selectattr('name','equalto',to_api_target_cdn) | map(attribute='id') | list | first }}/queue_update"
+    url: "{{ to_api_base_url }}/api/{{ to_api_version }}/cdns/{{ cdns_details.json.response | selectattr('name','equalto',to_api_target_cdn) | map(attribute='id') | list | first }}/queue_update"
     method: POST
     body_format: json
     headers:

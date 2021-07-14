@@ -20,7 +20,7 @@
 
 1. Install `jq`
 2. Install `ruby`
-3. Curl to get the response of https://{{ TO_BASE_URL }}/api/1.3/profiles/name/{{ TARGET_PROFILE }}/parameters and save that to a file named `profile.parameters.json`
+3. Curl to get the response of https://{{ TO_BASE_URL }}/api/{{ dl_to_api_version }}/profiles/name/{{ TARGET_PROFILE }}/parameters and save that to a file named `profile.parameters.json`
 4. `jq -r '[.[] | sort_by(.configFile,.name,.value)[] | {name: .name,configFile: .configFile,value: .value,secure: (if .secure then 1 else 0 end)}]' profile.parameters.json > profile.parameters.filtered.json`
 5. `ruby -ryaml -rjson -e 'puts YAML.dump(JSON.parse(STDIN.read))' < profile.parameters.filtered.json > profile.parameters.yml`
 6. Transplant into appropriate ansible var file

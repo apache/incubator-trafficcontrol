@@ -172,7 +172,7 @@
   with_items: "{{ dl_ds_merged_cachegroups | json_query(type_filter) }}"
   vars:
     type_query: "response[?name == '{{ item.type | default('EDGE_LOC') }}'].id | [0]"
-    type_filter: "[?type == 'INFRA_LOC']"
+    type_filter: "[?type == 'TC_LOC']"
     error_query: "alerts[?level=='error'].text[?!contains(@,'already exists')]"
   register: create_cachegroup_out
   failed_when: (create_cachegroup_out.status == 400 and create_cachegroup_out.json | to_json | from_json | json_query(error_query) | length != 0) or (create_cachegroup_out.status > 400 and create_cachegroup_out.status < 600 and create_cachegroup_out.status != 500)
@@ -663,6 +663,140 @@
   set_fact:
     status_assignment: "{{ status_assignment | default({}) | combine({ item: 'REPORTED' }) }}"
   with_items: "{{ groups['atsec'] + groups['atsmid'] + groups['grove'] }}"
+  
+# Due to data manipulation being a shortcome of ansible, in these next set of tasks we are extracting 
+# interface data that is needed for server creation for dual homing puposes from ansible facts and 
+# storing the final result in dl_all_interfaces var
+          
+- name: Set tmp var to store all pertinent interfaces data from ansible facts for each host
+  set_fact:
+    _dl_all_ifaces_tmp_1: "{{ (_dl_all_ifaces_tmp_1 | default([])) + [ifaces] }}"
+  loop: "{{ hostvars | to_json | replace(replacestr, '') | from_json | json_query(loop_query) | subelements('all_ifaces') }}"
+  loop_control:
+    label: "{{ item.0.host_name }} - {{ item.1 }}"
+  when: 'ifaces != ""'
+  vars:
+    loop_query: "* | [].{host_name: inventory_hostname, hostvrs: @, all_ifaces: @.ansible_interfaces || `[]`}" # || used to set default value to empty list
+    replacestr: "{{ '{{' }}"
+    iface_query: "[ansible_{{ item.1 }}] | [? (ipv4 || ipv6) && length(ipv6[?!starts_with(address,`fe80`) && scope == `global`]) > `0` && (type == `ether` || type == `bonding`)] | [0] | {iface_name: device, v6_addresses: ipv6[?!starts_with(address,`fe80`) && scope == `global`], host: `{{ item.0.host_name }}`, mtu: mtu, v4_address: ipv4}"
+    ifaces: "{{ item.0.hostvrs | json_query(iface_query) }}"
+
+- name: Set var to add checks for v6 slaac address and service address to tmp var for all interfaces
+  set_fact: 
+    _dl_all_ifaces_tmp_2: "{{ _dl_all_ifaces_tmp_2 | default({}) | combine({ host_key: combined_result }) }}"
+  loop: "{{ _dl_all_ifaces_tmp_1 | subelements('v6_addresses') }}"
+  loop_control:
+    label: "{{ item.0.host }} - {{item.1.address}}"
+  vars:
+    v6_start: "{{ (item.1.address.split(':')[:-1]) | join(':') }}"
+    v6_start_regex: "{{ v6_start }}.+"
+    v6_addr_list: "{{ item.0.v6_addresses | difference([item.1]) | map(attribute='address') | list }}"
+    v6_addr_starts_with: "{{ v6_addr_list | select('match',v6_start_regex) | list }}"
+    is_v6_slaac_addr: "{{ true if (v6_addr_list | length > 0) and ( v6_addr_list | select('match',v6_start_regex) | list | length == 0) else false }}"
+    default_v6_addr: "{{ hostvars[item.0.host].ipv6_service_address | default(hostvars[item.0.host].ansible_default_ipv6.address) }}"
+    is_v6_service_addr: "{{ true if ((item.1.address == default_v6_addr) and (( v6_addr_list | length ) == 0)) or (not is_v6_slaac_addr and ( v6_addr_list | length ) > 0) else false }}"
+    tmp_host_key: "{{ item.0.host }}.{{ item.0.iface_name}}"
+    host_key: "{{ tmp_host_key | replace('.','_') | replace('-','_') }}" # parsing error using '.' in host_key
+    result: "{{ item.1 | combine({'is_v6_slaac_addr': is_v6_slaac_addr, 'is_service_address': is_v6_service_addr}) }}"
+    host_query: "{{ host_key }}.host | [0]"
+    iface_query: "{{ host_key }}.iface_name | [0]"
+    mtu_query: "{{ host_key }}.mtu | [0]"
+    v4_addr_query: "{{ host_key }}.v4_address | [0]"
+    v6_addr_query: "{{ host_key }}.v6_addresses"
+    combined_result:
+      host: "{{ (_dl_all_ifaces_tmp_2 | default({})) | json_query(host_query) | default(item.0.host, true) }}"
+      iface_name: "{{ (_dl_all_ifaces_tmp_2 | default({})) | json_query(iface_query) | default(item.0.iface_name, true) }}"
+      mtu: "{{ (_dl_all_ifaces_tmp_2 | default({})) | json_query(mtu_query) | default(item.0.mtu, true) }}"
+      v4_address: "{{ (_dl_all_ifaces_tmp_2 | default({})) | json_query(v4_addr_query) | default(item.0.v4_address, true) }}"
+      v6_addresses: "{{ ((_dl_all_ifaces_tmp_2 | default({})) | json_query(v6_addr_query) | default([], true)) + [result] }}"
+
+- name: Set var to add v4 service address check to tmp var for all interfaces
+  set_fact:
+    _dl_all_ifaces_tmp_3: "{{ (_dl_all_ifaces_tmp_3 | default([])) + [ item | combine({'v4_address': {'is_service_address': is_v4_service_addr } }, recursive=True)] }}"
+  loop: "{{ _dl_all_ifaces_tmp_2 | dict2items | map(attribute='value') | list }}"
+  loop_control:
+    label: "{{ item.host }} - {{ item.iface_name }}"
+  vars:
+    is_v4_service_addr: "{{ true if item.v4_address.address == hostvars[item.host].ansible_default_ipv4.address else false }}"
+
+- name: Get ip gateway information from shell
+  shell: "if [ \"$(`which ip` -{{ item.ip_family }} route show {{ item.address }}/{{ item.suffix }} | grep via)\" == \"\" ]; then `which ip` -{{ item.ip_family }} route show | grep default | grep -vE ' fe80| 127.' | cut -f3 -d' ';else `which ip` -{{ item.ip_family }} route show {{ item.address }}/{{ item.suffix }} | cut -f3 -d' '; fi"
+  loop: "{{ _dl_all_ifaces_tmp_3 | json_query(ipObject_query) }}"
+  register: ipAddress_gateways
+  changed_when: false
+  environment:
+    PATH: "{{ lookup('env', 'PATH') }}:/usr/local/sbin:/usr/sbin:/sbin"
+  vars:
+    ipObject_query: "[] | { v4_address: [].{ host: host, address: v4_address.address, suffix: v4_address.netmask, ip_family: `4` }, v6_addresses: [].{ address: @.v6_addresses[0].address, host: host, suffix: @.v6_addresses[0].prefix, ip_family: `6` } } | *[]"
+  delegate_to: "{{ item.host }}"
+
+- name: Get interface speed to determine max maxBandwidth
+  shell: "cat /sys/class/net/{{ item.iface_name }}/speed"
+  loop: "{{ _dl_all_ifaces_tmp_3 | json_query(iface_query) }}"
+  register: iface_total_bandwidth
+  changed_when: false
+  environment:
+    PATH: "{{ lookup('env', 'PATH') }}:/usr/local/sbin:/usr/sbin:/sbin"
+  vars:
+    iface_query: "[].{ host: host, iface_name: iface_name }"
+  failed_when: false
+  delegate_to: "{{ item.host }}"
+
+- name: Set var for adding v6 gateway information to to tmp var for all interfaces
+  set_fact:
+    _dl_all_ifaces_tmp_4: "{{ _dl_all_ifaces_tmp_4 | default({}) | combine({ hostAsKey: combined_result }) }}"
+  loop: "{{ _dl_all_ifaces_tmp_3 | subelements('v6_addresses') }}"
+  loop_control:
+    label: "{{ item.0.host }} - {{ item.1.address }}"
+  vars:
+    v6gateway_query: "[?item.address == `{{ item.1.address }}`] |[0].stdout"
+    v6gateway: "{{ (((ipAddress_gateways.results | json_query(v6gateway_query)) if ipAddress_gateways.results | json_query(v6gateway_query) != '' else (v6_cidr_address | ipaddr('1'))).split('/'))[0] }}"
+    v6_cidr_address: "{{ item.1.address }}/{{ item.1.prefix }}"
+    tmp_hostAsKey: "{{ item.0.host }}.{{ item.0.iface_name }}"
+    hostAsKey: "{{ tmp_hostAsKey | replace('.','_') | replace('-','_') }}"
+    result: "{{ item.1 | combine({'gateway': v6gateway, 'address': v6_cidr_address}) }}"
+    host_query: "{{ hostAsKey }}.host | [0]"
+    iface_query: "{{ hostAsKey }}.iface_name | [0]"
+    mtu_query: "{{ hostAsKey }}.mtu | [0]"
+    v4_address_query: "{{ hostAsKey }}.v4_address | [0]"
+    v6_addresses_query: "{{ hostAsKey }}.v6_addresses"
+    combined_result:
+      host: "{{ (_dl_all_ifaces_tmp_4 | default({})) | json_query(host_query) | default(item.0.host, true) }}"
+      iface_name: "{{ (_dl_all_ifaces_tmp_4 | default({})) | json_query(iface_query) | default(item.0.iface_name, true) }}"
+      mtu: "{{ (_dl_all_ifaces_tmp_4 | default({})) | json_query(mtu_query) | default(item.0.mtu, true) }}"
+      v4_address: "{{ (_dl_all_ifaces_tmp_4 | default({})) | json_query(v4_address_query) | default(item.0.v4_address, true) }}"
+      v6_addresses: "{{ ((_dl_all_ifaces_tmp_4 | default({})) | json_query(v6_addresses_query) | default([], true)) + [result] }}"
+  
+- name: Set var to adding v4 gateway and interface total bandwidth to tmp var for all interfaces
+  set_fact:
+    _dl_all_ifaces_tmp_5: "{{ _dl_all_ifaces_tmp_5 | default ([]) + [item | combine({'iface_total_bandwidth': totalBandwidth, 'v4_address': {'gateway': v4gateway, 'address': v4_cidr_address } }, recursive=True)] }}"
+  loop: "{{ _dl_all_ifaces_tmp_4 | dict2items | map(attribute='value') | list }}"
+  loop_control:
+    label: "{{ item.host }} - {{ item.v4_address.address }}"
+  vars:
+    v4gateway_query: "[?item.address == `{{ item.v4_address.address}}`] |[0].stdout"
+    v4gateway: "{{ ((ipAddress_gateways.results | json_query(v4gateway_query)).split('/'))[0] }}"
+    v4_cidr_address: "{{ item.v4_address.address }}/{{ net_cidr_address | ipaddr('prefix') }}"
+    net_cidr_address: "{{ item.v4_address.network }}/{{ item.v4_address.netmask }}"
+    totalBandwidth_query: "[?item == `{{ item.iface_name }}`] | to_number([0].stdout)"
+    totalBandwidth: "{{  iface_total_bandwidth.results | json_query(totalBandwidth_query)}}"
+
+- name: Set Fact for all interfaces with required data for server creation
+  set_fact: 
+    dl_all_interfaces: "{{ (dl_all_interfaces | default({})) | combine({ item.0.key: [serverIfacePayload] }, recursive=True, list_merge='append') }}"
+  loop: "{{ ifaceObject | subelements('value') }}"
+  loop_control: 
+    label: "{{ item.0.key }} - {{ item.1.name }}"
+  vars: 
+    ifaceObject_query: "[].{ key: host, value: [{name: iface_name, max_bandwidth: iface_total_bandwidth, mtu: to_number(mtu), ipAddresses: ({v4_address: [v4_address], v6_address: v6_addresses} | *[].{address: address, gateway: gateway, serviceAddress: is_service_address })}]}"
+    ifaceObject: "{{ _dl_all_ifaces_tmp_5 | json_query(ifaceObject_query) }}"
+    monitor_interface_query: "ipAddresses[] | [?serviceAddress == `true`]"
+    monitor_interface: "{{ true if (item.1 | json_query(monitor_interface_query) | length) > 0 else false }}"
+    serverIfacePayload: "{{ item.1 | combine({'monitor': monitor_interface, 'max_bandwidth': (max_bandwidth | int) }, recursive=True) }}"
+    bandwidth: "{{ (item.1.max_bandwidth | default(1000, true)) | int }}"
+    max_bandwidth_by_limit: "{{ bandwidth - (reserved_interface_bandwidth_lookup[bandwidth]) if reserved_interface_bandwidth_lookup is defined and reserved_interface_bandwidth_lookup[bandwidth] is defined }}"
+    max_bandwidth_by_percent: "{{ (bandwidth|int) - ((bandwidth|int)/(reserved_interface_bandwidth_percent | default(80) | int )) }}"
+    max_bandwidth: "{{ max_bandwidth_by_limit | default(max_bandwidth_by_percent,true) }}"
 
 - name: Create Servers (Non-mso)
   uri:
@@ -701,13 +835,7 @@
     profileId: "{{ profile_id }}"
     cdnId: "{{ cdn_id }}"
     updPending: True
-    interfaceName: "{{ hostvars[item].ansible_default_ipv4.interface | default('eth0') }}"
-    ipAddress: "{{ hostvars[item].ansible_default_ipv4.address | default(hostvars[item].ansible_host) }}"
-    ipNetmask: "{{ hostvars[item].ansible_default_ipv4.netmask | default('255.255.255.0') }}"
-    ipGateway: "{{ hostvars[item].ansible_default_ipv4.gateway | default('127.0.0.0') }}"
-    ip6Address: "{{ hostvars[item].ansible_default_ipv6.address | default(omit) }}"
-    ip6Gateway: "{{ hostvars[item].ansible_default_ipv6.gateway | default(omit) }}"
-    interfaceMtu: "{{ hostvars[item].ansible_default_ipv4.mtu | default('9000') }}"
+    interfaces: "{{ dl_all_interfaces[item] }}"
     tcpPort: "{{ (dl_ds_merged_servers[item] | default(dl_ds_merged_servers['server.kabletown.invalid'])).tcpPort | default(omit) }}"
     httpsPort: "{{ (dl_ds_merged_servers[item] | default(dl_ds_merged_servers['server.kabletown.invalid'])).httpsPort | default(omit) }}"
     xmppId: "{{ (dl_ds_merged_servers[item] | default(dl_ds_merged_servers['server.kabletown.invalid'])).xmppId | default(omit) }}"
@@ -771,13 +899,15 @@
     profileId: "{{ profile_id }}"
     cdnId: "{{ cdn_id }}"
     updPending: True
-    interfaceName: "eth0"
-    ipAddress: "{{ hostvars[item].ansible_host }}"
-    ipNetmask: "255.255.255.0"
-    ipGateway: "127.0.0.0"
-    ip6Address: "{{ omit }}"
-    ip6Gateway: "{{ omit }}"
-    interfaceMtu: "9000"
+    interfaces:
+      - maxBandwidth: null
+        monitor: true
+        mtu: 9000
+        name: "eth0"
+        ipAddresses:
+          - address: "{{ hostvars[item].ansible_host }}"
+            gateway: "127.0.0.0"
+            serviceAddress: true
     tcpPort: "{{ (dl_ds_merged_servers[item] | default(dl_ds_merged_servers['server.kabletown.invalid'])).tcpPort | default(omit) }}"
     httpsPort: "{{ (dl_ds_merged_servers[item] | default(dl_ds_merged_servers['server.kabletown.invalid'])).httpsPort | default(omit) }}"
     xmppId: "{{ (dl_ds_merged_servers[item] | default(dl_ds_merged_servers['server.kabletown.invalid'])).xmppId | default(omit) }}"
