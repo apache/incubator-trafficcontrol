@@ -61,29 +61,17 @@ var (
 )
 
 func init() {
-	fromTypePtr := getopt.StringLong("fromType", 't', riakBE.Name(), fmt.Sprintf("From server types (%v)", strings.Join(supportedTypes(), "|")))
-	if fromTypePtr == nil {
-		stdlog.Fatal("unable to load fromType")
-	}
-	fromType = *fromTypePtr
+	fromType = riakBE.Name()
+	getopt.FlagLong(&fromType, "fromType", 't', fmt.Sprintf("From server types (%v)", strings.Join(supportedTypes(), "|")))
 
-	toTypePtr := getopt.StringLong("toType", 'o', pgBE.Name(), fmt.Sprintf("From server types (%v)", strings.Join(supportedTypes(), "|")))
-	if toTypePtr == nil {
-		stdlog.Fatal("unable to load toType")
-	}
-	toType = *toTypePtr
+	toType = pgBE.Name()
+	getopt.FlagLong(&fromType, "toType", 'o', fmt.Sprintf("From server types (%v)", strings.Join(supportedTypes(), "|")))
 
-	toCfgPtr := getopt.StringLong("toCfgPath", 'g', "pg.json", "To server config file")
-	if toCfgPtr == nil {
-		stdlog.Fatal("unable to load toCfg")
-	}
-	toCfgPath = *toCfgPtr
+	toCfgPath = "pg.json"
+	getopt.FlagLong(&toCfgPath, "toCfgPath", 'g', "To server config file")
 
-	fromCfgPtr := getopt.StringLong("fromCfgPath", 'f', "riak.json", "From server config file")
-	if fromCfgPtr == nil {
-		stdlog.Fatal("unable to load fromCfg")
-	}
-	fromCfgPath = *fromCfgPtr
+	fromCfgPath = "riak.json"
+	getopt.FlagLong(&fromCfgPath, "fromCfgPath", 'f', "From server config file")
 
 	getopt.FlagLong(&dry, "dry", 'r', "Do not perform writes").
 		SetOptional().

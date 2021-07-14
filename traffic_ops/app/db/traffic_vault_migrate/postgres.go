@@ -37,14 +37,14 @@ import (
 
 // PGConfig represents the configuration options available to the PG backend.
 type PGConfig struct {
-	Host     string `json:"host"`
-	Port     string `json:"port"`
-	User     string `json:"user"`
-	Password string `json:"password"`
-	SSLMode  string `json:"sslmode"`
-	Database string `json:"database"`
-	Key      string `json:"aesKey"`
-	AESKey   []byte
+	Host      string `json:"host"`
+	Port      string `json:"port"`
+	User      string `json:"user"`
+	Password  string `json:"password"`
+	SSLMode   string `json:"sslmode"`
+	Database  string `json:"database"`
+	KeyBase64 string `json:"aesKey"`
+	AESKey    []byte
 }
 
 // PGBackend is the Postgres implementation of TVBackend.
@@ -79,12 +79,12 @@ func (pg *PGBackend) ReadConfigFile(configFile string) error {
 		return err
 	}
 
-	if pg.cfg.AESKey, err = base64.StdEncoding.DecodeString(pg.cfg.Key); err != nil {
-		return fmt.Errorf("unable to decode PG AESKey '%s': %w", pg.cfg.Key, err)
+	if pg.cfg.AESKey, err = base64.StdEncoding.DecodeString(pg.cfg.KeyBase64); err != nil {
+		return fmt.Errorf("unable to decode PG AESKey '%s': %w", pg.cfg.KeyBase64, err)
 	}
 
 	if err = util.ValidateAESKey(pg.cfg.AESKey); err != nil {
-		return fmt.Errorf("unable to validate PG AESKey '%s'", pg.cfg.Key)
+		return fmt.Errorf("unable to validate PG AESKey '%s'", pg.cfg.KeyBase64)
 	}
 	return nil
 }
@@ -387,16 +387,16 @@ func (tbl *pgSSLKeyTable) gatherKeys(db *sql.DB) error {
 	return nil
 }
 func (tbl *pgSSLKeyTable) decrypt(aesKey []byte) error {
-	for i, dns := range tbl.Records {
-		if err := decryptInto(aesKey, dns.DataEncrypted, &tbl.Records[i].Keys); err != nil {
+	for i, key := range tbl.Records {
+		if err := decryptInto(aesKey, key.DataEncrypted, &tbl.Records[i].Keys); err != nil {
 			return fmt.Errorf("unable to decrypt into keys: %w", err)
 		}
 	}
 	return nil
 }
 func (tbl *pgSSLKeyTable) encrypt(aesKey []byte) error {
-	for i, dns := range tbl.Records {
-		data, err := json.Marshal(dns.Keys)
+	for i, key := range tbl.Records {
+		data, err := json.Marshal(key.Keys)
 		if err != nil {
 			return fmt.Errorf("encrypt issue marshalling keys: %w", err)
 		}

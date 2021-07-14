@@ -643,8 +643,11 @@ func search(cluster *riak.Cluster, index string, query string, filterQuery strin
 		if !ok {
 			return nil, fmt.Errorf("riak search command unexpected type %T", iCmd)
 		}
+		if cmd.Response == nil {
+			return nil, errors.New("riak received nil response")
+		}
 		if start == 0 {
-			if cmd.Response == nil || cmd.Response.NumFound == 0 {
+			if cmd.Response.NumFound == 0 {
 				return nil, nil
 			}
 			if cmd.Response.NumFound <= numRows {
