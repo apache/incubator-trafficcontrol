@@ -1074,7 +1074,7 @@ h2 {
 .x_title h2 small {
   margin-left: 10px
 }
-.x_title span {
+.x_title span:not(.bc) {
   color: #BDBDBD
 }
 .x_content {

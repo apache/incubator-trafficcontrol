@@ -18,47 +18,6 @@ under the License.
 -->
 
 <div class="x_panel">
-    <div class="x_title">
-        <ol class="breadcrumb pull-left">
-            <li class="active">Change Logs <button type="button" class="btn btn-link" ng-click="changeDays()">[ last {{days}} days ]</button></li>
-        </ol>
-        <div class="pull-right">
-            <div class="form-inline" role="search">
-                <input id="quickSearch" name="quickSearch" type="search" class="form-control text-input" placeholder="Quick search..." ng-model="quickSearch" ng-change="onQuickSearchChanged()" aria-label="Search"/>
-                <div class="input-group text-input">
-                    <span class="input-group-addon">
-                        <label for="pageSize">Page size</label>
-                    </span>
-                    <input id="pageSize" name="pageSize" type="number" min="1" class="form-control" placeholder="100" ng-model="pageSize" ng-change="onPageSizeChanged()" />
-                </div>
-                <div id="toggleColumns" class="btn-group" role="group" title="Select Table Columns" uib-dropdown is-open="columnSettings.isopen">
-                    <button type="button" class="btn btn-default dropdown-toggle" uib-dropdown-toggle aria-haspopup="true" aria-expanded="false">
-                        <i class="fa fa-columns"></i>&nbsp;
-                        <span class="caret"></span>
-                    </button>
-                    <menu ng-click="$event.stopPropagation()" class="column-settings dropdown-menu-right dropdown-menu" uib-dropdown-menu>
-                        <li role="menuitem" ng-repeat="c in gridOptions.columnApi.getAllColumns() | orderBy:'colDef.headerName'">
-                            <div class="checkbox">
-                                <label><input type="checkbox" ng-checked="c.isVisible()" ng-click="toggleVisibility(c.colId)">{{::c.colDef.headerName}}</label>
-                            </div>
-                        </li>
-                    </menu>
-                </div>
-                <div class="btn-group" role="group" uib-dropdown is-open="more.isopen">
-                    <button name="moreBtn" type="button" class="btn btn-default dropdown-toggle" uib-dropdown-toggle aria-haspopup="true" aria-expanded="false">
-                        More&nbsp;
-                        <span class="caret"></span>
-                    </button>
-                    <ul class="dropdown-menu-right dropdown-menu" uib-dropdown-menu>
-                        <li role="menuitem"><button class="menu-item-button" type="button" ng-click="clearTableFilters()">Clear Table Filters</button></li>
-                        <li role="menuitem"><button class="menu-item-button" type="button" ng-click="exportCSV()">Export CSV</button></li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-        <div class="clearfix"></div>
-    </div>
-    <div class="x_content">
-        <div style="height: 740px;" ag-grid="gridOptions" class="change-logs-table ag-theme-alpine"></div>
-    </div>
+    <common-grid-controller title="Change Logs" table-name="changeLogs" options="gridOptions" data="changeLogs"
+                            columns="columns" title-button="titleButton"></common-grid-controller>
 </div>

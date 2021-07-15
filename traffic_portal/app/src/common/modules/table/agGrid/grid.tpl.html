@@ -18,14 +18,22 @@ under the License.
 -->
 
 <div class="x_title">
-    <ol class="breadcrumb pull-left">
-        <li class="active" ng-if="$ctrl.title">
-            {{ $ctrl.title }}
-            <button ng-if="$ctrl.titleButton !== undefined" type="button" class="btn btn-link"
-                    ng-click="$ctrl.titleButton.onClick()">{{ $ctrl.titleButton.getText() }}</button>
-        </li>
+    <div class="pull-left">
+        <ol class="breadcrumb pull-left" ng-if="$ctrl.breadCrumbs !== undefined">
+            <li ng-repeat="bc in $ctrl.breadCrumbs track by $index" ng-class="{'active': ($index+1 === $ctrl.breadCrumbs.length)}">
+                <a ng-if="$ctrl.bcHasHref(bc)" href="{{ $ctrl.bcGetHref(bc) }}">{{ $ctrl.bcGetText(bc) }}</a>
+                <span class="bc" ng-if="!$ctrl.bcHasHref(bc)">{{  $ctrl.bcGetText(bc) }}</span>
+            </li>
+        </ol>
+        <ol class="breadcrumb pull-left" ng-if="$ctrl.breadCrumbs === undefined || $ctrl.breadCrumbs.length < 1">
+            <li class="active" ng-if="$ctrl.title">
+                {{ $ctrl.title }}
+            </li>
+        </ol>
+        <button ng-if="$ctrl.titleButton !== undefined" type="button" class="btn btn-link"
+                ng-click="$ctrl.titleButton.onClick()">{{ $ctrl.titleButton.getText() }}</button>
         <span ng-if="$ctrl.options.selectRows">{{ $ctrl.selectedData.length }} row(s) selected</span>
-    </ol>
+    </div>
     <div class="pull-right">
         <div class="form-inline" role="search">
             <input id="quickSearch" name="quickSearch" type="search" class="form-control text-input" placeholder="Quick search..." ng-model="$ctrl.quickSearch" ng-change="$ctrl.onQuickSearchChanged()" aria-label="Search"/>
@@ -76,7 +84,7 @@ under the License.
     <ul>
         <li role="menuitem" ng-repeat="menu in $ctrl.contextMenuOptions" ng-if="$ctrl.isShown(menu)">
             <hr ng-if="menu.type == 0" class="divider"/>
-            <button ng-if="menu.type == 1" type="button" ng-click="$ctrl.contextMenuClick(menu, $event)">{{ $ctrl.getText(menu) }}</button>
+            <button ng-if="menu.type == 1" ng-disabled="$ctrl.contextIsDisabled(menu)" type="button" ng-click="$ctrl.contextMenuClick(menu, $event)">{{ $ctrl.getText(menu) }}</button>
             <a ng-if="menu.type == 2" href="{{ $ctrl.getHref(menu) }}" target="{{ menu.newTab ? '_blank' : '' }}">{{ $ctrl.getText(menu) }}</a>
         </li>
     </ul>

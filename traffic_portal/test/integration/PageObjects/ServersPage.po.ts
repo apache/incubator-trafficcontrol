@@ -141,8 +141,7 @@ export class ServersPage extends BasePage {
     let name = nameServer+this.randomize;
     await this.txtQuickSearch.clear();
     await this.txtQuickSearch.sendKeys(name);
-    await browser.actions().mouseMove(element(by.xpath("//span[text()='"+name+"']"))).perform();
-    await browser.actions().doubleClick(element(by.xpath("//span[text()='"+name+"']"))).perform();
+    await browser.actions().click(element(by.xpath("//span[text()='"+name+"']"))).perform();
   }
 
   public async SearchDeliveryServiceFromServerPage(name:string): Promise<boolean> {

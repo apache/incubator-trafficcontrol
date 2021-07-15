@@ -38,6 +38,16 @@ export namespace CGC {
 
     }
 
+    export interface TitleBreadCrumbs {
+        // If href is undefined, getHref is called
+        href?: string;
+        getHref?(): string;
+
+        // If text is undefined, getText is called
+        text?: string;
+        getText(): string;
+    }
+
     export interface CommonOption {
         type: OptionType;
         name: string;

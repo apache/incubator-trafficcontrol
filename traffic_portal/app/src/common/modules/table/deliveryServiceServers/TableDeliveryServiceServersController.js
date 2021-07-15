@@ -16,8 +16,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+/** @typedef { import('../agGrid/CommonGridController').CGC } CGC */
 
-var TableDeliveryServiceServersController = function(deliveryService, servers, filter, $controller, $scope, $uibModal, deliveryServiceService) {
+var TableDeliveryServiceServersController = function(deliveryService, servers, filter, $controller, $scope, $uibModal, deliveryServiceService, locationUtils) {
 
 	// extends the TableServersController to inherit common methods
 	angular.extend(this, $controller('TableServersController', { tableName: 'deliveryServiceServers', servers: servers, filter: filter, $scope: $scope }));
@@ -32,6 +33,56 @@ var TableDeliveryServiceServersController = function(deliveryService, servers, f
 	};
 
 	$scope.deliveryService = deliveryService;
+
+	this.$onInit = function() {
+	    $scope.contextMenuOptions.push({
+			type: 0
+		});
+		$scope.contextMenuOptions.push({
+			type: 1,
+			shown: function(row) {
+			    return !row.topology;
+			},
+			onClick: function(row) {
+				$scope.confirmRemoveServer(row);
+			},
+			isDisabled: function(row) {
+				return !$scope.isEdge(row) && !$scope.isOrigin(row);
+			},
+			getText: function(row) {
+				return "Remove " + row.type + "Server";
+			}
+		});
+		$scope.contextMenuOptions.push({
+			type: 1,
+			shown: function(row) {
+				return row.topology;
+			},
+			onClick: function(row) {
+				$scope.confirmRemoveServer(row);
+			},
+			isDisabled: function(row) {
+				return !$scope.isOrigin(row);
+			},
+			getText: function(row) {
+				return "Remove " + row.type + "Server";
+			}
+		});
+
+		$scope.dropDownOptions.push({
+			type: 0
+		});
+		$scope.dropDownOptions.push({
+			type: 1,
+            name: "selectServersMenuItem",
+			onClick: function() {
+				$scope.selectServers();
+			},
+			getText: function () {
+				return "Assign " + ($scope.deliveryService.topology ? "ORG " : "") + "Servers";
+			}
+		});
+	};
 
 	$scope.selectServers = function() {
 		var modalInstance = $uibModal.open({
@@ -67,11 +118,7 @@ var TableDeliveryServiceServersController = function(deliveryService, servers, f
 		});
 	};
 
-	$scope.confirmRemoveServer = function(server, $event) {
-		if ($event) {
-			$event.stopPropagation(); // this kills the click event so it doesn't trigger anything else
-		}
-
+	$scope.confirmRemoveServer = function(server) {
 		const params = {
 			title: 'Remove Server from Delivery Service?',
 			message: 'Are you sure you want to remove ' + server.hostName + ' from this delivery service?'
@@ -93,7 +140,34 @@ var TableDeliveryServiceServersController = function(deliveryService, servers, f
 		});
 	};
 
+	/** @type CGC.TitleButton */
+	$scope.titleButton = {
+	    onClick: function() {
+	    	locationUtils.navigateToPath("topologies/edit?name=" + $scope.deliveryService.topology);
+		},
+		getText: function() {
+	    	return "[ " + $scope.deliveryService.topology + " topology ]";
+		}
+	};
+
+	/** @type CGC.TitleBreadCrumbs */
+	$scope.breadCrumbs = [{
+		href: "#!/delivery-services",
+		text: "Delivery Services"
+	},
+		{
+			getHref: function() {
+				return "#!/delivery-services/" + $scope.deliveryService.id + "?type=" + $scope.deliveryService.type;
+			},
+			getText: function() {
+				return $scope.deliveryService.xmlId;
+			}
+		},
+		{
+			text: "Servers"
+		}];
+
 };
 
-TableDeliveryServiceServersController.$inject = ['deliveryService', 'servers', 'filter', '$controller', '$scope', '$uibModal', 'deliveryServiceService'];
+TableDeliveryServiceServersController.$inject = ['deliveryService', 'servers', 'filter', '$controller', '$scope', '$uibModal', 'deliveryServiceService', 'locationUtils'];
 module.exports = TableDeliveryServiceServersController;

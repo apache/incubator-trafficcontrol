@@ -16,6 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+/** @typedef { import('../agGrid/CommonGridController').CGC } CGC */
 
 var TableDeliveryServiceJobsController = function(deliveryService, jobs, $controller, $scope, $location) {
 
@@ -23,6 +24,23 @@ var TableDeliveryServiceJobsController = function(deliveryService, jobs, $contro
 	angular.extend(this, $controller('TableJobsController', { tableName: 'dsJobs', jobs: jobs, $scope: $scope }));
 
 	$scope.deliveryService = deliveryService;
+
+	/** @type CGC.TitleBreadCrumbs */
+	$scope.breadCrumbs = [{
+		href: "#!/delivery-services",
+		text: "Delivery Services"
+	},
+	{
+		getText: function () {
+			return $scope.deliveryService.xmlId;
+		},
+		getHref: function () {
+			return "#!/delivery-services/" + $scope.deliveryService.id + "?type=" + $scope.deliveryService.type;
+		}
+	},
+	{
+		text: "Invalidation Requests"
+	}];
 
 	$scope.createJob = function() {
 		$location.path($location.path() + '/new');

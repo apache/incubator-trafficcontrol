@@ -16,11 +16,41 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+/** @typedef { import('../agGrid/CommonGridController').CGC } CGC */
 
 var TableCDNNotificationsController = function(cdn, notifications, filter, $controller, $scope) {
 
 	// extends the TableNotificationsController to inherit common methods
 	angular.extend(this, $controller('TableNotificationsController', { tableName: 'cdnNotifications', notifications: notifications, filter: filter, $scope: $scope }));
+
+	/** @type CGC.TitleBreadCrumbs[] */
+	$scope.breadCrumbs = [{
+		href: "#!/cdns",
+		text: "CDNs"
+	},
+	{
+	    getText: function() {
+	    	return $scope.cdn.name;
+		},
+		getHref: function() {
+	    	return "#!/cdns/" + $scope.cdn.id;
+		}
+	},
+	{
+		text: "Notifications"
+	}];
+
+	this.$onInit = function() {
+		let i;
+		for(i = 0; i < $scope.dropDownOptions.length; ++i) {
+			const ddo = $scope.dropDownOptions[i];
+			if (ddo.text !== undefined){
+				if (ddo.text === "Create Notification") {
+					$scope.dropDownOptions[i].onClick = function(entry) { $scope.createNotification($scope.cdn); };
+				}
+			}
+		}
+	};
 
 	$scope.cdn = cdn;
 };

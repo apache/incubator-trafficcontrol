@@ -16,6 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+/** @typedef { import('../agGrid/CommonGridController').CGC } CGC */
 
 var TableTopologyServersController = function(topologies, servers, filter, $controller, $scope, $uibModal, cdnService, topologyService) {
 
@@ -23,6 +24,19 @@ var TableTopologyServersController = function(topologies, servers, filter, $cont
 	angular.extend(this, $controller('TableServersController', { tableName: 'topologyServers', servers: servers, filter: filter, $scope: $scope }));
 
 	$scope.topology = topologies[0];
+
+	/** @type CGC.TitleBreadCrumbs[] */
+	$scope.breadCrumbs = [{
+		text: "Topologies",
+		href: "#!/topologies"
+	},
+	{
+		getText: function() { return $scope.topology.name; },
+		getHref: function() { return "#!/topologies/edit?name=" + $scope.topology.name; }
+	},
+	{
+		text: "Servers"
+	}];
 
 	$scope.confirmTopologyQueueServerUpdates = function(topology) {
 		const params = {
@@ -72,6 +86,20 @@ var TableTopologyServersController = function(topologies, servers, filter, $cont
 		}, function () {
 			console.log('Clear server updated cancelled');
 		});
+	};
+
+	this.$onInit = function() {
+		let i;
+		for(i = 0; i < $scope.dropDownOptions.length; ++i) {
+			const ddo = $scope.dropDownOptions[i];
+			if (ddo.text !== undefined){
+				if (ddo.text === "Queue Server Updates") {
+					$scope.dropDownOptions[i].onClick = function(entry) { $scope.confirmTopologyQueueServerUpdates($scope.topology); };
+				} else if (ddo.text === "Clear Server Updates") {
+					$scope.dropDownOptions[i].onClick = function(entry) { $scope.confirmTopologyClearServerUpdates($scope.topology); };
+				}
+			}
+		}
 	};
 
 };

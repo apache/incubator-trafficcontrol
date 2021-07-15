@@ -16,11 +16,25 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+/** @typedef { import('../agGrid/CommonGridController').CGC } CGC */
 
 var TableProfileServersController = function(profile, servers, filter, $controller, $scope) {
 
 	// extends the TableServersController to inherit common methods
 	angular.extend(this, $controller('TableServersController', { tableName: 'profileServers', servers: servers, filter: filter, $scope: $scope }));
+
+	/** @type CGC.TitleBreadCrumbs[] */
+	$scope.breadCrumbs = [{
+		text: "Profiles",
+		href: "#!/profiles"
+	},
+	{
+		getText: function() { return $scope.profile.name; },
+		getHref: function() { return "#!/profiles/" + $scope.profile.id;}
+	},
+	{
+		text: "Servers"
+	}];
 
 	$scope.profile = profile;
 };

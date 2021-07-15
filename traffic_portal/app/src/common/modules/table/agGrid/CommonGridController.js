@@ -51,13 +51,25 @@ let CommonGridController = function ($scope, $document, $state, userModel, dateU
     this.contextMenuOptions = [];
     /** @type CGC.TitleButton */
     this.titleButton = {};
+    /** @type CGC.TitleBreadCrumbs */
+    this.breadCrumbs = [];
+
+    function HTTPSCellRenderer() {}
+    HTTPSCellRenderer.prototype.init = function(params) {
+        this.eGui = document.createElement("A");
+        this.eGui.href = "https://" + params.value;
+        this.eGui.setAttribute("class", "link");
+        this.eGui.setAttribute("target", "_blank");
+        this.eGui.textContent = params.value;
+    };
+    HTTPSCellRenderer.prototype.getGui = function() {return this.eGui;};
 
     // browserify can't handle classes...
     function SSHCellRenderer() {}
     SSHCellRenderer.prototype.init = function(params) {
         this.eGui = document.createElement("A");
         this.eGui.href = "ssh://" + userModel.user.username + "@" + params.value;
-        this.eGui.setAttribute("target", "_blank");
+        this.eGui.setAttribute("class", "link");
         this.eGui.textContent = params.value;
     };
     SSHCellRenderer.prototype.getGui = function() {return this.eGui;};
@@ -141,6 +153,7 @@ let CommonGridController = function ($scope, $document, $state, userModel, dateU
 
         this.gridOptions = {
             components: {
+                httpsCellRenderer: HTTPSCellRenderer,
                 sshCellRenderer: SSHCellRenderer,
                 updateCellRenderer: UpdateCellRenderer,
                 checkCellRenderer: CheckCellRenderer,
@@ -217,6 +230,9 @@ let CommonGridController = function ($scope, $document, $state, userModel, dateU
                 $scope.$apply();
             },
             onRowClicked: function(params) {
+                if (params.event.target.classList.contains('link')) {
+                    return;
+                }
                 const selection = window.getSelection().toString();
                 if(self.options.onRowClick !== undefined && (selection === "" || selection === $scope.mouseDownSelectionText)) {
                     self.options.onRowClick(params);
@@ -282,6 +298,15 @@ let CommonGridController = function ($scope, $document, $state, userModel, dateU
                     }
                 } catch (e) {
                     console.error("Failure to load stored page size:", e);
+                }
+
+                try {
+                    const page = parseInt(localStorage.getItem(tableName + "_table_page"));
+                    if (page !== undefined && page > 0 && page <= $scope.gridOptions.api.paginationGetTotalPages()-1) {
+                        $scope.gridOptions.api.paginationGoToPage(page);
+                    }
+                } catch (e) {
+                    console.error("Failed to load stored page number:", e);
                 }
 
                 self.gridOptions.api.addEventListener("sortChanged", function() {
@@ -350,6 +375,31 @@ let CommonGridController = function ($scope, $document, $state, userModel, dateU
         return menu.getHref(this.entry);
     };
 
+    this.contextIsDisabled = function(menu) {
+        if (menu.isDisabled !== undefined) {
+            return menu.isDisabled(this.entry);
+        }
+        return false;
+    };
+
+    this.bcGetText = function (bc) {
+        if(bc.text !== undefined){
+            return bc.text;
+        }
+        return bc.getText();
+    };
+
+    this.bcHasHref = function(bc) {
+        return bc.href !== undefined || bc.getHref !== undefined;
+    };
+
+    this.bcGetHref = function(bc) {
+        if(bc.href !== undefined) {
+            return bc.href;
+        }
+        return bc.getHref();
+    };
+
     this.getText = function (menu) {
         if (menu.text !== undefined){
             return menu.text;
@@ -382,7 +432,8 @@ angular.module("trafficPortal.table").component("commonGridController", {
         dropDownOptions: "<?",
         contextMenuOptions: "<?",
         defaultData: "<?",
-        titleButton: "<?"
+        titleButton: "<?",
+        breadCrumbs: "<?"
     }
 });
 

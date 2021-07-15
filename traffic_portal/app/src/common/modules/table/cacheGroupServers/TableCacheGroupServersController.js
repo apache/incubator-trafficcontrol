@@ -16,6 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+/** @typedef { import('../agGrid/CommonGridController').CGC } CGC */
 
 var TableCacheGroupsServersController = function(cacheGroup, servers, filter, $controller, $scope, $state, $uibModal, cacheGroupService) {
 
@@ -23,6 +24,23 @@ var TableCacheGroupsServersController = function(cacheGroup, servers, filter, $c
 	angular.extend(this, $controller('TableServersController', { tableName: 'cacheGroupServers', servers: servers, filter: filter, $scope: $scope }));
 
 	$scope.cacheGroup = cacheGroup;
+
+	/** @type CGC.TitleBreadCrumbs */
+	$scope.breadCrumbs = [{
+		text: "Cache Groups",
+		href: "#!/cache-groups"
+	},
+	{
+		getText: function() {
+			return $scope.cacheGroup.name;
+		},
+		getHref: function() {
+			return "#!/cache-groups/" + $scope.cacheGroup.id;
+		}
+	},
+	{
+		text: "Servers"
+	}];
 
 	let queueCacheGroupServerUpdates = function(cacheGroup, cdnId) {
 		cacheGroupService.queueServerUpdates(cacheGroup.id, cdnId)
@@ -92,6 +110,19 @@ var TableCacheGroupsServersController = function(cacheGroup, servers, filter, $c
 		});
 	};
 
+	this.$onInit = function() {
+		let i;
+		for(i = 0; i < $scope.dropDownOptions.length; ++i) {
+			const ddo = $scope.dropDownOptions[i];
+			if (ddo.text !== undefined){
+				if (ddo.text === "Queue Server Updates") {
+					$scope.dropDownOptions[i].onClick = function(entry) { $scope.confirmCacheGroupQueueServerUpdates($scope.cacheGroup); };
+				} else if (ddo.text === "Clear Server Updates") {
+					$scope.dropDownOptions[i].onClick = function(entry) { $scope.confirmCacheGroupClearServerUpdates($scope.cacheGroup); };
+				}
+			}
+		}
+	};
 };
 
 TableCacheGroupsServersController.$inject = ['cacheGroup', 'servers', 'filter', '$controller', '$scope', '$state', '$uibModal', 'cacheGroupService'];
