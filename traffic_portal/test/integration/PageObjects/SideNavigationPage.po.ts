@@ -54,6 +54,9 @@ export class SideNavigationPage extends BasePage{
     private lnkCoordinates = element(by.xpath("//a[@href='/#!/coordinates']"));
     private lnkRegions = element(by.xpath("//a[@href='/#!/regions']"));
     private lnkASNs = element(by.xpath("//a[@href='/#!/asns']"));
+    //Navigation for Jobs
+    private mnuTools = element(by.cssContainingText("#sidebar-menu a", "Tools"))
+    private lnkJobs = element(by.linkText("Invalidate Content"))
     async ClickConfigureMenu(){
         await browser.wait(ExpectedConditions.visibilityOf(this.mnuConfigure), 2000);
         await this.mnuConfigure.click();
@@ -69,6 +72,10 @@ export class SideNavigationPage extends BasePage{
     async ClickTopologyMenu(){
         await browser.wait(ExpectedConditions.visibilityOf(this.mnuTopology), 2000);
         await this.mnuTopology.click();
+    }
+    async ClickToolsMenu(){
+        await browser.wait(ExpectedConditions.visibilityOf(this.mnuTools), 2000);
+        await this.mnuTools.click();
     }
     async NavigateToTopologiesPage(){
         await browser.wait(ExpectedConditions.visibilityOf(this.lnkTopologies), 2000);
@@ -169,5 +176,10 @@ export class SideNavigationPage extends BasePage{
         await browser.wait(ExpectedConditions.visibilityOf(this.lnkPhysLocations), 2000);
         await browser.actions().mouseMove(this.lnkPhysLocations).perform();
         await browser.actions().click(this.lnkPhysLocations).perform();
+    }
+    async NavigateToJobsPage(){
+        await browser.wait(ExpectedConditions.visibilityOf(this.lnkJobs), 2000);
+        await browser.actions().mouseMove(this.lnkJobs).perform();
+        await browser.actions().click(this.lnkJobs).perform();
     }
 }
