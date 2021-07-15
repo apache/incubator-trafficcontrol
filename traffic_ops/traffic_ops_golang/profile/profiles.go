@@ -1,3 +1,8 @@
+// Package profile includes logic and handlers for Profile-related API
+// endpoints, including /profiles, /profiles/name/{{name}}/parameters,
+// /profiles/{{ID}}/parameters,
+// /profiles/name/{{New Profile Name}}/copy/{{existing Profile Name}},
+// /profiles/import, and /profiles/{{ID}}/export.
 package profile
 
 /*
@@ -21,9 +26,10 @@ package profile
 
 import (
 	"errors"
-	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/util/ims"
+	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/apache/trafficcontrol/lib/go-log"
@@ -34,11 +40,13 @@ import (
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/auth"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/dbhelpers"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/parameter"
+	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/util/ims"
 
 	validation "github.com/go-ozzo/ozzo-validation"
 	"github.com/jmoiron/sqlx"
 )
 
+// Supported (non-pagination) query string parameters for /profiles.
 const (
 	CDNQueryParam         = "cdn"
 	DescriptionQueryParam = "description"
@@ -96,7 +104,21 @@ func (prof *TOProfile) GetType() string {
 
 func (prof *TOProfile) Validate() error {
 	errs := validation.Errors{
-		NameQueryParam:        validation.Validate(prof.Name, validation.Required),
+		NameQueryParam: validation.Validate(prof.Name, validation.By(
+			func(value interface{}) error {
+				name, ok := value.(*string)
+				if !ok {
+					return fmt.Errorf("wrong type, need: string, got: %T", value)
+				}
+				if name == nil || *name == "" {
+					return errors.New("required and cannot be blank")
+				}
+				if strings.Contains(*name, " ") {
+					return errors.New("cannot contain spaces")
+				}
+				return nil
+			},
+		)),
 		DescriptionQueryParam: validation.Validate(prof.Description, validation.Required),
 		CDNQueryParam:         validation.Validate(prof.CDNID, validation.Required),
 		TypeQueryParam:        validation.Validate(prof.Type, validation.Required),

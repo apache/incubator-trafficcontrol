@@ -22,6 +22,7 @@ package profile
 import (
 	"errors"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -141,11 +142,26 @@ func TestValidate(t *testing.T) {
 	expected := util.JoinErrsStr(test.SortErrors([]error{
 		errors.New("'cdn' cannot be blank"),
 		errors.New("'description' cannot be blank"),
-		errors.New("'name' cannot be blank"),
+		errors.New("'name' required and cannot be blank"),
 		errors.New("'type' cannot be blank"),
 	}))
 
 	if !reflect.DeepEqual(expected, errs) {
 		t.Errorf("expected %++v,  got %++v", expected, errs)
 	}
+
+	p.CDNID = new(int)
+	*p.CDNID = 1
+	p.Description = new(string)
+	*p.Description = "description"
+	p.Name = new(string)
+	*p.Name = "A name with spaces"
+	p.Type = new(string)
+	*p.Type = "type"
+
+	err := p.Validate()
+	if !strings.Contains(err.Error(), "cannot contain spaces") {
+		t.Error("Expected an error about the Profile name containing spaces")
+	}
+
 }

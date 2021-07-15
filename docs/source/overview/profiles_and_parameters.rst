@@ -56,6 +56,11 @@ Name
 """"
 Ostensibly this is simply the Profile's name. However, the name of a Profile has drastic consequences for how Traffic Control treats it. Particularly, the name of a Profile is heavily conflated with its Type_. These relationships are discussed further in the Type_ section, on a Type-by-Type basis.
 
+The Name of a Profile may not contain spaces.
+
+.. versionchanged:: ATCv6
+	In older versions of :abbr:`ATC (Apache Traffic Control)`, Profile Names were allowed to contain spaces. The :ref:`to-api` will reject creation or update of Profiles that have spaces in their Names as of :abbr:`ATC (Apache Traffic Control)` version 6, so legacy Profiles will need to be updated to meet this constraint before they can be modified.
+
 .. _profile-routing-disabled:
 
 Routing Disabled
