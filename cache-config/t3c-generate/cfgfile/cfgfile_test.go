@@ -465,7 +465,7 @@ func MakeFakeTOData() *t3cutil.ConfigData {
 			*randParam(),
 			*randParam(),
 		},
-		CacheKeyParams: []tc.Parameter{
+		RemapConfigParams: []tc.Parameter{
 			*randParam(),
 			*randParam(),
 			*randParam(),

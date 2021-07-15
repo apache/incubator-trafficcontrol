@@ -584,7 +584,31 @@ This configuration file can only be affected by the special ``maxRevalDurationDa
 
 remap.config
 ''''''''''''
-This configuration file can only be affected by one Parameter on a :ref:`Profile <profiles>` assigned to a :term:`Delivery Service`. Then, for every Parameter assigned to that :ref:`Profile <profiles>` that has the Config File value "cachekey.config" - **NOT this Config File** -, a parameter will be added to the line for that :term:`Delivery Service` like so: :file:`pparam=--{Name}={Value}` where ``Name`` is the Parameter's :ref:`parameter-name`, and ``Value`` is its Value_.
+This configuration file can only be affected by Parameters on a :ref:`Profile <profiles>` assigned to a :term:`Delivery Service`. Then, for every Parameter assigned to that :ref:`Profile <profiles>` that has the Config File value "remap.config" -, a parameter will be added to the line for that :term:`Delivery Service` like so: :file:`@pparam={Value}` where ``Name`` is of the form `<plugin>.pparam` and ``Value`` are the plugin pparam arguments.
+
+Previously this configuration file can only be affected by one Parameter on a :ref:`Profile <profiles>` assigned to a :term:`Delivery Service`. Then, for every Parameter assigned to that :ref:`Profile <profiles>` that has the Config File value "cachekey.config" - **NOT this Config File** -, a parameter will be added to the line for that :term:`Delivery Service` like so: :file:`pparam=--{Name}={Value}` where ``Name`` is the Parameter's :ref:`parameter-name`, and ``Value`` is its Value_.  Multiple arguments should use multiple parameters.  The order that multiple args show up in the remap rule should be considered random.
+
+The following plugins have support for adding args with following parameter `Config File`
+  - ``background_fetch.pparam`` `<https://docs.trafficserver.apache.org/en/latest/admin-guide/plugins/background_fetch.en.html>` Note the --config=bg_fetch.conf arg is already added by t3c.
+  - ``cachekey.pparam`` `<https://docs.trafficserver.apache.org/en/latest/admin-guide/plugins/cachekey.en.html>`
+  - ``cache_range_requests.pparam`` `<https://docs.trafficserver.apache.org/en/latest/admin-guide/plugins/cache_range_requests.en.html>`
+  - ``slice.pparam`` `<https://docs.trafficserver.apache.org/en/latest/admin-guide/plugins/slice.en.html>`  Note the --blocksize=<val> is already handled in the :ref:`tp-services-delivery-service` view in Traffic Portal.
+  - ``url_sig.pparam`` `<https://docs.trafficserver.apache.org/en/latest/admin-guide/plugins/url_sig.en.html>`. Note the config file is already added by t3c.
+
+.. note:: cachekey.config is deprecated but available for backwards compatibility.  cachekey.config Name and Value will be converted to the pparam syntax with '--' added as a prefix to the name.  Any "empty" param value (ie: separator) will add an extra '=' to the key.
+
+.. table:: Equivalent cachekey.config/cachekey.pparam entries
+
+  +------------------------+---------------------+--------------------------+----------------------------------+
+  | :ref:`parameter-name`  | `Config File`_      | Value_                   | Result                           |
+  +========================+=====================+==========================+==================================+
+  | remove-all-params      | cachekey.config     | true                     | @pparam=--remove-all-params=true |
+  | cachekey.pparam        | remap.config        | --remove-all-params=true | @pparam=--remove-all-params=true |
+  | separator              | cachekey.config     |                          | @pparam=--separator=             |
+  | cachekey.pparam        | remap.config        | --separator=             | @pparam=--separator=             |
+  | cachekey.pparam        | cachekey.pparam     | -o                       | @pparam=-o (no config equiv)     |
+  +------------------------+---------------------+--------------------------+----------------------------------+
+
 
 .. seealso:: For an explanation of the syntax of this configuration file, refer to `the Apache Traffic Server remap.config documentation <https://docs.trafficserver.apache.org/en/7.1.x/admin-guide/files/remap.config.en.html>`_.
 

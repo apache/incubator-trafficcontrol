@@ -50,8 +50,11 @@ type ConfigData struct {
 	// ServerParams must be all Parameters on the Profile of the current server. Must not include other Parameters.
 	ServerParams []tc.Parameter `json:"server_parameters,omitempty"`
 
-	// CacheKeyParams must be all Parameters with the ConfigFile atscfg.CacheKeyParameterConfigFile.
-	CacheKeyParams []tc.Parameter `json:"cache_key_parameters,omitempty"`
+	// CacheKeyConfigParams must be all Parameters with the "cachekey.config" (compat)
+	CacheKeyConfigParams []tc.Parameter `json:"cachekey_config_parameters,omitempty"`
+
+	// RemapConfigParams must be all Parameters with the ConfigFile "remap.config"
+	RemapConfigParams []tc.Parameter `json:"remap_config_parameters,omitempty"`
 
 	// ParentConfigParams must be all Parameters with the ConfigFile "parent.config.
 	ParentConfigParams []tc.Parameter `json:"parent_config_parameters,omitempty"`
@@ -109,7 +112,8 @@ type ConfigDataMetaData struct {
 	CacheGroups            ReqMetaData                            `json:"cache_groups"`
 	GlobalParams           ReqMetaData                            `json:"global_parameters"`
 	ServerParams           ReqMetaData                            `json:"server_parameters"`
-	CacheKeyParams         ReqMetaData                            `json:"cache_key_parameters"`
+	CacheKeyConfigParams   ReqMetaData                            `json:"cachekey_config_parameters"`
+	RemapConfigParams      ReqMetaData                            `json:"remap_config_parameters"`
 	ParentConfigParams     ReqMetaData                            `json:"parent_config_parameters"`
 	DeliveryServices       ReqMetaData                            `json:"delivery_services"`
 	DeliveryServiceServers ReqMetaData                            `json:"delivery_service_servers"`
@@ -638,29 +642,55 @@ func GetConfigData(toClient *toreq.TOClient, disableProxy bool, cacheHostName st
 		}
 		return nil
 	}
-	cacheKeyParamsF := func() error {
-		defer func(start time.Time) { log.Infof("cacheKeyParamsF took %v\n", time.Since(start)) }(time.Now())
+
+	cacheKeyConfigParamsF := func() error {
+		defer func(start time.Time) { log.Infof("cacheKeyConfigParamsF took %v\n", time.Since(start)) }(time.Now())
 		{
 			reqHdr := (http.Header)(nil)
 			if oldCfg != nil {
-				reqHdr = MakeReqHdr(oldCfg.MetaData.CacheKeyParams)
+				reqHdr = MakeReqHdr(oldCfg.MetaData.CacheKeyConfigParams)
+			}
+			params, reqInf, err := toClient.GetConfigFileParameters("cachekey.config", reqHdr)
+			if err != nil {
+				return errors.New("getting cache key parameters: " + err.Error())
+			}
+			if reqInf.StatusCode == http.StatusNotModified {
+				log.Infof("Getting config: %v not modified, using old config", "CacheKeyParams")
+				toData.CacheKeyConfigParams = oldCfg.CacheKeyConfigParams
+			} else {
+				log.Infof("Getting config: %v is modified, using new response", "CacheKeyParams")
+				toData.CacheKeyConfigParams = params
+			}
+			toData.MetaData.CacheKeyConfigParams = MakeReqMetaData(reqInf.RespHeaders)
+			toIPs.Store(reqInf.RemoteAddr, nil)
+		}
+		return nil
+	}
+
+	remapConfigParamsF := func() error {
+		defer func(start time.Time) { log.Infof("remapConfigParamsF took %v\n", time.Since(start)) }(time.Now())
+		{
+			reqHdr := (http.Header)(nil)
+			if oldCfg != nil {
+				reqHdr = MakeReqHdr(oldCfg.MetaData.RemapConfigParams)
 			}
 			params, reqInf, err := toClient.GetConfigFileParameters(atscfg.CacheKeyParameterConfigFile, reqHdr)
 			if err != nil {
 				return errors.New("getting cache key parameters: " + err.Error())
 			}
 			if reqInf.StatusCode == http.StatusNotModified {
-				log.Infof("Getting config: %v not modified, using old config", "CacheKeyParams")
-				toData.CacheKeyParams = oldCfg.CacheKeyParams
+				log.Infof("Getting config: %v not modified, using old config", "RemapConfigParams")
+				toData.RemapConfigParams = oldCfg.RemapConfigParams
 			} else {
-				log.Infof("Getting config: %v is modified, using new response", "CacheKeyParams")
-				toData.CacheKeyParams = params
+				log.Infof("Getting config: %v is modified, using new response", "RemapConfigParams")
+				toData.RemapConfigParams = params
 			}
-			toData.MetaData.CacheKeyParams = MakeReqMetaData(reqInf.RespHeaders)
+			toData.MetaData.RemapConfigParams = MakeReqMetaData(reqInf.RespHeaders)
 			toIPs.Store(reqInf.RemoteAddr, nil)
 		}
 		return nil
 	}
+
 	parentConfigParamsF := func() error {
 		defer func(start time.Time) { log.Infof("parentConfigParamsF took %v\n", time.Since(start)) }(time.Now())
 		{
@@ -712,7 +742,7 @@ func GetConfigData(toClient *toreq.TOClient, disableProxy bool, cacheHostName st
 	fs := []func() error{serversF, cgF, jobsF}
 	if !revalOnly {
 		// skip data not needed for reval, if we're reval-only
-		fs = append([]func() error{dsrF, cacheKeyParamsF, parentConfigParamsF, capsF, dsCapsF, topologiesF}, fs...)
+		fs = append([]func() error{dsrF, cacheKeyConfigParamsF, remapConfigParamsF, parentConfigParamsF, capsF, dsCapsF, topologiesF}, fs...)
 	}
 	errs := runParallel(fs)
 
