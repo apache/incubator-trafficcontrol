@@ -60,6 +60,14 @@ func (to *Session) AssignServersToDeliveryService(servers []string, xmlId string
 	return resp, reqInf, err
 }
 
+// GetServersByDeliveryService gets the servers that are assigned to the delivery service with the given ID.
+func (to *Session) GetServersByDeliveryService(id int) (tc.DSServerResponseV30, toclientlib.ReqInf, error) {
+	route := fmt.Sprintf(APIDeliveryServicesServers, strconv.Itoa(id))
+	resp := tc.DSServerResponseV30{}
+	reqInf, err := to.get(route, nil, &resp)
+	return resp, reqInf, err
+}
+
 // GetDeliveryServiceServer returns associations between Delivery Services and servers using the
 // provided pagination controls.
 // Deprecated: GetDeliveryServiceServer will be removed in 6.0. Use GetDeliveryServiceServerWithHdr.

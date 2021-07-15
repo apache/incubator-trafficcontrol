@@ -605,6 +605,17 @@ func DeleteTestDeliveryServiceServers(t *testing.T) {
 		t.Error("POST delivery service servers returned success, but ds-server not in GET")
 	}
 
+	serversByDS, _, err := TOSession.GetServersByDeliveryService(*ds.ID, client.RequestOptions{})
+	if err != nil {
+		t.Errorf("unexpected error getting servers by delivery service: %v", err)
+	}
+	if len(serversByDS.Response) != 1 {
+		t.Errorf("getting servers by delivery service - expected: 1 server, actual: %d servers", len(serversByDS.Response))
+	}
+	if *serversByDS.Response[0].ID != *server.ID {
+		t.Errorf("getting servers by delivery service - expected: server ID %d, actual: %d", *server.ID, *serversByDS.Response[0].ID)
+	}
+
 	if *ds.Active {
 		*ds.Active = false
 		_, _, err = TOSession.UpdateDeliveryService(*ds.ID, ds, client.RequestOptions{})

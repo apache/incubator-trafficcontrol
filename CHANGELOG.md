@@ -37,6 +37,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/).
 - ORT config generation: Added a rule to ip_allow such that PURGE requests are allowed over localhost
 - Added integration to use ACME to generate new SSL certificates.
 - Add a Federation to the Ansible Dataset Loader
+- Added `GetServersByDeliveryService` method to the TO Go client
 - Added asynchronous status to ACME certificate generation.
 - Added per Delivery Service HTTP/2 and TLS Versions support, via ssl_server_name.yaml and sni.yaml. See overview/delivery_services and t3c docs.
 - Added headers to Traffic Portal, Traffic Ops, and Traffic Monitor to opt out of tracking users via Google FLoC.

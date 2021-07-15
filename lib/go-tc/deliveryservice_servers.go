@@ -159,6 +159,11 @@ type DSServer struct {
 	ServerInterfaces *[]ServerInterfaceInfo `json:"interfaces" db:"interfaces"`
 }
 
+type DSServerResponseV30 struct {
+	Response []DSServer `json:"response"`
+	Alerts
+}
+
 // DSServerV4 contains information for a V4.x Delivery Service Server.
 type DSServerV4 struct {
 	DSServerBaseV4

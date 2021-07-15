@@ -18,6 +18,7 @@ package client
 import (
 	"fmt"
 	"net/url"
+	"strconv"
 
 	"github.com/apache/trafficcontrol/lib/go-tc"
 	"github.com/apache/trafficcontrol/lib/go-util"
@@ -54,6 +55,14 @@ func (to *Session) AssignServersToDeliveryService(servers []string, xmlID string
 	dss := tc.DeliveryServiceServers{ServerNames: servers, XmlId: xmlID}
 	var resp tc.Alerts
 	reqInf, err := to.post(route, opts, dss, &resp)
+	return resp, reqInf, err
+}
+
+// GetServersByDeliveryService gets the servers that are assigned to the delivery service with the given ID.
+func (to *Session) GetServersByDeliveryService(id int, opts RequestOptions) (tc.DSServerResponseV4, toclientlib.ReqInf, error) {
+	route := fmt.Sprintf(apiDeliveryServicesServers, strconv.Itoa(id))
+	resp := tc.DSServerResponseV4{}
+	reqInf, err := to.get(route, opts, &resp)
 	return resp, reqInf, err
 }
 
