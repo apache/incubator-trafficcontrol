@@ -219,6 +219,16 @@ func CreateV40(w http.ResponseWriter, r *http.Request) {
 	}
 	alerts := res.TLSVersionsAlerts()
 	alerts.AddNewAlert(tc.SuccessLevel, "Delivery Service creation was successful")
+
+	if inf.Config.TrafficVaultEnabled && (*ds.Protocol == tc.DSProtocolHTTPS || *ds.Protocol == tc.DSProtocolHTTPAndHTTPS) && (ds.SSLKeyVersion == nil || *ds.SSLKeyVersion == 0) {
+		err, errCode := GeneratePlaceholderSelfSignedCert(*res, inf, r.Context())
+		if err != nil || errCode != http.StatusOK {
+			api.HandleErr(w, r, inf.Tx.Tx, errCode, nil, err)
+			return
+		}
+		alerts.AddNewAlert(tc.SuccessLevel, " A self-signed certificate was created as a placeholder.")
+	}
+
 	w.Header().Set("Location", fmt.Sprintf("/api/4.0/deliveryservices?id=%d", *res.ID))
 	api.WriteAlertsObj(w, r, http.StatusCreated, alerts, []tc.DeliveryServiceV40{*res})
 }
@@ -715,6 +725,16 @@ func UpdateV40(w http.ResponseWriter, r *http.Request) {
 	}
 	alerts := res.TLSVersionsAlerts()
 	alerts.AddNewAlert(tc.SuccessLevel, "Delivery Service update was successful")
+
+	if inf.Config.TrafficVaultEnabled && (*ds.Protocol == tc.DSProtocolHTTPS || *ds.Protocol == tc.DSProtocolHTTPAndHTTPS) && (ds.SSLKeyVersion == nil || *ds.SSLKeyVersion == 0) {
+		err, errCode := GeneratePlaceholderSelfSignedCert(*res, inf, r.Context())
+		if err != nil || errCode != http.StatusOK {
+			api.HandleErr(w, r, inf.Tx.Tx, errCode, nil, err)
+			return
+		}
+		alerts.AddNewAlert(tc.SuccessLevel, " A self-signed certificate was created as a placeholder.")
+	}
+
 	api.WriteAlertsObj(w, r, http.StatusOK, alerts, []tc.DeliveryServiceV40{*res})
 }
 

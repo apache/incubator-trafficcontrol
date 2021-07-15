@@ -135,7 +135,7 @@ func CUDDeliveryServiceWithLocks(t *testing.T) {
 	if len(types.Response) < 1 {
 		t.Fatal("expected at least one type")
 	}
-	customDS := getCustomDS(cdn.ID, types.Response[0].ID, "cdn_locks_test_ds_name", "routingName", "https://test_cdn_locks.com", "cdn_locks_test_ds_xml_id")
+	customDS := getCustomDS(cdn.ID, types.Response[0].ID, "cdn-locks-test-ds-name", "edge", "https://test-cdn-locks.com", "cdn-locks-test-ds-xml-id")
 
 	// Create a lock for this user
 	_, _, err = userSession.CreateCDNLock(tc.CDNLock{

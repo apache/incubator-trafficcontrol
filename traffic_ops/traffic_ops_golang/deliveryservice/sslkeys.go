@@ -23,10 +23,13 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/apache/trafficcontrol/lib/go-tc"
+	"github.com/apache/trafficcontrol/lib/go-util"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/api"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/dbhelpers"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/tenant"
@@ -75,7 +78,7 @@ func GenerateSSLKeys(w http.ResponseWriter, r *http.Request) {
 		api.HandleErr(w, r, inf.Tx.Tx, statusCode, userErr, sysErr)
 		return
 	}
-	if err := generatePutRiakKeys(req, inf.Tx.Tx, inf.Vault, r.Context()); err != nil {
+	if err := GeneratePutRiakKeys(req, inf.Tx.Tx, inf.Vault, r.Context()); err != nil {
 		api.HandleErr(w, r, inf.Tx.Tx, http.StatusInternalServerError, nil, errors.New("generating and putting SSL keys: "+err.Error()))
 		return
 	}
@@ -87,9 +90,9 @@ func GenerateSSLKeys(w http.ResponseWriter, r *http.Request) {
 	api.WriteResp(w, r, "Successfully created ssl keys for "+*req.DeliveryService)
 }
 
-// generatePutRiakKeys generates a certificate, csr, and key from the given request, and insert it into the Riak key database.
+// GeneratePutRiakKeys generates a certificate, csr, and key from the given request, and insert it into the Riak key database.
 // The req MUST be validated, ensuring required fields exist.
-func generatePutRiakKeys(req tc.DeliveryServiceGenSSLKeysReq, tx *sql.Tx, tv trafficvault.TrafficVault, ctx context.Context) error {
+func GeneratePutRiakKeys(req tc.DeliveryServiceGenSSLKeysReq, tx *sql.Tx, tv trafficvault.TrafficVault, ctx context.Context) error {
 	dsSSLKeys := tc.DeliveryServiceSSLKeys{
 		CDN:             *req.CDN,
 		DeliveryService: *req.DeliveryService,
@@ -114,4 +117,71 @@ func generatePutRiakKeys(req tc.DeliveryServiceGenSSLKeysReq, tx *sql.Tx, tv tra
 		return errors.New("putting keys in Traffic Vault: " + err.Error())
 	}
 	return nil
+}
+
+// GeneratePlaceholderSelfSignedCert generates a self-signed SSL certificate as a placeholder when a new HTTPS
+// delivery service is created or an HTTP delivery service is updated to use HTTPS.
+func GeneratePlaceholderSelfSignedCert(ds tc.DeliveryServiceV40, inf *api.APIInfo, context context.Context) (error, int) {
+	version := util.JSONIntStr(1)
+
+	db, err := api.GetDB(context)
+	if err != nil {
+		return err, http.StatusInternalServerError
+	}
+	tx, err := db.Begin()
+	if err != nil {
+		return err, http.StatusInternalServerError
+	}
+	defer tx.Commit()
+
+	cdnName, cdnDomain, err := getCDNNameDomain(*ds.CDNID, tx)
+	if err != nil {
+		return err, http.StatusInternalServerError
+	}
+
+	cdnNameStr := string(cdnName)
+
+	if ds.ExampleURLs == nil {
+		ds.ExampleURLs = MakeExampleURLs(ds.Protocol, *ds.Type, *ds.RoutingName, *ds.MatchList, cdnDomain)
+	}
+
+	hostname := strings.Split(ds.ExampleURLs[0], "://")[1]
+	if strings.Contains(ds.Type.String(), "HTTP") {
+		parts := strings.Split(hostname, ".")
+		parts[0] = "*"
+		hostname = strings.Join(parts, ".")
+	}
+
+	req := tc.DeliveryServiceGenSSLKeysReq{
+		DeliveryServiceSSLKeysReq: tc.DeliveryServiceSSLKeysReq{
+			CDN:             &cdnNameStr,
+			DeliveryService: ds.XMLID,
+			HostName:        &hostname,
+			Key:             ds.XMLID,
+			Version:         &version,
+			BusinessUnit:    util.StrPtr("Placeholder"),
+			City:            util.StrPtr("Placeholder"),
+			Organization:    util.StrPtr("Placeholder"),
+			Country:         util.StrPtr("United States (US)"),
+			State:           util.StrPtr("CO"),
+		},
+	}
+	if err := GeneratePutRiakKeys(req, tx, inf.Vault, context); err != nil {
+		return errors.New("generating and putting SSL keys: " + err.Error()), http.StatusInternalServerError
+	}
+	if err := updateSSLKeyVersion(*req.DeliveryService, req.Version.ToInt64(), tx); err != nil {
+		return errors.New("generating SSL keys for delivery service '" + *req.DeliveryService + "': " + err.Error()), http.StatusInternalServerError
+	}
+
+	return nil, http.StatusOK
+}
+
+func getCDNNameDomain(cdnID int, tx *sql.Tx) (string, string, error) {
+	q := `SELECT cdn.name, cdn.domain_name from cdn where cdn.id = $1`
+	cdnName := ""
+	cdnDomain := ""
+	if err := tx.QueryRow(q, cdnID).Scan(&cdnName, &cdnDomain); err != nil {
+		return "", "", fmt.Errorf("getting cdn name and domain for cdn '%v': "+err.Error(), cdnID)
+	}
+	return cdnName, cdnDomain, nil
 }
