@@ -36,6 +36,8 @@ func TestServerCapabilities(t *testing.T) {
 		header.Set(rfc.IfModifiedSince, rfcTime)
 		header.Set(rfc.IfUnmodifiedSince, rfcTime)
 		SortTestServerCapabilities(t)
+		CreateTestServerCapabilityAlreadyExist(t)
+		GetTestServerCapabilitiesByInvalidName(t)
 		UpdateTestServerCapabilities(t)
 		UpdateTestServerCapabilitiesWithHeaders(t, header)
 		header = make(map[string][]string)
@@ -43,6 +45,8 @@ func TestServerCapabilities(t *testing.T) {
 		header.Set(rfc.IfMatch, etag)
 		UpdateTestServerCapabilitiesWithHeaders(t, header)
 		ValidationTestServerCapabilities(t)
+		UpdateTestServerCapabilititesInvalidData(t)
+		DeleteTestServerCapabilitiesInvalidName(t)
 	})
 }
 
@@ -53,6 +57,20 @@ func CreateTestServerCapabilities(t *testing.T) {
 		if err != nil {
 			t.Errorf("Unexpected error creating Server Capability '%s': %v - alerts: %+v", sc.Name, err, resp.Alerts)
 		}
+	}
+}
+
+func CreateTestServerCapabilityAlreadyExist(t *testing.T) {
+	if len(testData.ServerCapabilities) < 1 {
+		t.Fatal("Need at least one Server Capabilities to test duplicate")
+	}
+	firstServerCapability := testData.ServerCapabilities[0]
+	resp, reqInf, err := TOSession.CreateServerCapability(firstServerCapability, client.RequestOptions{})
+	if err == nil {
+		t.Errorf("Expected server_capability name '%s' already exists. - Alerts %v", firstServerCapability.Name, resp.Alerts)
+	}
+	if reqInf.StatusCode != http.StatusBadRequest {
+		t.Errorf("Expected 400 Status code, but found %d", reqInf.StatusCode)
 	}
 }
 
@@ -91,6 +109,18 @@ func GetTestServerCapabilities(t *testing.T) {
 	}
 	if len(resp.Response) != len(testData.ServerCapabilities) {
 		t.Errorf("expected to get %d Server Capabilities, actual: %d", len(testData.ServerCapabilities), len(resp.Response))
+	}
+}
+
+func GetTestServerCapabilitiesByInvalidName(t *testing.T) {
+	opts := client.NewRequestOptions()
+	opts.QueryParameters.Set("name", "abcd")
+	resp, _, err := TOSession.GetServerCapabilities(opts)
+	if err != nil {
+		t.Errorf("Expected no error: %v - alerts: %+v", err, resp.Alerts)
+	}
+	if len(resp.Response) > 0 {
+		t.Errorf("Expected no response for Get Server Capability by Invalid name, but found some response '%d'", len(resp.Response))
 	}
 }
 
@@ -165,6 +195,27 @@ func UpdateTestServerCapabilities(t *testing.T) {
 	}
 }
 
+func UpdateTestServerCapabilititesInvalidData(t *testing.T) {
+	resp, _, err := TOSession.GetServerCapabilities(client.RequestOptions{})
+	if err != nil {
+		t.Fatalf("Expected no error, but got: %v - alerts: %+v", err, resp.Alerts)
+	}
+	if len(resp.Response) == 0 {
+		t.Fatalf("no server capability in response, quitting")
+	}
+	newSCName := "sc-test"
+	resp.Response[0].Name = newSCName
+
+	// Update server capability with new name
+	updateResponse, reqInf, err := TOSession.UpdateServerCapability("invalid", resp.Response[0], client.RequestOptions{})
+	if err == nil {
+		t.Errorf("Expected cannot find exactly one server capability with the query string provided: %v - alerts: %+v", err, updateResponse.Alerts)
+	}
+	if reqInf.StatusCode != http.StatusBadRequest {
+		t.Errorf("Expected 400 Status code, but found %d", reqInf.StatusCode)
+	}
+}
+
 func DeleteTestServerCapabilities(t *testing.T) {
 	opts := client.NewRequestOptions()
 	for _, sc := range testData.ServerCapabilities {
@@ -172,7 +223,6 @@ func DeleteTestServerCapabilities(t *testing.T) {
 		if err != nil {
 			t.Errorf("cannot delete Server Capability: %v - alerts: %+v", err, delResp.Alerts)
 		}
-
 		opts.QueryParameters.Set("name", sc.Name)
 		serverCapability, _, err := TOSession.GetServerCapabilities(opts)
 		if err != nil {
@@ -181,5 +231,26 @@ func DeleteTestServerCapabilities(t *testing.T) {
 		if len(serverCapability.Response) != 0 {
 			t.Errorf("Expected an empty response when filtering for the name of a Server Capability that's been deleted, but found %d matching Server Capabilities", len(serverCapability.Response))
 		}
+	}
+}
+
+func DeleteTestServerCapabilitiesInvalidName(t *testing.T) {
+
+	//invalid name
+	delResp, reqInf, err := TOSession.DeleteServerCapability("invalid", client.RequestOptions{})
+	if err == nil {
+		t.Errorf("Expected no server capability with that key found %v", delResp.Alerts)
+	}
+	if reqInf.StatusCode != http.StatusNotFound {
+		t.Errorf("Expected 404 error status code, but found %d", reqInf.StatusCode)
+	}
+
+	//no parameters
+	delResp, reqInf, err = TOSession.DeleteServerCapability("", client.RequestOptions{})
+	if err == nil {
+		t.Errorf("Expected missing key: name %v", delResp.Alerts)
+	}
+	if reqInf.StatusCode != http.StatusBadRequest {
+		t.Errorf("Expected 400 error status code, but found %d", reqInf.StatusCode)
 	}
 }
