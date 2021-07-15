@@ -18,16 +18,6 @@
 
 set -e
 
-download_go() {
-	go_version="$(cat "${GITHUB_WORKSPACE}/GO_VERSION")"
-	wget -O go.tar.gz "https://dl.google.com/go/go${go_version}.linux-amd64.tar.gz"
-	tar -C /usr/local -xzf go.tar.gz
-	rm go.tar.gz
-	export PATH="${PATH}:${GOROOT}/bin"
-	go version
-}
-download_go
-
 GOPATH="$(mktemp -d)"
 SRCDIR="$GOPATH/src/github.com/apache"
 mkdir -p "$SRCDIR"

@@ -19,30 +19,7 @@
 set -o errexit -o nounset
 trap 'echo "Error on line ${LINENO} of ${0}"; exit 1' ERR
 
-# download_go downloads and installs the GO version specified in GO_VERSION
-download_go() {
-	. build/functions.sh
-	if verify_and_set_go_version; then
-		return
-	fi
-	go_version="$(cat "${GITHUB_WORKSPACE}/GO_VERSION")"
-	wget -O go.tar.gz "https://dl.google.com/go/go${go_version}.linux-amd64.tar.gz" --no-verbose
-	echo "Extracting Go ${go_version}..."
-	<<-'SUDO_COMMANDS' sudo sh
-		set -o errexit
-    go_dir="$(command -v go | xargs realpath | xargs dirname | xargs dirname)"
-		mv "$go_dir" "${go_dir}.unused"
-		tar -C /usr/local -xzf go.tar.gz
-	SUDO_COMMANDS
-	rm go.tar.gz
-	go version
-}
-
-GOROOT=/usr/local/go
-export PATH="${PATH}:${GOROOT}/bin"
 export GOPATH="${HOME}/go"
-
-download_go
 
 # update all golang.org/x dependencies in go.mod/go.sum
 go get -u \

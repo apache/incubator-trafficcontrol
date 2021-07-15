@@ -44,8 +44,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@master
-      - name: Download Go
-        run: .github/actions/check-go-modules/entrypoint.sh download_go
       - name: Vendor dependencies
         id: vendor-dependencies
         run: .github/actions/check-go-modules/entrypoint.sh vendor_dependencies

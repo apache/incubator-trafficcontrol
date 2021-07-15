@@ -196,7 +196,7 @@ tp_default_properties_template:
         customLink:
           _comment: Do you want to show a custom link to your own ds dashboards?
           show: false
-          baseUrl: "{{ tp_ts_base_url }}/dashboard/script/traffic_ops_deliveryservice.js?which="
+          baseUrl: "{{ tp_ts_base_url }}/dashboard/db/cdn-overview?var-svc="
     dsRequests:
       _comments: Should all delivery service changes go through the delivery service
         review process? You can also provide a role that will skip the process.
@@ -208,7 +208,7 @@ tp_default_properties_template:
         _comment: Do you want to show a charts button for each server? If so, where
           can the charts be found? xml id will be appended to the provided url.
         show: false
-        baseUrl: "{{ tp_ts_base_url }}/dashboard/script/traffic_ops_server.js?which="
+        baseUrl: "{{ tp_ts_base_url }}/dashboard/db/server-stats?var-SERVER="
     changeLogs:
       _comment: Change log settings
       days: 7

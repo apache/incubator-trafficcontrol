@@ -74,24 +74,6 @@ QUERY
 
 sudo useradd trafops
 
-download_go() {
-	. build/functions.sh
-	if verify_and_set_go_version; then
-		return
-	fi
-	go_version="$(cat "${GITHUB_WORKSPACE}/GO_VERSION")"
-	wget -O go.tar.gz "https://dl.google.com/go/go${go_version}.linux-amd64.tar.gz" --no-verbose
-	echo "Extracting Go ${go_version}..."
-	<<-'SUDO_COMMANDS' sudo sh
-		set -o errexit
-    go_dir="$(command -v go | xargs realpath | xargs dirname | xargs dirname)"
-		mv "$go_dir" "${go_dir}.unused"
-		tar -C /usr/local -xzf go.tar.gz
-	SUDO_COMMANDS
-	rm go.tar.gz
-	go version
-}
-
 gray_bg="$(printf '%s%s' $'\x1B' '[100m')";
 red_bg="$(printf '%s%s' $'\x1B' '[41m')";
 yellow_bg="$(printf '%s%s' $'\x1B' '[43m')";
@@ -153,9 +135,6 @@ CHROMIUM_CONTAINER=$(docker ps -qf name=chromium)
 HUB_CONTAINER=$(docker ps -qf name=hub)
 CHROMIUM_VER=$(docker exec "$CHROMIUM_CONTAINER" chromium --version | grep -Eo '[0-9.]+')
 
-GOROOT=/usr/local/go
-export PATH="${PATH}:${GOROOT}/bin"
-download_go
 export GOPATH="${HOME}/go"
 readonly ORG_DIR="$GOPATH/src/github.com/apache"
 readonly REPO_DIR="${ORG_DIR}/trafficcontrol"

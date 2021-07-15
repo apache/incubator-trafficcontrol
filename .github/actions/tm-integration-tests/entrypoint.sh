@@ -33,29 +33,6 @@ function wait_for_endpoint() {
 }
 export -f wait_for_endpoint
 
-download_go() {
-	. build/functions.sh
-	if verify_and_set_go_version; then
-		return
-	fi
-	go_version="$(cat "${GITHUB_WORKSPACE}/GO_VERSION")"
-	wget -O go.tar.gz "https://dl.google.com/go/go${go_version}.linux-amd64.tar.gz"
-	echo "Extracting Go ${go_version}..."
-	<<-'SUDO_COMMANDS' sudo sh
-		set -o errexit
-		go_dir="$(
-			dirname "$(
-				dirname "$(
-					realpath "$(
-						which go
-						)")")")"
-		mv "$go_dir" "${go_dir}.unused"
-		tar -C /usr/local -xzf go.tar.gz
-	SUDO_COMMANDS
-	rm go.tar.gz
-	go version
-}
-
 gray_bg="$(printf '%s%s' $'\x1B' '[100m')";
 red_bg="$(printf '%s%s' $'\x1B' '[41m')";
 yellow_bg="$(printf '%s%s' $'\x1B' '[43m')";
@@ -73,9 +50,6 @@ ciab_dir="${GITHUB_WORKSPACE}/infrastructure/cdn-in-a-box";
 
 sudo apt-get install -y --no-install-recommends gettext
 
-GOROOT=/usr/local/go
-export GOROOT PATH="${PATH}:${GOROOT}/bin"
-download_go
 export GOPATH="${HOME}/go"
 org_dir="$GOPATH/src/github.com/apache"
 repo_dir="${org_dir}/trafficcontrol"
