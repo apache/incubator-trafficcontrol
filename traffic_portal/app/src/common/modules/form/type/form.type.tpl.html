@@ -29,6 +29,16 @@ under the License.
             <button class="btn btn-primary" title="View Cache Groups" ng-show="type.useInTable == 'cachegroup'" ng-click="viewCacheGroups()">View Cache Groups</button>
             <button class="btn btn-primary" title="View Static DNS Entries" ng-show="type.useInTable == 'staticdnsentry'" ng-click="viewStaticDnsEntries()">View Static DNS Entries</button>
         </div>
+        <div class="btn-group pull-right" role="group" uib-dropdown is-open="more.isopen">
+            <button name="moreBtn" type="button" class="btn btn-default dropdown-toggle pull-right" uib-dropdown-toggle aria-haspopup="true" aria-expanded="false">
+                More&nbsp;
+                <span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu-right dropdown-menu pull-right" uib-dropdown-menu>
+                <li role="menuitem"><button class="menu-item-button" type="button" ng-show="type.useInTable == 'server'" ng-click="queueUpdatesByType()">Queue Server Updates By type</button></li>
+                <li role="menuitem"><button class="menu-item-button" type="button" ng-show="type.useInTable == 'server'" ng-click="clearUpdatesByType()">Clear Server Updates By Type</button></li>
+            </ul>
+        </div>
         <div class="clearfix"></div>
     </div>
     <div class="x_content">

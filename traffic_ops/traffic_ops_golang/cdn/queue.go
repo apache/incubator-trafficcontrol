@@ -20,25 +20,44 @@ package cdn
  */
 
 import (
-	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/apache/trafficcontrol/lib/go-tc"
-
+	"github.com/apache/trafficcontrol/lib/go-util"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/api"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/dbhelpers"
+
+	"github.com/jmoiron/sqlx"
 )
 
 func Queue(w http.ResponseWriter, r *http.Request) {
+	var typeID int
+	var profileID int
+	var ok bool
+	var err error
+	var str string
+	queryParams := make(map[string]string, 0)
+
 	inf, userErr, sysErr, errCode := api.NewInfo(r, []string{"id"}, []string{"id"})
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, sysErr)
 		return
 	}
 	defer inf.Close()
+
+	cols := map[string]dbhelpers.WhereColumnInfo{
+		"cdnID":     {Column: "server.cdn_id", Checker: nil},
+		"typeID":    {Column: "server.type", Checker: nil},
+		"profileID": {Column: "server.profile", Checker: nil},
+	}
+
+	typeName := inf.Params["type"]
+	profile := inf.Params["profile"]
+
 	reqObj := tc.CDNQueueUpdateRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&reqObj); err != nil {
 		api.HandleErr(w, r, inf.Tx.Tx, http.StatusBadRequest, errors.New("malformed JSON: "+err.Error()), nil)
@@ -56,22 +75,76 @@ func Queue(w http.ResponseWriter, r *http.Request) {
 		api.HandleErr(w, r, inf.Tx.Tx, http.StatusNotFound, nil, nil)
 		return
 	}
+
+	// get type ID
+	if typeName != "" {
+		typeID, ok, err = dbhelpers.GetTypeIDByName(typeName, inf.Tx.Tx)
+		if err != nil {
+			api.HandleErr(w, r, inf.Tx.Tx, http.StatusInternalServerError, nil, errors.New("error getting type ID from name: "+err.Error()))
+			return
+		}
+		if !ok {
+			api.HandleErr(w, r, inf.Tx.Tx, http.StatusNotFound, errors.New("no type ID found with that name"), nil)
+			return
+		}
+		queryParams["typeID"] = strconv.Itoa(typeID)
+		str = fmt.Sprintf(" typeID: %d", typeID)
+	}
+
+	// get profile ID
+	if profile != "" {
+		profileID, ok, err = dbhelpers.GetProfileIDFromName(profile, inf.Tx.Tx)
+		if err != nil {
+			api.HandleErr(w, r, inf.Tx.Tx, http.StatusInternalServerError, nil, errors.New("error getting profile ID from name: "+err.Error()))
+			return
+		}
+		if !ok {
+			api.HandleErr(w, r, inf.Tx.Tx, http.StatusNotFound, errors.New("no profile ID found with that name"), nil)
+			return
+		}
+		queryParams["profileID"] = strconv.Itoa(profileID)
+		str = fmt.Sprintf(" profileID: %d", profileID)
+	}
+
 	userErr, sysErr, statusCode := dbhelpers.CheckIfCurrentUserHasCdnLock(inf.Tx.Tx, string(cdnName), inf.User.UserName)
 	if userErr != nil || sysErr != nil {
 		api.HandleErr(w, r, inf.Tx.Tx, statusCode, userErr, sysErr)
 		return
 	}
-	if err := queueUpdates(inf.Tx.Tx, int64(inf.IntParams["id"]), reqObj.Action == "queue"); err != nil {
-		api.HandleErr(w, r, inf.Tx.Tx, http.StatusInternalServerError, nil, errors.New("CDN queueing updates: "+err.Error()))
+
+	where, orderBy, pagination, queryValues, errs := dbhelpers.BuildWhereAndOrderByAndPagination(queryParams, cols)
+	if len(errs) > 0 {
+		errCode = http.StatusBadRequest
+		userErr = util.JoinErrs(errs)
+		api.HandleErr(w, r, inf.Tx.Tx, errCode, userErr, nil)
 		return
 	}
-	api.CreateChangeLogRawTx(api.ApiChange, "CDN: "+string(cdnName)+", ID: "+strconv.Itoa(inf.IntParams["id"])+", ACTION: CDN server updates "+reqObj.Action+"d", inf.User, inf.Tx.Tx)
+
+	query := `UPDATE server SET upd_pending = :upd_pending`
+	query = query + where + orderBy + pagination
+	queryValues["upd_pending"] = reqObj.Action == "queue"
+	ok, err = queueUpdates(inf.Tx, queryValues, query)
+	if err != nil {
+		api.HandleErr(w, r, inf.Tx.Tx, http.StatusInternalServerError, nil, fmt.Errorf("queueing updates: %v", err))
+		return
+	}
+	if !ok {
+		api.HandleErr(w, r, inf.Tx.Tx, http.StatusNotFound, fmt.Errorf("no server with the given combination found"), nil)
+		return
+	}
+
+	api.CreateChangeLogRawTx(api.ApiChange, "CDN: "+string(cdnName)+", ID: "+strconv.Itoa(inf.IntParams["id"])+str+", ACTION: CDN server updates "+reqObj.Action+"d", inf.User, inf.Tx.Tx)
 	api.WriteResp(w, r, tc.CDNQueueUpdateResponse{Action: reqObj.Action, CDNID: int64(inf.IntParams["id"])})
 }
 
-func queueUpdates(tx *sql.Tx, cdnID int64, queue bool) error {
-	if _, err := tx.Exec(`UPDATE server SET upd_pending = $1 WHERE server.cdn_id = $2`, queue, cdnID); err != nil {
-		return errors.New("querying queue updates: " + err.Error())
+// queueUpdates is the helper function to queue/ dequeue updates on servers for a CDN, optionally filtered by type and/ or profile
+func queueUpdates(tx *sqlx.Tx, queryValues map[string]interface{}, query string) (bool, error) {
+	result, err := tx.NamedExec(query, queryValues)
+	if err != nil {
+		return false, errors.New("querying queue updates: " + err.Error())
+	} else if rc, err := result.RowsAffected(); err != nil {
+		return false, fmt.Errorf("checking rows updated: %v", err)
+	} else {
+		return rc > 0, nil
 	}
-	return nil
 }

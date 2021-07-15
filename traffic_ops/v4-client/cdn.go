@@ -63,3 +63,16 @@ func (to *Session) GetCDNSSLKeys(name string, opts RequestOptions) (tc.CDNSSLKey
 	reqInf, err := to.get(route, opts, &data)
 	return data, reqInf, err
 }
+
+// QueueUpdatesForCDN set the "updPending" field of a list of servers identified by
+// 'cdnID' and any other query params (type or profile) to the value of 'queueUpdate'
+func (to *Session) QueueUpdatesForCDN(cdnID int, queueUpdate bool, opts RequestOptions) (tc.CDNQueueUpdateResponse, toclientlib.ReqInf, error) {
+	req := tc.CDNQueueUpdateRequest{Action: queueUpdateActions[queueUpdate]}
+	var resp tc.CDNQueueUpdateResponse
+	if opts.QueryParameters == nil {
+		opts.QueryParameters = url.Values{}
+	}
+	path := fmt.Sprintf("/cdns/%d/queue_update", cdnID)
+	reqInf, err := to.post(path, opts, req, &resp)
+	return resp, reqInf, err
+}

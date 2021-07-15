@@ -17,7 +17,7 @@
  * under the License.
  */
 
-var FormTypeController = function(type, $scope, $location, formUtils, stringUtils, locationUtils) {
+var FormTypeController = function(type, $scope, $location, formUtils, stringUtils, locationUtils, $uibModal, cdnService, typeService) {
 
     $scope.type = type;
 
@@ -30,6 +30,56 @@ var FormTypeController = function(type, $scope, $location, formUtils, stringUtil
 
     $scope.viewServers = function() {
         $location.path($location.path() + '/servers');
+    };
+
+    $scope.queueUpdatesByType = function() {
+        const params = {
+            title: 'Queue Server Updates By Type',
+            message: "Please select a CDN"
+        };
+        const modalInstance = $uibModal.open({
+            templateUrl: 'common/modules/dialog/select/dialog.select.tpl.html',
+            controller: 'DialogSelectController',
+            size: 'md',
+            resolve: {
+                params: function () {
+                    return params;
+                },
+                collection: function(cdnService) {
+                    return cdnService.getCDNs();
+                }
+            }
+        });
+        modalInstance.result.then(function(cdn) {
+            typeService.queueServerUpdates(cdn.id, $scope.type.name).then($scope.refresh);
+        }, function () {
+            // do nothing
+        });
+    };
+
+    $scope.clearUpdatesByType = function() {
+        const params = {
+            title: 'Clear Server Updates By Type',
+            message: "Please select a CDN"
+        };
+        const modalInstance = $uibModal.open({
+            templateUrl: 'common/modules/dialog/select/dialog.select.tpl.html',
+            controller: 'DialogSelectController',
+            size: 'md',
+            resolve: {
+                params: function () {
+                    return params;
+                },
+                collection: function(cdnService) {
+                    return cdnService.getCDNs();
+                }
+            }
+        });
+        modalInstance.result.then(function(cdn) {
+            typeService.clearServerUpdates(cdn.id, $scope.type.name).then($scope.refresh);
+        }, function () {
+            // do nothing
+        });
     };
 
     $scope.viewDeliveryServices = function() {
@@ -52,5 +102,5 @@ var FormTypeController = function(type, $scope, $location, formUtils, stringUtil
 
 };
 
-FormTypeController.$inject = ['type', '$scope', '$location', 'formUtils', 'stringUtils', 'locationUtils'];
+FormTypeController.$inject = ['type', '$scope', '$location', 'formUtils', 'stringUtils', 'locationUtils', '$uibModal', 'cdnService', 'typeService'];
 module.exports = FormTypeController;

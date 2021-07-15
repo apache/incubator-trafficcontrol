@@ -5,6 +5,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/).
 
 ## [unreleased]
 ### Added
+- [#4982](https://github.com/apache/trafficcontrol/issues/4982) Added the ability to support queueing updates by server type and profile 
 - [#5451](https://github.com/apache/trafficcontrol/issues/5451) Added change log count to user API's response payload and query param (username) to logs API
 - Added support for CDN locks
 - Added support for PostgreSQL as a Traffic Vault backend

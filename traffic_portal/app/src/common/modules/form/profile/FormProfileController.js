@@ -95,6 +95,14 @@ var FormProfileController = function(profile, $scope, $location, $uibModal, file
 
     };
 
+    $scope.queueUpdatesByProfile = function() {
+        profileService.queueServerUpdatesByProfile($scope.profile.cdn, $scope.profile.name).then($scope.refresh);
+    };
+
+    $scope.clearUpdatesByProfile = function() {
+        profileService.clearServerUpdatesByProfile($scope.profile.cdn, $scope.profile.name).then($scope.refresh);
+    };
+
     $scope.navigateToPath = locationUtils.navigateToPath;
 
     $scope.hasError = formUtils.hasError;
