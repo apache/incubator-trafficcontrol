@@ -1094,6 +1094,16 @@ func (r *TrafficOpsReq) StartServices(syncdsUpdate *UpdateStatus) error {
 
 	log.Infof("t3c-check-reload returned '%+v'\n", serviceNeeds)
 
+	// We have our own internal knowledge of files that have been modified as well
+	// If check-reload does not know about these and we do, then we should initiate
+	// a reload as well
+	if serviceNeeds != t3cutil.ServiceNeedsRestart && serviceNeeds != t3cutil.ServiceNeedsReload {
+		if r.TrafficCtlReload || r.RemapConfigReload {
+			log.Infof("ATS config files unchanged, we updated files via t3c-apply, ATS needs reload")
+			serviceNeeds = t3cutil.ServiceNeedsReload
+		}
+	}
+
 	if (serviceNeeds == t3cutil.ServiceNeedsRestart || serviceNeeds == t3cutil.ServiceNeedsReload) && !r.IsPackageInstalled("trafficserver") {
 		// TODO try to reload/restart anyway? To allow non-RPM installs?
 		return errors.New("trafficserver needs " + serviceNeeds.String() + " but is not installed.")

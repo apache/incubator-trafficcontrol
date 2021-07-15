@@ -531,10 +531,16 @@ func UpdateMaxmind(cfg config.Cfg) bool {
 		return false
 	}
 
-	gunzip := exec.Command("bash", "-c", "gunzip < "+filePath+" > "+strings.TrimSuffix(filePath, ".gz"))
+	gunzip := exec.Command("bash", "-c", "gunzip < "+filePath+" > "+(strings.TrimSuffix(filePath, ".gz"))+".tmp")
 	err = gunzip.Run()
 	if err != nil {
 		log.Errorf("error running gunzip: %v\n", err)
+		return false
+	}
+	move := exec.Command("bash", "-c", "mv "+(strings.TrimSuffix(filePath, ".gz")+".tmp")+" "+strings.TrimSuffix(filePath, ".gz"))
+	err = move.Run()
+	if err != nil {
+		log.Errorf("error moving new maxmind database file: %v\n", err)
 		return false
 	}
 
