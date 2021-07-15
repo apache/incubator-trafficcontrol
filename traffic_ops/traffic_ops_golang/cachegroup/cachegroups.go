@@ -37,7 +37,7 @@ import (
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/api"
 	"github.com/apache/trafficcontrol/traffic_ops/traffic_ops_golang/dbhelpers"
 
-	"github.com/go-ozzo/ozzo-validation"
+	validation "github.com/go-ozzo/ozzo-validation"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 )
@@ -592,7 +592,6 @@ LEFT JOIN cachegroup AS cgs ON cachegroup.secondary_parent_cachegroup_id = cgs.i
 
 //The TOCacheGroup implementation of the Updater interface
 func (cg *TOCacheGroup) Update(h http.Header) (error, error, int) {
-
 	if cg.LocalizationMethods == nil {
 		cg.LocalizationMethods = &[]tc.LocalizationMethod{}
 	}
@@ -620,7 +619,6 @@ func (cg *TOCacheGroup) Update(h http.Header) (error, error, int) {
 	if userErr != nil || sysErr != nil {
 		return userErr, sysErr, errCode
 	}
-
 	err := cg.ReqInfo.Tx.Tx.QueryRow(
 		UpdateQuery(),
 		cg.Name,
@@ -688,7 +686,7 @@ func (cg *TOCacheGroup) handleCoordinateUpdate() (*int, error, error, int) {
 	}
 
 	if err = cg.updateCoordinate(); err != nil {
-		return nil, nil, tc.DBError, http.StatusInternalServerError
+		return nil, err, tc.DBError, http.StatusBadRequest
 	}
 	return coordinateID, nil, nil, http.StatusOK
 }
