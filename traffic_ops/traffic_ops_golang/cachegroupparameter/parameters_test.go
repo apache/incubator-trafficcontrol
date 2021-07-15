@@ -151,8 +151,7 @@ func TestReadCacheGroupParameters(t *testing.T) {
 		},
 	}
 	toParameterReaders := map[string]api.Reader{
-		"Unassigned Parameters": &TOCacheGroupUnassignedParameter{},
-		"Parameters":            &TOCacheGroupParameter{},
+		"Parameters": &TOCacheGroupParameter{},
 	}
 	for _, testCase := range testCases {
 		for toParameterKey, toParameterReader := range toParameterReaders {
