@@ -34,6 +34,7 @@ import org.apache.traffic_control.traffic_router.core.edge.Node;
 import org.apache.traffic_control.traffic_router.core.edge.Node.IPVersions;
 import org.apache.traffic_control.traffic_router.core.edge.TrafficRouterLocation;
 import org.apache.traffic_control.traffic_router.core.hash.ConsistentHasher;
+import org.apache.traffic_control.traffic_router.core.http.RouterFilter;
 import org.apache.traffic_control.traffic_router.core.loc.AnonymousIp;
 import org.apache.traffic_control.traffic_router.core.loc.AnonymousIpDatabaseService;
 import org.apache.traffic_control.traffic_router.core.loc.FederationRegistry;
@@ -58,6 +59,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.log4j.Logger;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
+import org.springframework.web.util.UriComponentsBuilder;
 import org.xbill.DNS.Name;
 import org.xbill.DNS.Type;
 import org.xbill.DNS.Zone;
@@ -105,6 +107,7 @@ public class TrafficRouter {
 	public static final String DNSSEC_ENABLED = "dnssec.enabled";
 	public static final String DNSSEC_ZONE_DIFFING = "dnssec.zone.diffing.enabled";
 	public static final String DNSSEC_RRSIG_CACHE_ENABLED = "dnssec.rrsig.cache.enabled";
+	public static final String STRIP_SPECIAL_QUERY_PARAMS = "strip.special.query.params";
 	private static final long DEFAULT_EDGE_NS_TTL = 3600;
 	private static final int DEFAULT_EDGE_TR_LIMIT = 4;
 
@@ -117,6 +120,7 @@ public class TrafficRouter {
 	private final boolean consistentDNSRouting;
 	private final boolean clientSteeringDiversityEnabled;
 	private final boolean dnssecZoneDiffingEnabled;
+	private final boolean stripSpecialQueryParamsEnabled;
 	private final boolean edgeDNSRouting;
 	private final boolean edgeHTTPRouting;
 	private final long edgeNSttl; // 1 hour default
@@ -152,6 +156,7 @@ public class TrafficRouter {
 		this.anonymousIpService = anonymousIpService;
 		this.federationRegistry = federationRegistry;
 		this.clientSteeringDiversityEnabled = JsonUtils.optBoolean(cr.getConfig(), CLIENT_STEERING_DIVERSITY);
+		this.stripSpecialQueryParamsEnabled = JsonUtils.optBoolean(cr.getConfig(), STRIP_SPECIAL_QUERY_PARAMS);
 		this.dnssecZoneDiffingEnabled = JsonUtils.optBoolean(cr.getConfig(), DNSSEC_ENABLED) && JsonUtils.optBoolean(cr.getConfig(), DNSSEC_ZONE_DIFFING);
 		this.consistentDNSRouting = JsonUtils.optBoolean(cr.getConfig(), "consistent.dns.routing"); // previous/default behavior
 		this.edgeDNSRouting =  JsonUtils.optBoolean(cr.getConfig(), "edge.dns.routing") && cr.hasEdgeTrafficRouters();
@@ -1164,10 +1169,29 @@ public class TrafficRouter {
 	public HTTPRouteResult route(final HTTPRequest request, final Track track) throws MalformedURLException, GeolocationException {
 		track.setRouteType(RouteType.HTTP, request.getHostname());
 
+		final HTTPRouteResult result;
 		if (isMultiRouteRequest(request)) {
-			return multiRoute(request, track);
+			result = multiRoute(request, track);
 		} else {
-			return singleRoute(request, track);
+			result = singleRoute(request, track);
+		}
+		if (stripSpecialQueryParamsEnabled) {
+		    stripSpecialQueryParams(result);
+		}
+		return result;
+	}
+
+	public void stripSpecialQueryParams(final HTTPRouteResult result) throws MalformedURLException {
+		if (result != null && result.getUrls() != null) {
+			for (int i = 0; i < result.getUrls().size(); i++) {
+				final URL url = result.getUrls().get(i);
+				if (url != null) {
+					result.getUrls().set(i, UriComponentsBuilder.fromHttpUrl(url.toString())
+							.replaceQueryParam(HTTPRequest.FAKE_IP)
+							.replaceQueryParam(RouterFilter.REDIRECT_QUERY_PARAM)
+							.build().toUri().toURL());
+				}
+			}
 		}
 	}
 

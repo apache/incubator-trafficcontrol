@@ -36,6 +36,8 @@ import org.junit.Test;
 import org.xbill.DNS.Name;
 import org.xbill.DNS.Type;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -98,6 +100,7 @@ public class TrafficRouterTest {
         when(trafficRouter.singleRoute(any(HTTPRequest.class), any(Track.class))).thenCallRealMethod();
         when(trafficRouter.selectDeliveryService(any(Request.class))).thenReturn(deliveryService);
         when(trafficRouter.consistentHashDeliveryService(any(DeliveryService.class), any(HTTPRequest.class), any())).thenCallRealMethod();
+        doCallRealMethod().when(trafficRouter).stripSpecialQueryParams(any(HTTPRouteResult.class));
     }
 
     @Test
@@ -323,5 +326,17 @@ public class TrafficRouterTest {
         dest.append(httpRequest.getUri());
 
         assertThat(deliveryService.createURIString(httpRequest, cache), equalTo(dest.toString()));
+    }
+
+    @Test
+    public void itStripsSpecialQueryParameters() throws MalformedURLException {
+        HTTPRouteResult result = new HTTPRouteResult(false);
+        result.setUrl(new URL("http://example.org/foo?trred=false&fakeClientIpAddress=192.168.0.2"));
+        trafficRouter.stripSpecialQueryParams(result);
+        assertThat(result.getUrl().toString(), equalTo("http://example.org/foo"));
+
+        result.setUrl(new URL("http://example.org/foo?b=1&trred=false&a=2&asdf=foo&fakeClientIpAddress=192.168.0.2&c=3"));
+        trafficRouter.stripSpecialQueryParams(result);
+        assertThat(result.getUrl().toString(), equalTo("http://example.org/foo?b=1&a=2&asdf=foo&c=3"));
     }
 }
