@@ -230,9 +230,6 @@ type URISignerKeyset struct {
 	Keys       []jwk.EssentialHeader `json:"keys"`
 }
 
-// Deprecated: use TrafficVaultPing instead.
-type RiakPingResp TrafficVaultPing
-
 // TrafficVaultPing represents the status of a given Traffic Vault server.
 type TrafficVaultPing struct {
 	Status string `json:"status"`

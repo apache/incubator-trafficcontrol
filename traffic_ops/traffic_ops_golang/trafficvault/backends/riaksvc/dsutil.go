@@ -98,10 +98,10 @@ func putDeliveryServiceSSLKeysObj(key tc.DeliveryServiceSSLKeys, tx *sql.Tx, aut
 	return err
 }
 
-func ping(tx *sql.Tx, authOpts *riak.AuthOptions, riakPort *uint) (tc.RiakPingResp, error) {
+func ping(tx *sql.Tx, authOpts *riak.AuthOptions, riakPort *uint) (tc.TrafficVaultPing, error) {
 	servers, err := getRiakServers(tx, riakPort)
 	if err != nil {
-		return tc.RiakPingResp{}, errors.New("getting riak servers: " + err.Error())
+		return tc.TrafficVaultPing{}, errors.New("getting riak servers: " + err.Error())
 	}
 	for _, server := range servers {
 		cluster, err := getRiakStorageCluster([]ServerAddr{server}, authOpts)
@@ -123,9 +123,9 @@ func ping(tx *sql.Tx, authOpts *riak.AuthOptions, riakPort *uint) (tc.RiakPingRe
 		if err := cluster.Stop(); err != nil {
 			log.Errorln("stopping Riak cluster (after ping success): " + err.Error())
 		}
-		return tc.RiakPingResp{Status: "OK", Server: server.FQDN + ":" + server.Port}, nil
+		return tc.TrafficVaultPing{Status: "OK", Server: server.FQDN + ":" + server.Port}, nil
 	}
-	return tc.RiakPingResp{}, errors.New("failed to ping any Riak server")
+	return tc.TrafficVaultPing{}, errors.New("failed to ping any Riak server")
 }
 
 func getDNSSECKeys(cdnName string, tx *sql.Tx, authOpts *riak.AuthOptions, riakPort *uint) (tc.DNSSECKeysRiak, bool, error) {
