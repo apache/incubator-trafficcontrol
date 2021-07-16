@@ -135,6 +135,9 @@ func (tp *TOType) Create() (error, error, int) {
 func (tp *TOType) AllowMutation(forCreation bool) bool {
 	if !forCreation {
 		userErr, sysErr, actualUseInTable := tp.loadUseInTable()
+		if actualUseInTable == "" {
+			return true
+		}
 		if userErr != nil || sysErr != nil {
 			return false
 		} else if actualUseInTable != "server" {
@@ -153,6 +156,9 @@ func (tp *TOType) loadUseInTable() (error, error, string) {
 		query := `SELECT use_in_table from type where id=$1`
 		err := tp.ReqInfo.Tx.Tx.QueryRow(query, tp.ID).Scan(&useInTable)
 		if err == sql.ErrNoRows {
+			if tp.UseInTable == nil {
+				return nil, nil, ""
+			}
 			return nil, nil, *tp.UseInTable
 		}
 		if err != nil {
