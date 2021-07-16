@@ -62,6 +62,7 @@ WHERE name='tm.instance_name' AND
 `
 const userQueryByEmail = `SELECT EXISTS(SELECT * FROM tm_user WHERE email=$1)`
 const setTokenQuery = `UPDATE tm_user SET token=$1 WHERE email=$2`
+const UpdateLoginTimeQuery = `UPDATE tm_user SET last_authenticated = now() WHERE username=$1`
 
 const defaultCookieDuration = 6 * time.Hour
 
@@ -149,9 +150,26 @@ func LoginHandler(db *sqlx.DB, cfg config.Config) http.HandlerFunc {
 			if authenticated {
 				httpCookie := tocookie.GetCookie(form.Username, defaultCookieDuration, cfg.Secrets[0])
 				http.SetCookie(w, httpCookie)
-				resp = struct {
-					tc.Alerts
-				}{tc.CreateAlerts(tc.SuccessLevel, "Successfully logged in.")}
+
+				//If all's well until here, then update last authenticated time
+				tx, txErr := db.Begin()
+				if txErr != nil {
+					api.HandleErr(w, r, tx, http.StatusInternalServerError, nil, fmt.Errorf("beginning transaction: %w", txErr))
+					return
+				}
+				defer tx.Commit()
+				_, dbErr := tx.Exec(UpdateLoginTimeQuery, form.Username)
+				if dbErr != nil {
+					log.Errorf("unable to update authentication time for a given user: %s\n", dbErr.Error())
+					resp = struct {
+						tc.Alerts
+					}{tc.CreateAlerts(tc.ErrorLevel, "Unable to update authentication time for a given user")}
+				} else {
+					resp = struct {
+						tc.Alerts
+					}{tc.CreateAlerts(tc.SuccessLevel, "Successfully logged in.")}
+				}
+
 			} else {
 				resp = struct {
 					tc.Alerts

@@ -17,7 +17,7 @@
  * under the License.
  */
 
-var TableTenantUsersController = function(tenant, tenantUsers, $controller, $scope, $state, locationUtils) {
+var TableTenantUsersController = function(tenant, tenantUsers, $controller, $scope, $state, dateUtils, locationUtils) {
 
 	// extends the TableUsersController to inherit common methods
 	angular.extend(this, $controller('TableUsersController', { users: tenantUsers, $scope: $scope }));
@@ -25,6 +25,8 @@ var TableTenantUsersController = function(tenant, tenantUsers, $controller, $sco
 	let tenantUsersTable;
 
 	$scope.tenant = tenant;
+
+	$scope.relativeLoginTime = dateUtils.relativeLoginTime;
 
 	$scope.editUser = function(id) {
 		locationUtils.navigateToPath('/users/' + id);
@@ -48,7 +50,7 @@ var TableTenantUsersController = function(tenant, tenantUsers, $controller, $sco
 			"iDisplayLength": 25,
 			"aaSorting": [],
 			"columns": $scope.columns,
-			"initComplete": function(settings, json) {
+			"initComplete": function() {
 				try {
 					// need to create the show/hide column checkboxes and bind to the current visibility
 					$scope.columns = JSON.parse(localStorage.getItem('DataTables_tenantUsersTable_/')).columns;
@@ -61,5 +63,5 @@ var TableTenantUsersController = function(tenant, tenantUsers, $controller, $sco
 
 };
 
-TableTenantUsersController.$inject = ['tenant', 'tenantUsers', '$controller', '$scope', '$state', 'locationUtils'];
+TableTenantUsersController.$inject = ['tenant', 'tenantUsers', '$controller', '$scope', '$state', 'dateUtils', 'locationUtils'];
 module.exports = TableTenantUsersController;

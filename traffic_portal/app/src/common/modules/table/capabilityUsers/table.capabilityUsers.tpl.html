@@ -53,6 +53,7 @@ under the License.
                 <th>Tenant</th>
                 <th>Role</th>
                 <th>Registration Sent</th>
+                <th>Last Authenticated</th>
                 <th>Change Log Count</th>
             </tr>
             </thead>
@@ -64,6 +65,7 @@ under the License.
                 <td data-search="^{{::u.tenant}}$">{{::u.tenant}}</td>
                 <td data-search="^{{::u.rolename}}$">{{::u.rolename}}</td>
                 <td data-search="^{{::u.registrationSent}}$">{{::u.registrationSent}}</td>
+                <td data-search="^{{::relativeLoginTime(u.lastAuthenticated)}}$">{{::relativeLoginTime(u.lastAuthenticated)}}</td>
                 <td data-search="^{{::u.changeLogCount}}$">{{::u.changeLogCount}}</td>
             </tr>
             </tbody>

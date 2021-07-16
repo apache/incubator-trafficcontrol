@@ -229,7 +229,8 @@ func (this *TOUser) Read(h http.Header, useIMS bool) ([]interface{}, error, erro
 	}
 	type UserGet40 struct {
 		UserGet
-		ChangeLogCount *int `json:"changeLogCount" db:"change_log_count"`
+		ChangeLogCount    *int       `json:"changeLogCount" db:"change_log_count"`
+		LastAuthenticated *time.Time `json:"lastAuthenticated" db:"last_authenticated"`
 	}
 
 	user := &UserGet{}
@@ -431,6 +432,7 @@ func (user *TOUser) SelectQuery40() string {
 	u.tenant_id,
 	t.name as tenant,
 	u.last_updated,
+	u.last_authenticated,
 	(SELECT count(l.tm_user) FROM log as l WHERE l.tm_user = u.id) as change_log_count
 	FROM tm_user u
 	LEFT JOIN tenant t ON u.tenant_id = t.id

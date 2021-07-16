@@ -454,6 +454,12 @@ func GetTestUsers(t *testing.T) {
 	if err != nil {
 		t.Errorf("cannot get users: %v - alerts: %+v", err, resp.Alerts)
 	}
+	if len(resp.Response) < 1 {
+		t.Fatalf("expected a users list, got nothing")
+	}
+	if resp.Response[0].LastAuthenticated == nil {
+		t.Errorf("current user's authenticated time, expected: '%s' actual: %v", resp.Response[0].LastAuthenticated, nil)
+	}
 }
 
 func GetTestUserCurrent(t *testing.T) {
@@ -465,6 +471,9 @@ func GetTestUserCurrent(t *testing.T) {
 		t.Errorf("current user expected: '%s' actual: %v", SessionUserName, nil)
 	} else if *user.Response.UserName != SessionUserName {
 		t.Errorf("current user expected: '%s' actual: '%s'", SessionUserName, *user.Response.UserName)
+	}
+	if user.Response.LastAuthenticated == nil {
+		t.Errorf("current user's authenticated time, expected: '%s' actual: %v", user.Response.LastAuthenticated, nil)
 	}
 }
 

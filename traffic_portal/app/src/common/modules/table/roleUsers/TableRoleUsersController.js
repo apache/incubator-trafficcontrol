@@ -17,7 +17,7 @@
  * under the License.
  */
 
-var TableRoleUsersController = function(roles, roleUsers, $controller, $scope, $state, locationUtils) {
+var TableRoleUsersController = function(roles, roleUsers, $controller, $scope, $state, dateUtils, locationUtils) {
 
 	// extends the TableUsersController to inherit common methods
 	angular.extend(this, $controller('TableUsersController', { users: roleUsers, $scope: $scope }));
@@ -25,6 +25,8 @@ var TableRoleUsersController = function(roles, roleUsers, $controller, $scope, $
 	let roleUsersTable;
 
 	$scope.role = roles[0];
+
+	$scope.relativeLoginTime = dateUtils.relativeLoginTime;
 
 	$scope.editUser = function(id) {
 		locationUtils.navigateToPath('/users/' + id);
@@ -48,7 +50,7 @@ var TableRoleUsersController = function(roles, roleUsers, $controller, $scope, $
 			"iDisplayLength": 25,
 			"aaSorting": [],
 			"columns": $scope.columns,
-			"initComplete": function(settings, json) {
+			"initComplete": function() {
 				try {
 					// need to create the show/hide column checkboxes and bind to the current visibility
 					$scope.columns = JSON.parse(localStorage.getItem('DataTables_roleUsersTable_/')).columns;
@@ -61,5 +63,5 @@ var TableRoleUsersController = function(roles, roleUsers, $controller, $scope, $
 
 };
 
-TableRoleUsersController.$inject = ['roles', 'roleUsers', '$controller', '$scope', '$state', 'locationUtils'];
+TableRoleUsersController.$inject = ['roles', 'roleUsers', '$controller', '$scope', '$state', 'dateUtils', 'locationUtils'];
 module.exports = TableRoleUsersController;

@@ -38,7 +38,7 @@ var DateUtils = function() {
 			var dF = this.dateFormat;
 
 			// You can't provide utc if you skip other args (use the "UTC:" mask prefix)
-			if (arguments.length == 1 && Object.prototype.toString.call(date) == "[object String]" && !/\d/.test(date)) {
+			if (arguments.length === 1 && Object.prototype.toString.call(date) === "[object String]" && !/\d/.test(date)) {
 				mask = date;
 				date = undefined;
 			}
@@ -50,7 +50,7 @@ var DateUtils = function() {
 			mask = String(dF.masks[mask] || mask || dF.masks["default"]);
 
 			// Allow setting the utc argument via the mask
-			if (mask.slice(0, 4) == "UTC:") {
+			if (mask.slice(0, 4) === "UTC:") {
 				mask = mask.slice(4);
 				utc = true;
 			}
@@ -92,7 +92,7 @@ var DateUtils = function() {
 					TT:   H < 12 ? "AM" : "PM",
 					Z:    utc ? "UTC" : (String(date).match(timezone) || [""]).pop().replace(timezoneClip, ""),
 					o:    (o > 0 ? "-" : "+") + pad(Math.floor(Math.abs(o) / 60) * 100 + Math.abs(o) % 60, 4),
-					S:    ["th", "st", "nd", "rd"][d % 10 > 3 ? 0 : (d % 100 - d % 10 != 10) * d % 10]
+					S:    ["th", "st", "nd", "rd"][d % 10 > 3 ? 0 : (d % 100 - d % 10 !== 10) * d % 10]
 				};
 
 			return mask.replace(token, function ($0) {
@@ -142,7 +142,21 @@ var DateUtils = function() {
 	 */
 	this.getRelativeTime = function(date) {
 		return moment(date).fromNow();
-	}
+	};
+
+	/**
+	 * Converts a date into a string that tells how much time is between the current time and the given date and whether
+	 * the user has logged into the system.
+	 * @param {Date | string} date Either a Date object or a string that can be parsed by momentjs.
+	 * @returns {string} A human readable description of how much time is between now and `date`.
+	 */
+	this.relativeLoginTime = function(date) {
+		if (date) {
+			return moment(date).fromNow();
+		} else {
+			return "Never logged in";
+		}
+	};
 
 };
 

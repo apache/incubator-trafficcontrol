@@ -105,15 +105,26 @@ func Current(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer inf.Close()
+
 	currentUser, err := getUser(inf.Tx.Tx, inf.User.ID)
 	if err != nil {
 		api.HandleErr(w, r, inf.Tx.Tx, http.StatusInternalServerError, nil, errors.New("getting current user: "+err.Error()))
 		return
 	}
-	api.WriteResp(w, r, currentUser)
+
+	version := inf.Version
+	if version == nil {
+		api.HandleErr(w, r, inf.Tx.Tx, http.StatusInternalServerError, fmt.Errorf("TOUsers.Read called with invalid API version"), nil)
+		return
+	}
+	if version.Major >= 4 {
+		api.WriteResp(w, r, currentUser)
+	} else {
+		api.WriteResp(w, r, currentUser.UserCurrent)
+	}
 }
 
-func getUser(tx *sql.Tx, id int) (tc.UserCurrent, error) {
+func getUser(tx *sql.Tx, id int) (tc.UserCurrentV40, error) {
 	q := `
 SELECT
 u.address_line1,
@@ -125,6 +136,7 @@ u.email,
 u.full_name,
 u.id,
 u.last_updated,
+u.last_authenticated,
 u.local_passwd,
 u.new_user,
 u.phone_number,
@@ -141,10 +153,10 @@ LEFT JOIN role as r ON r.id = u.role
 INNER JOIN tenant as t ON t.id = u.tenant_id
 WHERE u.id=$1
 `
-	u := tc.UserCurrent{}
+	u := tc.UserCurrentV40{}
 	localPassword := sql.NullString{}
-	if err := tx.QueryRow(q, id).Scan(&u.AddressLine1, &u.AddressLine2, &u.City, &u.Company, &u.Country, &u.Email, &u.FullName, &u.ID, &u.LastUpdated, &localPassword, &u.NewUser, &u.PhoneNumber, &u.PostalCode, &u.PublicSSHKey, &u.Role, &u.RoleName, &u.StateOrProvince, &u.Tenant, &u.TenantID, &u.UserName); err != nil {
-		return tc.UserCurrent{}, errors.New("querying current user: " + err.Error())
+	if err := tx.QueryRow(q, id).Scan(&u.AddressLine1, &u.AddressLine2, &u.City, &u.Company, &u.Country, &u.Email, &u.FullName, &u.ID, &u.LastUpdated, &u.LastAuthenticated, &localPassword, &u.NewUser, &u.PhoneNumber, &u.PostalCode, &u.PublicSSHKey, &u.Role, &u.RoleName, &u.StateOrProvince, &u.Tenant, &u.TenantID, &u.UserName); err != nil {
+		return tc.UserCurrentV40{}, errors.New("querying current user: " + err.Error())
 	}
 	u.LocalUser = util.BoolPtr(localPassword.Valid)
 	return u, nil

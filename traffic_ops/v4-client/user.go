@@ -24,6 +24,9 @@ import (
 	"github.com/apache/trafficcontrol/traffic_ops/toclientlib"
 )
 
+// UserCurrentResponseV4 is an alias to avoid client breaking changes. In-case of a minor or major version change, we replace the below alias with a new structure.
+type UserCurrentResponseV4 = tc.UserCurrentResponseV40
+
 // GetUsers retrieves all (Tenant-accessible) Users stored in Traffic Ops.
 func (to *Session) GetUsers(opts RequestOptions) (tc.UsersResponseV40, toclientlib.ReqInf, error) {
 	data := tc.UsersResponseV40{}
@@ -33,9 +36,9 @@ func (to *Session) GetUsers(opts RequestOptions) (tc.UsersResponseV40, toclientl
 }
 
 // GetUserCurrent retrieves the currently authenticated User.
-func (to *Session) GetUserCurrent(opts RequestOptions) (tc.UserCurrentResponse, toclientlib.ReqInf, error) {
+func (to *Session) GetUserCurrent(opts RequestOptions) (UserCurrentResponseV4, toclientlib.ReqInf, error) {
 	route := `/user/current`
-	resp := tc.UserCurrentResponse{}
+	resp := UserCurrentResponseV4{}
 	reqInf, err := to.get(route, opts, &resp)
 	return resp, reqInf, err
 }

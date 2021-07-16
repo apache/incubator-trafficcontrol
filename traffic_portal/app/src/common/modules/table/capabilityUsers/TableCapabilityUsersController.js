@@ -17,7 +17,7 @@
  * under the License.
  */
 
-var TableCapabilityUsersController = function(capability, capUsers, $controller, $scope, $state, locationUtils) {
+var TableCapabilityUsersController = function(capability, capUsers, $controller, $scope, $state, dateUtils, locationUtils) {
 
 	// extends the TableUsersController to inherit common methods
 	angular.extend(this, $controller('TableUsersController', { users: capUsers, $scope: $scope }));
@@ -25,6 +25,8 @@ var TableCapabilityUsersController = function(capability, capUsers, $controller,
 	let capUsersTable;
 
 	$scope.capability = capability[0];
+
+	$scope.relativeLoginTime = dateUtils.relativeLoginTime;
 
 	$scope.editUser = function(id) {
 		locationUtils.navigateToPath('/users/' + id);
@@ -48,7 +50,7 @@ var TableCapabilityUsersController = function(capability, capUsers, $controller,
 			"iDisplayLength": 25,
 			"aaSorting": [],
 			"columns": $scope.columns,
-			"initComplete": function(settings, json) {
+			"initComplete": function() {
 				try {
 					// need to create the show/hide column checkboxes and bind to the current visibility
 					$scope.columns = JSON.parse(localStorage.getItem('DataTables_capUsersTable_/')).columns;
@@ -61,5 +63,5 @@ var TableCapabilityUsersController = function(capability, capUsers, $controller,
 
 };
 
-TableCapabilityUsersController.$inject = ['capability', 'capUsers', '$controller', '$scope', '$state', 'locationUtils'];
+TableCapabilityUsersController.$inject = ['capability', 'capUsers', '$controller', '$scope', '$state', 'dateUtils', 'locationUtils'];
 module.exports = TableCapabilityUsersController;

@@ -19,16 +19,19 @@ package tc
  * under the License.
  */
 
-import "database/sql"
-import "encoding/json"
-import "errors"
-import "fmt"
+import (
+	"database/sql"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"time"
 
-import "github.com/apache/trafficcontrol/lib/go-rfc"
-import "github.com/apache/trafficcontrol/lib/go-util"
+	"github.com/apache/trafficcontrol/lib/go-rfc"
+	"github.com/apache/trafficcontrol/lib/go-util"
 
-import "github.com/go-ozzo/ozzo-validation"
-import "github.com/go-ozzo/ozzo-validation/is"
+	"github.com/go-ozzo/ozzo-validation"
+	"github.com/go-ozzo/ozzo-validation/is"
+)
 
 // UserCredentials contains Traffic Ops login credentials
 type UserCredentials struct {
@@ -107,18 +110,25 @@ type User struct {
 	commonUserFields
 }
 
-// UserV40 contains ChangeLogCount field
+// UserV40 contains ChangeLogCount field.
 type UserV40 struct {
 	User
-	ChangeLogCount *int `json:"changeLogCount" db:"change_log_count"`
+	ChangeLogCount    *int       `json:"changeLogCount" db:"change_log_count"`
+	LastAuthenticated *time.Time `json:"lastAuthenticated" db:"last_authenticated"`
 }
 
-// UserCurrent represents the profile for the authenticated user
+// UserCurrent represents the profile for the authenticated user.
 type UserCurrent struct {
 	UserName  *string `json:"username"`
 	LocalUser *bool   `json:"localUser"`
 	RoleName  *string `json:"roleName"`
 	commonUserFields
+}
+
+// UserCurrentV40 contains LastAuthenticated field.
+type UserCurrentV40 struct {
+	UserCurrent
+	LastAuthenticated *time.Time `json:"lastAuthenticated" db:"last_authenticated"`
 }
 
 // CurrentUserUpdateRequest differs from a regular User/UserCurrent in that many of its fields are
@@ -328,6 +338,12 @@ type DeleteUserResponse struct {
 // or update the current user.
 type UserCurrentResponse struct {
 	Response UserCurrent `json:"response"`
+	Alerts
+}
+
+// UserCurrentResponseV40 is the Traffic Ops API version 4.0 variant of UserResponse.
+type UserCurrentResponseV40 struct {
+	Response UserCurrentV40 `json:"response"`
 	Alerts
 }
 
